@@ -1,0 +1,20 @@
+if($this->form->KtrResponse() !=''){
+            $type = "KTR";
+            $typeID = '4';
+            $valg_id = $this->form->UpdateListe($type,$typeID);
+        }
+        if($this->form->AfslutningResponse() !=''){
+            $type = "Afslutning";
+            $typeID = '2';
+            $valg_id = $this->form->UpdateListe($type,$typeID);
+        }
+        if($this->form->UdlægResponse() !=''){
+            $type = "Udlæg";
+            $typeID = '5';
+            $valg_id = $this->form->UpdateListe($type,$typeID);
+        }
+        if($this->form->BemaerkningResponse() !=''){
+            $type = "Bemærkning";
+            $typeID = '3';
+            $valg_id = $this->form->UpdateListe($type,$typeID);
+        }

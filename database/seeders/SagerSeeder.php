@@ -1,0 +1,256 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
+use App\Models\Sager;
+use App\Models\Kreditorer;
+use App\Models\Debitorer;
+use App\Models\Sagsbehandler;
+use App\Models\Konsulenter;
+use App\Models\Status;
+use App\Models\ktr;
+use App\Models\bemaerkning;
+use App\Models\afslutning;
+use App\Models\udlaeg;
+use App\Models\Sagervalgliste;
+
+class SagerSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // -------------------------------------------------------------------------
+        // 1. TJEK OG AUTO-SEED STAMDATA OG DROPDOWNS HVIS DE ER TOMME
+        // -------------------------------------------------------------------------
+
+        if (Kreditorer::count() === 0) {
+            foreach (['Danske Bank Inkasso', 'Jyske Finans A/S', 'Nordea Kredit', 'Express Bank', 'Resurs Bank'] as $navn) {
+                Kreditorer::create([
+                    'navn' => $navn,
+                    'cvr' => rand(10000000, 99999999),
+                    'adresse' => fake()->streetAddress(),
+                    'postnr' => rand(1000, 9999),
+                    'by' => fake()->city(),
+                    'email' => fake()->companyEmail(),
+                    'tlf' => '70' . rand(100000, 999999),
+                ]);
+            }
+        }
+
+        if (Debitorer::count() === 0) {
+            for ($d = 1; $d <= 100; $d++) {
+                Debitorer::create([
+                    'navn' => fake()->name(),
+                    'cpr_cvr' => rand(100000, 999999) . '-' . rand(1000, 9999),
+                    'adresse' => fake()->streetAddress(),
+                    'postnr' => rand(1000, 9999),
+                    'by' => fake()->city(),
+                    'tlf' => '20' . rand(100000, 999999),
+                    'email' => fake()->safeEmail(),
+                    'notat' => 'Fuldstændig oprettet test-debitor.',
+                ]);
+            }
+        }
+
+        if (Sagsbehandler::count() === 0) {
+            foreach (['Mette Frederiksen', 'Lars Løkke', 'Jakob Ellemann', 'Pia Olsen'] as $navn) {
+                Sagsbehandler::create([
+                    'navn' => $navn,
+                    'email' => Str::slug($navn) . '@inkasso.dk',
+                    'tlf' => '30' . rand(100000, 999999),
+                ]);
+            }
+        }
+
+        if (Konsulenter::count() === 0) {
+            foreach (['Anders Fogh', 'Helle Thorning', 'Poul Nyrup', 'Sven Auken'] as $navn) {
+                Konsulenter::create([
+                    'navn' => $navn,
+                    'email' => Str::slug($navn) . '@konsulent.dk',
+                    'tlf' => '40' . rand(100000, 999999),
+                ]);
+            }
+        }
+
+        if (Status::count() === 0) {
+            foreach (['Modtaget', 'Varsel sendt', 'Fogedret berammet', 'Afdragsvis betaling', 'Afsluttet - Indbetalt', 'Opgivet'] as $titel) {
+                Status::create(['navn' => $titel]);
+            }
+        }
+
+        if (ktr::count() === 0) {
+            foreach (['KTR-100 Konto i berod', 'KTR-200 Kontaktet pr. tlf', 'KTR-300 Retslig inkasso', 'KTR-400 Afdragsordning'] as $titel) {
+                ktr::create(['navn' => $titel]);
+            }
+        }
+
+        if (bemaerkning::count() === 0) {
+            foreach (['Debitor har lovet indbetaling fredag', 'Strider mod hovedstol', 'Afventer svar fra kreditor', 'Udvidet bopælsattest indhentet'] as $titel) {
+                bemaerkning::create(['navn' => $titel]);
+            }
+        }
+
+        if (afslutning::count() === 0) {
+            foreach (['Fuld indfrielse', 'Forlig indgået', 'Insolvenserklæring i fogedret', 'Kreditor trukket tilbage'] as $titel) {
+                afslutning::create(['navn' => $titel]);
+            }
+        }
+
+        if (udlaeg::count() === 0) {
+            foreach (['Ingen aktiver', 'Udlæg i bil', 'Udlæg i fast ejendom', 'Lønindeholdelse iværksat'] as $titel) {
+                udlaeg::create(['navn' => $titel]);
+            }
+        }
+
+        if (Sagervalgliste::count() === 0) {
+            $valglister = [
+                ['navn' => 'Standard inkasso', 'forkortelse' => 'STD'],
+                ['navn' => 'Haste-sag', 'forkortelse' => 'HASTE'],
+                ['navn' => 'Erhvervsinkasso', 'forkortelse' => 'ERH'],
+                ['navn' => 'Udenlandsk debitor', 'forkortelse' => 'UDL'],
+            ];
+
+            foreach ($valglister as $item) {
+                Sagervalgliste::create($item);
+            }
+        }
+
+        // Hent alle opdaterede samlinger
+        $kreditorer = Kreditorer::all();
+        $debitorer = Debitorer::all();
+        $sagsbehandlere = Sagsbehandler::all();
+        $konsulenter = Konsulenter::all();
+        $statuser = Status::all();
+        $ktrListe = ktr::all();
+        $bemaerkninger = bemaerkning::all();
+        $afslutninger = afslutning::all();
+        $udlaegListe = udlaeg::all();
+        $valglister = Sagervalgliste::all();
+
+        // -------------------------------------------------------------------------
+        // 2. NULSTIL PIPOT OG Hoved-TABELLER
+        // -------------------------------------------------------------------------
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+        DB::table('sager_kreditor')->truncate();
+        DB::table('sager_debitor')->truncate();
+        DB::table('sager_sagsbehandler')->truncate();
+        DB::table('sager_konsulent')->truncate();
+        DB::table('sager_status')->truncate();
+        DB::table('sager_ktr')->truncate();
+        DB::table('sager_bemaerkning')->truncate();
+        DB::table('sager_afslutning')->truncate();
+        DB::table('sager_udlaeg')->truncate();
+        DB::table('sager_valgliste')->truncate();
+        DB::table('sagers')->truncate();
+
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        // -------------------------------------------------------------------------
+        // 3. OPRET SAGER MED FULLDSTÆNDIG DATADÆKNING
+        // -------------------------------------------------------------------------
+        $shuffledDebitorer = $debitorer->shuffle();
+        $totalSager = 250;
+
+        for ($i = 1; $i <= $totalSager; $i++) {
+            
+            $uniqueSagsnr = 100000 + $i;
+
+            // GDPR-kategorier (15% expired, 15% expiring_soon, 70% aktiver)
+            $gdprCategory = fake()->randomElement(['expired', 'expiring_soon', 'normal', 'normal', 'normal']);
+
+            if ($gdprCategory === 'expired') {
+                $modtagetDato = Carbon::now()->subMonths(rand(66, 84));
+                $isAfsluttet = true;
+            } elseif ($gdprCategory === 'expiring_soon') {
+                $modtagetDato = Carbon::now()->subMonths(rand(58, 59));
+                $isAfsluttet = fake()->boolean(70);
+            } else {
+                $modtagetDato = Carbon::now()->subDays(rand(30, 1000));
+                $isAfsluttet = fake()->boolean(30);
+            }
+
+            $fakturadato = fake()->boolean(85) ? (clone $modtagetDato)->addDays(rand(1, 14)) : null;
+            $faktureret = $fakturadato && fake()->boolean(80) ? (clone $fakturadato)->addDays(rand(1, 5)) : null;
+            $betalt = $faktureret && fake()->boolean(65) ? (clone $faktureret)->addDays(rand(5, 30)) : null;
+            $afsluttetDato = $isAfsluttet ? (clone $modtagetDato)->addDays(rand(30, 180)) : null;
+            $opgivetDato = !$isAfsluttet && fake()->boolean(10) ? (clone $modtagetDato)->addDays(rand(60, 200)) : null;
+            $senesteRapport = (clone $modtagetDato)->addDays(rand(5, 40));
+
+            $hovedstol = fake()->randomFloat(2, 2000, 50000);
+            $renter = fake()->randomFloat(2, 150, 4500);
+            $gebyr = fake()->randomFloat(2, 100, 1800);
+            $startgebyr = fake()->randomFloat(2, 100, 950);
+            $ialt = $hovedstol + $renter + $gebyr + $startgebyr;
+
+            $indbetalt = $betalt ? $ialt : ($isAfsluttet ? fake()->randomFloat(2, 0, $ialt) : fake()->randomFloat(2, 0, $ialt / 2));
+            $restgaeldDkg = max(0, $ialt - $indbetalt);
+
+            $sag = Sager::create([
+                'sagsnr' => $uniqueSagsnr,
+                'afsluttet' => $afsluttetDato,
+                'faktureret' => $faktureret,
+                'betalt' => $betalt,
+                'fakturadato' => $fakturadato,
+                'modtaget' => $modtagetDato,
+                'senesterapport' => $senesteRapport,
+                'opgivet' => $opgivetDato,
+                'hovedstol' => $hovedstol,
+                'renter' => $renter,
+                'gebyr' => $gebyr,
+                'ialt' => $ialt,
+                'startgebyr' => $startgebyr,
+                'restgaeld_dkg' => $restgaeldDkg,
+                'restgaeld_kreditor' => $restgaeldDkg,
+                'indbetalt' => $indbetalt,
+                'n_mdlydelse' => fake()->randomFloat(2, 250, 3000),
+                'stelnr' => 'VIN-' . strtoupper(Str::random(10)),
+                'aktiv' => !$isAfsluttet,
+                'fakturanr' => 'FAK-' . (2026000 + $i),
+                'kort_bemaerkning' => fake()->randomElement([
+                    'Debitor har kontaktet kontoret vedr. afdrag.',
+                    'Varselsskrivelse afsendt pr. anbefalet post.',
+                    'Sag overdraget til fogedretten i Sønderborg.',
+                    'Forligsforhandling i gang.',
+                    null
+                ]),
+                'kode' => 'KODE-' . rand(100, 999),
+                'dato' => $modtagetDato,
+                'created_at' => $modtagetDato,
+                'updated_at' => $afsluttetDato ?? $senesteRapport,
+            ]);
+
+            // -------------------------------------------------------------------------
+            // 4. TILKNYT SAMTLIGE RELATIONER OG DROPDOWNS (100% GARANTERET UDFYLDT)
+            // -------------------------------------------------------------------------
+            
+            // Primary stakeholders
+            $sag->sagerkreditor()->attach($kreditorer->random()->id);
+
+            $debitor = $shuffledDebitorer->isNotEmpty() ? $shuffledDebitorer->pop() : $debitorer->random();
+            $sag->sagerdebitor()->attach($debitor->id);
+
+            $sag->sagersagsbehandler()->attach($sagsbehandlere->random()->id);
+            $sag->sagerkonsulent()->attach($konsulenter->random()->id);
+
+            // System & Dropdown Pivot Tables
+            $sag->sagerStatus()->attach($statuser->random()->id);
+            $sag->sagerKtr()->attach($ktrListe->random()->id);
+            $sag->sagerBemaerkning()->attach($bemaerkninger->random()->id);
+            $sag->sagervalgliste()->attach($valglister->random()->id);
+
+            // Valgfrie dropdowns tilknyttes til 70-80% af sagerne for variation
+            if (fake()->boolean(80)) {
+                $sag->sagerAfslutning()->attach($afslutninger->random()->id);
+            }
+            if (fake()->boolean(70)) {
+                $sag->sagerUdlaeg()->attach($udlaegListe->random()->id);
+            }
+        }
+
+        $this->command->info("✅ SagerSeeder har oprettet {$totalSager} sager med 100% udfyldte relationer, konsulenter, sagsbehandlere og dropdown-data!");
+    }
+}
