@@ -3,81 +3,78 @@
 namespace App\Livewire\Kreditor;
 
 use Livewire\Component;
-use Livewire\Attributes\On;
 use App\Models\Kreditorer;
+use App\Traits\HasCrudModal; // 🟢 BRUGER DET GENERISKE UI TRAIT
 
 class KreditorFormModal extends Component
 {
-    public ?Kreditorer $kreditor = null;
+    use HasCrudModal;
+
     public string $navn = '';
-    public string $lotusID = '';
-    public bool $showModal = false;
-    public $usedLotusIds = [];
+    public ?int $lotusID = null;
+    public array $usedLotusIds = [];
 
-    protected $rules = [
-        'navn' => 'required|string|max:255',
+    protected $listeners = [
+        'open-kreditor-modal' => 'openCreateModal',
+        'edit-kreditor-modal' => 'openEditModal',
     ];
-
-    #[On('open-kreditor-modal')]
-    public function openModal(?int $kreditorId = null)
-    {
-        $this->resetErrorBag();
-        $this->resetValidation();
-
-        $this->kreditor = $kreditorId
-            ? Kreditorer::findOrFail($kreditorId)
-            : null;
-
-        $this->navn = $this->kreditor?->navn ?? '';
-        $this->lotusID = $this->kreditor?->lotusID ?? '';
-
-        $this->showModal = true;
-    }
 
     public function mount()
     {
-        $this->usedLotusIds = \App\Models\Kreditorer::pluck('lotusID')->toArray();
+        $this->usedLotusIds = Kreditorer::pluck('lotusID')->filter()->toArray();
+    }
+
+    /**
+     * Krav fra HasCrudModal: Nulstil felter ved oprettelse/lukning
+     */
+    public function resetForm(): void
+    {
+        $this->navn = '';
+        $this->lotusID = $this->suggestedLotusId;
+    }
+
+    /**
+     * Krav fra HasCrudModal: Indlæs data ved redigering
+     */
+    public function loadItemData($id): void
+    {
+        $kreditor = Kreditorer::findOrFail($id);
+        $this->navn = $kreditor->navn;
+        $this->lotusID = $kreditor->lotusID;
     }
 
     public function getSuggestedLotusIdProperty()
     {
-        return (\App\Models\Kreditorer::max('lotusID') ?? 0) + 1;
+        return (Kreditorer::max('lotusID') ?? 0) + 1;
     }
 
     public function save()
     {
-        $this->validate();
+        $this->validate([
+            'navn' => ['required', 'string', 'max:255'],
+            'lotusID' => ['required', 'integer', 'unique:kreditors,lotusID,' . $this->editingId],
+        ]);
 
-        if ($this->kreditor) {
-            $this->kreditor->update([
+        if ($this->editingId) {
+            $kreditor = Kreditorer::findOrFail($this->editingId);
+            $kreditor->update([
                 'navn' => $this->navn,
                 'lotusID' => $this->lotusID,
             ]);
         } else {
-            $this->kreditor = Kreditorer::create([
+            $kreditor = Kreditorer::create([
                 'navn' => $this->navn,
                 'lotusID' => $this->lotusID,
             ]);
         }
 
-        $this->showModal = false;
-
-        // Dispatch browser event compatible with Alpine
-        $this->dispatch('kreditor-saved', [
-            'kreditorId' => $this->kreditor->id,
-            'navn' => $this->kreditor->navn,
-        ]);
-    }
-
-    public function closeModal()
-    {
-        $this->reset(['kreditor', 'navn', 'lotusID', 'showModal']);
-        $this->resetErrorBag();
-        $this->resetValidation();
+        $this->closeFormModal();
+        $this->dispatch('kreditor-saved', payload: ['kreditorId' => $kreditor->id, 'navn' => $kreditor->navn]);
+        $this->dispatch('toast', message: 'Kreditor gemt succesfuldt.', type: 'success');
     }
 
     public function render()
     {
-        return view('liveWire.kreditor.kreditor-form-modal');
+        return view('livewire.kreditor.kreditor-form-modal');
     }
 }

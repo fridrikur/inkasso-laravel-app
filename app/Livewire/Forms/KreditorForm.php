@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Livewire\forms;
+namespace App\Livewire\Forms;
+
 
 use Livewire\Attributes\Validate;
-use Livewire\form;
+use Livewire\Form;
 use App\models\Kreditorer;
 
 class KreditorForm extends Form

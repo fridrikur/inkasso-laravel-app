@@ -21,7 +21,7 @@ class Kreditorer extends Model
     {
         return $this->belongsToMany(Sager::class, 'sager_kreditor', 'kreditor_id', 'sag_id');
     }
-    public function hovedsagsbehandlere(): BelongsToMany
+    public function hovedsagsbehandler(): BelongsToMany
     {
       return $this->belongsToMany(Sagsbehandler::class, 'kreditor_hoved_sagsbehandler', 'kreditor_id', 'sagsbehandler_id');
     }

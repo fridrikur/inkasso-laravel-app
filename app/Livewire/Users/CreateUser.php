@@ -107,7 +107,7 @@ class CreateUser extends Component
             'Brugeren blev oprettet.'
         );
 
-        return redirect()->route('users.index');
+        return redirect()->route('users.manage-users');
     }
 
     public function render()

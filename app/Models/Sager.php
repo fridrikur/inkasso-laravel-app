@@ -109,11 +109,6 @@ class Sager extends Model
         return $this->belongsToMany(udlaeg::class, 'sager_udlaeg', 'sag_id', 'udlaeg_id');
     }
 
-    public function sagervalgliste()
-    {
-        return $this->belongsToMany(Sagervalgliste::class, 'sager_valgliste', 'sag_id', 'sagervalgliste_id');
-    }
-
     public function importSessions()
     {
         return $this->belongsToMany(
@@ -239,8 +234,7 @@ class Sager extends Model
             $sag->sagerBemaerkning()->detach();
             $sag->sagerAfslutning()->detach();
             $sag->sagerUdlaeg()->detach();
-            $sag->sagervalgliste()->detach();
-
+            
             $sag->dialogs()->delete();
             $sag->dokumenter()->delete();
             $sag->activities()->delete();

@@ -21,8 +21,8 @@ use App\Livewire\forms\UserForm;
 use App\Livewire\sager\ShowSager;
 use App\Livewire\sager\ShowKreditorSager;
 use App\Livewire\kreditorer\CreateKreditor;
-use App\Livewire\kreditorer\ShowKreditor;
-use App\Livewire\kreditorer\ShowKreditorer;
+use App\Livewire\Kreditorer\ManageKreditor;
+use App\Livewire\kreditorer\ManageKreditorer;
 use App\Livewire\kreditorer\UpdateKreditor;
 use App\Livewire\debitorer\CreateDebitor;
 use App\Livewire\debitorer\showDebitorer;
@@ -229,10 +229,12 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
 
         /* KREDITORER */
         Route::prefix('kreditorer')->group(function () {
-            Route::get('/', ShowKreditorer::class)->name('kreditorer.index');
+            // Oversigt over alle kreditorer
+            Route::get('/', ManageKreditorer::class)->name('kreditorer.index');
             Route::get('/create', CreateKreditor::class)->name('kreditorer.create');
             Route::get('/{kreditor}/edit', UpdateKreditor::class)->name('kreditorer.edit');
-            Route::get('/{kreditor}/show', ShowKreditor::class)->name('kreditorer.show');
+            // Enkelt kreditor administration (Tidligere ShowKreditor)
+            Route::get('/{kreditor}', ManageKreditor::class)->name('kreditor.manage');
             Route::get('/{kreditor}/sager', ShowKreditorSager::class)->name('kreditorer.sager');
             Route::get('/{kreditor}/import', ImportKreditor::class)->name('kreditorer.import');
         });
@@ -307,7 +309,6 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             return view('livewire.admin.sager.search');
         })->name('lukkede.sager.search');
 
-        Route::get('/kreditorer/{kreditor}/show-legacy', ShowKreditor::class)->name('showkreditor');
         Route::get('/saved-search/{saved}/results', SavedSearchResults::class)->name('saved-search.results');
 
         Route::get('/admin/sager/status/{status}', function (Status $status) {

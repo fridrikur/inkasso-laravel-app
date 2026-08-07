@@ -1,94 +1,82 @@
-<div>@if($showModal)
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+<div>
+@if($showFormModal)
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100">
 
         <button
-            wire:click="closeModal"
-            class="absolute top-2 right-2 text-gray-500 text-2xl hover:text-gray-700"
+            type="button"
+            wire:click="closeFormModal"
+            class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition"
         >
             &times;
         </button>
 
-        <h2 class="text-lg font-semibold mb-4">
-            {{ $kreditor ? 'Rediger kreditor' : 'Opret kreditor' }}
+        {{-- 🟢 BRUGER $editingId FRA HASCRUDMODAL --}}
+        <h2 class="text-lg font-bold text-slate-900 mb-4">
+            {{ $editingId ? 'Rediger kreditor' : 'Opret kreditor' }}
         </h2>
 
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Navn</label>
-            <input
-                type="text"
-                wire:model.defer="navn"
-                class="w-full border-gray-300 rounded-md shadow-sm"
-            >
-            @error('navn')
-                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-            @enderror
-        </div>
-
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Lotus ID</label>
-            <div class="mb-4">
-    
-            <input
-                type="number"
-                wire:model.live="lotusID"
-                placeholder="lotusID"
-                class="border rounded px-3 py-2 w-full"
-            >
-
-    {{-- STATUS --}}
-    @if(!empty($lotusID))
-
-        @if(in_array($lotusID, $usedLotusIds))
-
-            <div class="text-red-500 text-xs mt-1">
-                ⚠ LotusID findes allerede i systemet
+        <form wire:submit.prevent="save" class="space-y-4">
+            
+            {{-- NAVN --}}
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Navn</label>
+                <input
+                    type="text"
+                    wire:model="navn"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                >
+                @error('navn')
+                    <p class="text-xs text-rose-600 font-medium mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
-        @else
+            {{-- LOTUS ID --}}
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Lotus ID</label>
+                <input
+                    type="number"
+                    wire:model.live="lotusID"
+                    placeholder="f.eks. {{ $this->suggestedLotusId }}"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                >
 
-            <div class="text-green-600 text-xs mt-1">
-                ✓ LotusID er ledigt
+                @if(!empty($lotusID))
+                    @if(in_array($lotusID, $usedLotusIds))
+                        <div class="text-rose-600 text-xs font-semibold mt-1">
+                            ⚠ LotusID findes allerede i systemet
+                        </div>
+                    @else
+                        <div class="text-emerald-600 text-xs font-semibold mt-1">
+                            ✓ LotusID er ledigt
+                        </div>
+                    @endif
+                @endif
+
+                <div class="text-indigo-600 text-xs mt-2">
+                    Forslag: <strong>{{ $this->suggestedLotusId }}</strong>
+                </div>
             </div>
 
-        @endif
+            {{-- ACTIONS --}}
+            <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                    type="button"
+                    wire:click="closeFormModal"
+                    class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                >
+                    Annuller
+                </button>
 
-    @endif
-   {{-- SUGGESTION --}}
-    <div class="text-blue-600 text-xs mt-2">
-        Forslag: {{ $this->suggestedLotusId }}
-    </div>
+                <button
+                    type="submit"
+                    class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition cursor-pointer"
+                >
+                    {{ $editingId ? 'Gem ændringer' : 'Opret kreditor' }}
+                </button>
+            </div>
 
-    {{-- USED IDS --}}
-    <div class="mt-3">
-
-        <div class="text-xs font-semibold text-gray-500 mb-1">
-            Brugte LotusID:
-        </div>
-
-        <div class="max-h-24 overflow-y-auto border rounded p-2 bg-gray-50 text-xs text-gray-600">
-            {{ implode(', ', $usedLotusIds) }}
-        </div>
-
-    </div>
-</div>
-        </div>
-
-        <div class="flex justify-end gap-2">
-            <button
-                wire:click="closeModal"
-                class="px-4 py-2 bg-gray-200 rounded-md"
-            >
-                Annuller
-            </button>
-
-            <button
-                wire:click="save"
-                class="px-4 py-2 bg-indigo-600 text-white rounded-md"
-            >
-                Gem
-            </button>
-        </div>
+        </form>
 
     </div>
 </div>

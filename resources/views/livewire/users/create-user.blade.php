@@ -283,7 +283,7 @@
                     <div class="flex justify-end gap-3 pt-4">
 
                         <a
-                            href="{{ route('users.show-users') }}"
+                            href="{{ route('users.manage-users') }}"
                             class="px-5 py-3 rounded-xl border border-slate-300"
                         >
                             Annullér

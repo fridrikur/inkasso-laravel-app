@@ -92,7 +92,7 @@
     {{-- HOVED LAYOUT WRAPPER --}}
     <div class="min-h-screen flex w-full relative overflow-x-hidden">
 
-        {{-- MOBIL OVERLAY (Kun til mobil/tablet – uden sløring af desktop) --}}
+        {{-- MOBIL OVERLAY (Kun til mobil/tablet) --}}
         <div 
             x-show="sidebarOpen" 
             x-cloak
@@ -194,38 +194,129 @@
 
         {{-- HOVED INDHOLDSOMRÅDE --}}
         <div class="flex-1 flex flex-col min-w-0 w-full">
-            <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3.5 flex items-center justify-between sticky top-0 z-20 shadow-sm">
-                <div class="flex items-center gap-3">
+            
+            {{-- 🟢 OPGRADERET TOPHEADER --}}
+            <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+                
+                {{-- VENSTRE SIDE: MENU KNAP & DATO/KLOKKESLÆT --}}
+                <div class="flex items-center gap-4">
                     <button 
                         @click="toggleSidebar"
                         type="button"
                         class="p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 transition flex items-center gap-2 text-xs font-bold shadow-sm cursor-pointer"
                         title="Åbn/Skjul hovedmenu"
                     >
-                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                         </svg>
                         <span x-text="sidebarOpen ? 'Skjul menu' : 'Hovedmenu'">Hovedmenu</span>
                     </button>
+
+                    {{-- TEMPUS FUGIT / DATO OG REALTIDS-UR --}}
+                    <div 
+                        x-data="{ 
+                            time: '', 
+                            updateClock() { 
+                                const now = new Date(); 
+                                this.time = now.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); 
+                            } 
+                        }" 
+                        x-init="updateClock(); setInterval(() => updateClock(), 1000)"
+                        class="hidden md:flex items-center gap-2 border-l border-slate-200 pl-4 text-xs text-slate-500"
+                    >
+                        <span class="text-slate-400">📅</span>
+                        <span class="font-medium text-slate-700">
+                            {{ \Carbon\Carbon::now()->locale('da')->isoFormat('dddd [d.] D. MMM YYYY') }}
+                        </span>
+                        <span class="text-slate-300">•</span>
+                        <span class="text-slate-400">⏰</span>
+                        <span x-text="time" class="font-mono font-bold text-slate-800">00:00:00</span>
+                    </div>
                 </div>
 
+                {{-- SESSION NEDTÆLLING I HEADER --}}
+<div 
+    x-data="{ 
+        timeLeft: 900,
+        timer: null,
+        formatTime(sec) {
+            let m = String(Math.floor(sec / 60)).padStart(2, '0');
+            let s = String(sec % 60).padStart(2, '0');
+            return `${m}:${s}`;
+        },
+        resetTimer() {
+            let modal = document.getElementById('session-warning');
+            if (!modal || modal.style.display === 'none') {
+                this.timeLeft = 900;
+            }
+        }
+    }"
+    x-init="
+        timer = setInterval(() => { if (timeLeft > 0) timeLeft--; }, 1000);
+        ['mousemove', 'keydown', 'click', 'scroll'].forEach(evt => {
+            window.addEventListener(evt, () => resetTimer());
+        });
+    "
+    class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600"
+>
+    <span class="text-slate-400">⏳</span>
+    <span>Session udløber:</span>
+    <span x-text="formatTime(timeLeft)" 
+          :class="timeLeft < 60 ? 'text-rose-600 animate-pulse font-bold' : 'text-slate-900 font-mono font-bold'">
+        15:00
+    </span>
+</div>
+
+                {{-- HØJRE SIDE: BRUGERINFO, SESSION, QUICK MENU & LOG UD --}}
                 <div class="flex items-center gap-3">
+                    
+                    {{-- BRUGER BADGE MED ROLLE --}}
+                    <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+                        <div class="w-6 h-6 rounded-lg bg-indigo-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+                            {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                        </div>
+                        <div class="text-left">
+                            <span class="font-bold text-slate-800 block leading-tight">{{ auth()->user()->name }}</span>
+                            <span class="text-[10px] text-indigo-600 font-semibold block leading-tight">
+                                {{ auth()->user()->getRoleNames()->first() ?? 'Bruger' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- LIVEWIRE SESSION MANAGER / TIMER --}}
                     <livewire:session-manager />
 
+                    {{-- QUICK MENU KNAP --}}
                     <button
                         @click="$dispatch('open-quick-menu')"
                         type="button"
-                        class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition shadow-sm cursor-pointer"
+                        class="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition shadow-sm cursor-pointer"
                     >
                         <span>⚡ Quick Menu</span>
-                        <svg class="w-4 h-4 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-3.5 h-3.5 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                         </svg>
                     </button>
+
+                    {{-- 🔴 LOG AF KNAP --}}
+                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                        @csrf
+                        <button 
+                            type="submit" 
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 hover:border-rose-300 font-bold text-xs transition shadow-sm cursor-pointer"
+                            title="Log af systemet"
+                        >
+                            <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            <span class="hidden md:inline">Log af</span>
+                        </button>
+                    </form>
+
                 </div>
             </header>
 
-            {{-- MAIN PAGE CONTAINER (Centreret, fuld responsiv bredde uden dobbelt margin) --}}
+            {{-- MAIN PAGE CONTAINER --}}
             <main class="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
                 {{ $slot ?? $appSlot ?? '' }}
                 @yield('content')
@@ -375,5 +466,65 @@
         };
     })();
     </script>
+
+    {{-- GLOBAL TOAST CONTAINER --}}
+    <div 
+        x-data="{ 
+            toasts: [],
+            add(event) {
+                let data = event.detail || event;
+                if (Array.isArray(data)) data = data[0];
+                
+                const id = Date.now();
+                const toast = {
+                    id: id,
+                    message: data.message || 'Handling gennemført',
+                    type: data.type || 'info',
+                    icon: data.icon || 'check'
+                };
+                this.toasts.push(toast);
+                setTimeout(() => this.remove(id), 5000);
+            },
+            remove(id) {
+                this.toasts = this.toasts.filter(t => t.id !== id);
+            }
+        }"
+        @toast.window="add($event)"
+        x-init="
+            @if(session()->has('toast'))
+                add({ detail: {{ json_encode(session('toast')) }} });
+            @endif
+        "
+        class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"
+    >
+        <template x-for="toast in toasts" :key="toast.id">
+            <div 
+                x-show="true"
+                x-transition:enter="transition ease-out duration-300 transform translate-y-2 opacity-0"
+                x-transition:enter-end="transform translate-y-0 opacity-100"
+                x-transition:leave="transition ease-in duration-200 transform translate-y-2 opacity-0"
+                class="pointer-events-auto p-4 rounded-2xl shadow-xl border flex items-center justify-between gap-3 text-xs font-semibold"
+                :class="{
+                    'bg-emerald-900 text-white border-emerald-800': toast.type === 'success',
+                    'bg-rose-900 text-white border-rose-800': toast.type === 'error',
+                    'bg-amber-900 text-white border-amber-800': toast.type === 'warning',
+                    'bg-slate-900 text-white border-slate-800': toast.type === 'info'
+                }"
+            >
+                <div class="flex items-center gap-2.5">
+                    <template x-if="toast.type === 'success'">
+                        <svg class="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    </template>
+                    <template x-if="toast.type === 'error'">
+                        <svg class="w-5 h-5 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </template>
+                    <span x-text="toast.message"></span>
+                </div>
+                <button @click="remove(toast.id)" class="opacity-60 hover:opacity-100">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </template>
+    </div>
 </body>
 </html>
