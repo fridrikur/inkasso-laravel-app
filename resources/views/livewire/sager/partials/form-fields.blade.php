@@ -1,40 +1,38 @@
-    @props([
-            'form',
-            'selectOptions' => [],
-            'isSearchMode' => false,
-        ])
-        @php
-            $isSearchMode = $isSearchMode ?? false;
+@props([
+    'form',
+    'selectOptions' => [],
+    'isSearchMode' => false,
+])
+@php
+    $isSearchMode = $isSearchMode ?? false;
 
-            $selectOptions = is_array($selectOptions ?? null) ? $selectOptions : [];
-            $kreditorSuggestions = is_array($kreditorSuggestions ?? null) ? $kreditorSuggestions : [];
-            $showKreditorDropdown = $showKreditorDropdown ?? false;
-        @endphp{{-- SECTION 1 --}}
+    $selectOptions = is_array($selectOptions ?? null) ? $selectOptions : [];
+    $kreditorSuggestions = is_array($kreditorSuggestions ?? null) ? $kreditorSuggestions : [];
+    $showKreditorDropdown = $showKreditorDropdown ?? false;
+@endphp
 
-    {{-- ====================================================== --}}
-    {{-- SECTION 1: General / Kreditor / Status (Mockup layout) --}}
-    {{-- 5 rows, 4 columns, Aktiv spans col 1–2               --}}
-    {{-- ====================================================== --}}
-    <div class="relative space-y-4" wire:keydown.enter.prevent>
-        @if($isSearchMode)
-            <div wire:loading.flex
-                wire:target="form"
-                class="absolute inset-0 bg-white/60 backdrop-blur-sm z-50 items-center justify-center rounded-xl pointer-events-none">
+{{-- ====================================================== --}}
+{{-- SECTION 1: Generelt / Kreditor / Status                --}}
+{{-- ====================================================== --}}
+<div class="relative space-y-4" wire:keydown.enter.prevent>
+    @if($isSearchMode)
+        <div wire:loading.flex
+            wire:target="form"
+            class="absolute inset-0 bg-white/60 backdrop-blur-sm z-50 items-center justify-center rounded-xl pointer-events-none">
 
-                <div class="flex flex-col items-center space-y-2">
-                    <svg class="animate-spin h-6 w-6 text-slate-700" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
-                    </svg>
-                    <span class="text-sm text-slate-600">Søger...</span>
-                </div>
+            <div class="flex flex-col items-center space-y-2">
+                <svg class="animate-spin h-6 w-6 text-slate-700" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+                </svg>
+                <span class="text-sm text-slate-600">Søger...</span>
             </div>
-        @endif
+        </div>
+    @endif
 
-        <div class="bg-white shadow rounded-lg p-5">
-<h2 class="text-lg font-medium text-gray-700 border-b pb-2 mb-4">Generelt</h2>
+    <div class="bg-white shadow rounded-lg p-5">
+        <h2 class="text-lg font-medium text-gray-700 border-b pb-2 mb-4">Generelt</h2>
 
-
-<div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-3 gap-4">
 
             {{-- Row 1 --}}
             <div>
@@ -83,7 +81,6 @@
                     </ul>
                 @endif
             </div>
-
 
             <div>
                 <label class="block text-sm font-medium">Sag modtaget</label>
@@ -214,8 +211,6 @@
                         @endforeach
                     </select>
                 @endif
-
-                
             </div>
 
             <div>
@@ -226,7 +221,7 @@
             {{-- Row 5 --}}
             <div>
                 <label class="block text-sm font-medium">Udlæg bilbogen</label>
-                 @if($isSearchMode)
+                @if($isSearchMode)
                     <input 
                         type="text" 
                         wire:model.live.debounce.300ms="form.udlaeg"
@@ -296,182 +291,213 @@
         </div>
     </div>
 
-    {{-- ================= --}}
-{{-- SECTION 2: Debitor --}}
-{{-- 6 rows, 3 columns per mockup --}}
-{{-- ================= --}}
-<div class="bg-white shadow rounded-lg p-5">
-<h2 class="text-lg font-medium text-gray-700 border-b pb-2 mb-4">Debitor</h2>
+    {{-- ====================================================== --}}
+    {{-- SECTION 2: Debitor                                     --}}
+    {{-- ====================================================== --}}
+    <div class="bg-white shadow rounded-lg p-5">
+        <h2 class="text-lg font-medium text-gray-700 border-b pb-2 mb-4">Debitor</h2>
 
+        <div class="grid grid-cols-3 gap-6">
+            {{-- Kolonne 1: Stamdata --}}
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Navn(e)</label>
+                    <input type="text" wire:model.lazy="form.navn" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">c/o</label>
+                    <input type="text" wire:model.lazy="form.co" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Adresse</label>
+                    <input type="text" wire:model.lazy="form.adresse" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Post nr</label>
+                        <input type="text" wire:model.lazy="form.postnr" placeholder="xxxx" class="mt-1 w-full rounded-md border-gray-300" />
+                    </div>
 
-<div class="grid grid-cols-3 gap-4">
+                    <div class="col-span-2 relative">
+                        <label class="block text-sm font-medium text-gray-700">By</label>
+                        <input
+                            type="text"
+                            wire:model.debounce.250ms="form.by"
+                            wire:click="showByDropdown = true"
+                            wire:click.away="showByDropdown = false"
+                            placeholder="København"
+                            autocomplete="off"
+                            class="mt-1 w-full rounded-md border-gray-300"
+                        />
 
+                        @if($showByDropdown && count($bySuggestions))
+                            <ul class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                                @foreach($bySuggestions as $item)
+                                    <li
+                                        wire:click="selectBy('{{ addslashes($item['by']) }}', '{{ $item['postnr'] }}')"
+                                        class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between text-xs"
+                                    >
+                                        <span>{{ $item['by'] }}</span>
+                                        <span class="text-gray-500 font-mono">{{ $item['postnr'] }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">CPR/CVR</label>
+                    <input type="text" wire:model.lazy="form.pnr" placeholder="CPR/CVR" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Adressesøgning</label>
+                    <input type="date" wire:model.lazy="form.adropl" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+            </div>
 
-{{-- Column 1 --}}
-<div class="space-y-4">
-<div>
-<label class="block text-sm font-medium">Navn</label>
-<input type="text" wire:model.lazy="form.navn" class="mt-1 w-full rounded-md border-gray-300" />
-</div>
-<div>
-<label class="block text-sm font-medium">c/o</label>
-<input type="text" wire:model.lazy="form.co" class="mt-1 w-full rounded-md border-gray-300" />
-</div>
-<div>
-<label class="block text-sm font-medium">Adresse</label>
-<input type="text" wire:model.lazy="form.adresse" class="mt-1 w-full rounded-md border-gray-300" />
-</div>
-<div class="grid grid-cols-2 gap-4">
-    <div>
-        <label class="block text-sm font-medium">Postnr</label>
-        <input
-            type="text"
-            wire:model.lazy="form.postnr"
-            class="mt-1 w-full rounded-md border-gray-300"
-        />
+            {{-- Kolonne 2: Kontakter (Mails & Telefoner) --}}
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Mail #1</label>
+                    <input type="email" wire:model.lazy="form.email" placeholder="Mail" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Mail #2</label>
+                    <input type="email" wire:model.lazy="form.email2" placeholder="Mail" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Telefon #1</label>
+                    <input type="text" wire:model.lazy="form.tlf" placeholder="Telefon #1" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Telefon #2</label>
+                    <input type="text" wire:model.lazy="form.tlf2" placeholder="Telefon #2" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Telefon #3</label>
+                    <input type="text" wire:model.lazy="form.mobil" placeholder="Telefon #3" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+            </div>
+
+            {{-- Kolonne 3: Bemærkningsfelt --}}
+            <div class="flex flex-col">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Bemærkningsfelt vedr. fx kontakt</label>
+                <textarea wire:model.lazy="form.kontakt_bemaerkning" placeholder="TEKST" class="w-full flex-1 rounded-md border-gray-300 min-h-[220px]"></textarea>
+            </div>
+        </div>
     </div>
 
-    <div class="relative">
-        <label class="block text-sm font-medium">By</label>
-        <input
-            type="text"
-            wire:model.debounce.250ms="form.by"
-            wire:click="showByDropdown = true"
-            wire:click.away="showByDropdown = false"
-            autocomplete="off"
-            class="mt-1 w-full rounded-md border-gray-300"
-        />
+    {{-- ====================================================== --}}
+    {{-- SECTION 3: Økonomi (M. Interaktiv Beregningshjælp)     --}}
+    {{-- ====================================================== --}}
+    <div class="bg-white shadow rounded-lg p-5" x-data="{ showCalcHelp: false }">
+        <div class="border-b pb-2 mb-4 flex items-center justify-between">
+            <h2 class="text-lg font-medium text-gray-700">Økonomi</h2>
+            
+            {{-- TOGGLE KNAP TIL HJÆLPEVISNING --}}
+            <button 
+                type="button" 
+                @click="showCalcHelp = !showCalcHelp" 
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 transition shadow-sm cursor-pointer"
+            >
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span x-text="showCalcHelp ? 'Skjul beregningshjælp' : 'Vis beregningshjælp'"></span>
+            </button>
+        </div>
 
-        @if($showByDropdown && count($bySuggestions))
-            <ul class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-                @foreach($bySuggestions as $item)
-                    <li
-                        wire:click="selectBy('{{ addslashes($item['by']) }}', '{{ $item['postnr'] }}')"
-                        class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between"
-                    >
-                        <span>{{ $item['by'] }}</span>
-                        <span class="text-gray-500 text-sm">{{ $item['postnr'] }}</span>
-                    </li>
+        <div class="grid grid-cols-3 gap-4">
+
+            {{-- Column 1: BEREGNINGSFELTER --}}
+            <div class="space-y-4">
+                @foreach([
+                    'hovedstol'          => ['label' => 'Restance/gældpost',           'letter' => 'A', 'formula' => null],
+                    'renter'             => ['label' => 'Renter',                      'letter' => 'B', 'formula' => null],
+                    'gebyr'              => ['label' => 'Inkassosalær/gebyr',          'letter' => 'C', 'formula' => null],
+                    'ialt'               => ['label' => 'I alt',                       'letter' => 'D', 'formula' => 'A + B + C'],
+                    'resterende'         => ['label' => 'Resterende',                  'letter' => 'E', 'formula' => 'D ÷ F (D minus F)'],
+                    'indbetalt'          => ['label' => 'Indbetalt',                   'letter' => 'F', 'formula' => null],
+                    'restgaeld_kreditor' => ['label' => 'Restgæld kreditor',           'letter' => 'G', 'formula' => null],
+                    'restgaeld_dkg'      => ['label' => 'Restgæld inkl. inkassosalær', 'letter' => 'H', 'formula' => 'G + C'],
+                ] as $field => $info)
+
+                    @php
+                        $readonly = in_array($field, ['ialt', 'resterende', 'restgaeld_dkg']);
+                    @endphp
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-sm font-medium text-gray-700">
+                                {{ $info['label'] }}
+                            </label>
+                            
+                            {{-- BOGSTAV BOGMÆRKE (Viser A, B, C... H) --}}
+                            <span 
+                                x-show="showCalcHelp" 
+                                x-transition
+                                class="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-200"
+                            >
+                                Felt {{ $info['letter'] }}
+                            </span>
+                        </div>
+
+                        <input
+                            type="text"
+                            wire:model.debounce.400ms="form.{{ $field }}"
+                            @if(!$readonly) wire:blur="formatOnBlur('{{ $field }}')" @endif
+                            @if($readonly) readonly @endif
+                            class="w-full rounded-md border-gray-300 text-right {{ $readonly ? 'bg-gray-100 cursor-not-allowed font-semibold text-gray-800' : '' }}"
+                        />
+
+                        {{-- BEREGNINGSFORMLER SOM VISES NÅR TOGGLE ER AKTIV --}}
+                        @if($info['formula'])
+                            <div 
+                                x-show="showCalcHelp" 
+                                x-transition 
+                                class="text-[11px] text-indigo-600 font-medium mt-1 flex items-center gap-1"
+                            >
+                                <span>🧮 Formel:</span>
+                                <span class="font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
+                                    {{ $info['letter'] }} = {{ $info['formula'] }}
+                                </span>
+                            </div>
+                        @endif
+                    </div>
+
                 @endforeach
-            </ul>
-        @endif
+            </div>
+
+            {{-- Column 2: Faktura, Startgebyr mm. --}}
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium">Faktura dato</label>
+                    <input type="date" wire:model.lazy="form.fakturadato" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Fakturanr</label>
+                    <input type="text" wire:model.lazy="form.fakturanr" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Startgebyr</label>
+                    <input type="text" wire:model.lazy="form.startgebyr" class="mt-1 w-full rounded-md border-gray-300 text-right" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Kode</label>
+                    <input type="text" wire:model.lazy="form.kode" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+                <div style="margin-top: 11.3em;">
+                    <label class="block text-sm font-medium">Dato</label>
+                    <input type="date" wire:model.lazy="form.dato" class="mt-1 w-full rounded-md border-gray-300" />
+                </div>
+            </div>
+
+            {{-- Column 3: Kort bemærkning --}}
+            <div>
+                <label class="block text-sm font-medium">Kort bemærkning</label>
+                <textarea wire:model.lazy="form.kort_bemaerkning" rows="25" class="mt-1 w-full rounded-md border-gray-300"></textarea>
+            </div>
+
+        </div>
     </div>
-
-</div>
-<div>
-<label class="block text-sm font-medium">PNR</label>
-<input type="text" wire:model.lazy="form.pnr" class="mt-1 w-full rounded-md border-gray-300" />
-</div>
-<div>
-<label class="block text-sm font-medium">Seneste adressesøgning</label>
-<input type="date" wire:model.lazy="form.adropl" class="mt-1 w-full rounded-md border-gray-300" />
-</div>
-</div>
-
-
-{{-- Column 2 --}}
-<div class="space-y-4">
-<div>
-<label class="block text-sm font-medium">Mail</label>
-<input type="email" wire:model.lazy="form.email" class="mt-1 w-full rounded-md border-gray-300" />
-</div>
-<div>
-<label class="block text-sm font-medium">Tlf</label>
-<input type="text" wire:model.lazy="form.tlf" class="mt-1 w-full rounded-md border-gray-300" />
-</div>
-<div>
-<label class="block text-sm font-medium">Mobil</label>
-<input type="text" wire:model.lazy="form.mobil" class="mt-1 w-full rounded-md border-gray-300" />
-</div>
-</div>
-
-
-{{-- Column 3 --}}
-<div>
-<label class="block text-sm font-medium">Kontakt bemærkning</label>
-<textarea wire:model.lazy="form.kontakt_bemaerkning" rows="8" class="mt-1 w-full rounded-md border-gray-300"></textarea>
-</div>
-
-
-</div>
-</div>
-
-    
-{{-- ================= --}}
-{{-- SECTION 3: Økonomi --}}
-{{-- 8 rows, 3 columns per mockup --}}
-{{-- ================= --}}
-<div class="bg-white shadow rounded-lg p-5">
-<h2 class="text-lg font-medium text-gray-700 border-b pb-2 mb-4">Økonomi</h2>
-
-
-<div class="grid grid-cols-3 gap-4">
-
-
-{{-- Column 1 --}}
-{{-- Column 1 --}}
-
-<div class="space-y-4">
-@foreach([
-    'hovedstol' => 'Restance/gældpost',
-    'renter' => 'Renter',
-    'gebyr' => 'Inkassosalær/gebyr',
-    'ialt' => 'I alt',
-    'resterende' => 'Resterende',
-    'indbetalt' => 'Indbetalt',
-    'restgaeld_kreditor' => 'Restgæld kreditor',
-    'restgaeld_dkg' => 'Restgæld inkl. inkassosalær',
-] as $field => $label)
-
-@php
-    $readonly = in_array($field, ['ialt','resterende','restgaeld_dkg']);
-@endphp
-
-<div>
-    <label class="block text-sm font-medium">{{ $label }}</label>
-
-    <input
-        type="text"
-        wire:model.debounce.400ms="form.{{ $field }}"
-        @if(!$readonly) wire:blur="formatOnBlur('{{ $field }}')" @endif
-        @if($readonly) readonly @endif
-        class="mt-1 w-full rounded-md border-gray-300 text-right
-               {{ $readonly ? 'bg-gray-100 cursor-not-allowed' : '' }}"
-    />
-</div>
-
-@endforeach
-</div>
-
-{{-- Column 2 --}}
-<div class="space-y-4">
-<div>
-<label class="block text-sm font-medium">Faktura dato</label>
-<input type="date" wire:model.lazy="form.fakturadato" class="mt-1 w-full rounded-md border-gray-300" />
-</div>
-<div>
-<label class="block text-sm font-medium">Fakturanr</label>
-<input type="text" wire:model.lazy="form.fakturanr" class="mt-1 w-full rounded-md border-gray-300" />
-</div>
-<div>
-<label class="block text-sm font-medium">Startgebyr</label>
-<input type="text" wire:model.lazy="form.startgebyr" class="mt-1 w-full rounded-md border-gray-300 text-right" />
-</div>
-<div>
-<label class="block text-sm font-medium">Kode</label>
-<input type="text" wire:model.lazy="form.kode" class="mt-1 w-full rounded-md border-gray-300" />
-</div>
-<div class="mt-10" style="margin-top:11.3em">
-<label class="block text-sm font-medium">Dato</label>
-<input type="date" wire:model.lazy="form.dato" class="mt-1 w-full rounded-md border-gray-300" />
-</div>
-</div>
-
-
-{{-- Column 3 --}}
-<div>
-<label class="block text-sm font-medium">Kort bemærkning</label>
-<textarea wire:model.lazy="form.kort_bemaerkning" rows="25" class="mt-1 w-full rounded-md border-gray-300"></textarea>
-</div>
-</div>
 </div>

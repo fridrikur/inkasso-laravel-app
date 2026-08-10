@@ -157,46 +157,48 @@ class KreditorSagEditor extends Component
     public function confirmSave()
     {
         try {
-
-            // 🔒 Validate AGAIN (important!)
+            // 🔒 Validerer formularen igen
             $this->form->validate();
 
             $data = $this->sanitizeFormData();
 
+            // 🟢 Sæt automatisk 'modtaget' til dags dato/tidstempel ved indsendelse
+            $data['modtaget'] = now();
+
             $this->sag = Sager::create($data);
 
-            // 5️⃣ Update pivot relations
-                if ($this->sag->exists) {
+            // 5️⃣ Opdater pivot-relationer (Kreditor, Sagsbehandler, Debitor osv.)
+            if ($this->sag->exists) {
 
-                    // Kreditor pivot
-                    $kreditorId = $this->form->UpdateKreditor($this->sag);
-                    if ($kreditorId) {
-                        $this->sag->sagerkreditor()->sync([$kreditorId]);
-                    } else {
-                        $this->sag->sagerkreditor()->detach();
-                    }
-
-                    // Sagsbehandler pivot
-                    $sagsbehandlerId = $this->form->UpdateSagsbehandler();
-                    if ($sagsbehandlerId) {
-                        $this->sag->sagersagsbehandler()->sync([$sagsbehandlerId]);
-                    } else {
-                        $this->sag->sagersagsbehandler()->detach();
-                    }
-
-                    // Debitor pivot
-                    $debitorId = $this->form->UpdateDebitor($this->sag);
-                    if ($debitorId) {
-                        $this->sag->sagerdebitor()->sync([$debitorId]);
-                    } else {
-                        $this->sag->sagerdebitor()->detach();
-                    }
-
-                    // Other pivot relations (status, bemaerkning, ktr, afslutning, udlaeg, konsulent)
-                    foreach (['status', 'bemaerkning', 'ktr', 'afslutning', 'udlaeg', 'konsulent'] as $relation) {
-                        $this->form->updateRelation($relation, $this->sag->id);
-                    }
+                // Kreditor pivot
+                $kreditorId = $this->form->UpdateKreditor($this->sag);
+                if ($kreditorId) {
+                    $this->sag->sagerkreditor()->sync([$kreditorId]);
+                } else {
+                    $this->sag->sagerkreditor()->detach();
                 }
+
+                // Sagsbehandler pivot
+                $sagsbehandlerId = $this->form->UpdateSagsbehandler();
+                if ($sagsbehandlerId) {
+                    $this->sag->sagersagsbehandler()->sync([$sagsbehandlerId]);
+                } else {
+                    $this->sag->sagersagsbehandler()->detach();
+                }
+
+                // Debitor pivot
+                $debitorId = $this->form->UpdateDebitor($this->sag);
+                if ($debitorId) {
+                    $this->sag->sagerdebitor()->sync([$debitorId]);
+                } else {
+                    $this->sag->sagerdebitor()->detach();
+                }
+
+                // Øvrige pivot-relationer
+                foreach (['status', 'bemaerkning', 'ktr', 'afslutning', 'udlaeg', 'konsulent'] as $relation) {
+                    $this->form->updateRelation($relation, $this->sag->id);
+                }
+            }
 
             $this->reviewMode = false;
             $this->sentSuccessfully = true;
@@ -209,15 +211,12 @@ class KreditorSagEditor extends Component
             );
         } 
         catch (\Illuminate\Validation\ValidationException $e) {
-
             $this->dispatch('toast',
                 message: 'Validering fejlede ved indsendelse!',
                 type: 'error'
             );
-
         } 
         catch (\Exception $e) {
-
             \Log::error("Sag confirm error: " . $e->getMessage());
 
             $this->dispatch('toast',
@@ -225,7 +224,7 @@ class KreditorSagEditor extends Component
                 type: 'error'
             );
         }
-}
+    }
 
     protected function sanitizeFormData(): array
     {
@@ -233,11 +232,17 @@ class KreditorSagEditor extends Component
 
         $data['hovedstol'] = $this->normalizeDanishNumber($data['hovedstol'] ?? null);
         $data['renter'] = $this->normalizeDanishNumber($data['renter'] ?? null);
-        // Only allow fields defined in allowedFields
+
+        // Hent de dynamiske felter
         $allowed = collect($data)
             ->only($this->allowedFields)
             ->map(fn ($value) => $value === '' ? null : $value)
             ->toArray();
+
+        // 🟢 Sikr at 'modtaget' altid inkluderes i arrayet
+        if (isset($data['modtaget'])) {
+            $allowed['modtaget'] = $data['modtaget'];
+        }
 
         return $allowed;
     }

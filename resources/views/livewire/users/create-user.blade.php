@@ -1,309 +1,146 @@
-<div class="min-h-screen bg-slate-100">
-
-    <div class="max-w-5xl mx-auto py-10 px-6">
-
-        {{-- HERO --}}
-        <div class="mb-8">
-
-            <div class="flex items-center gap-4">
-
-                <div
-                    class="h-14 w-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-2xl shadow"
-                >
-                    +
-                </div>
-
-                <div>
-
-                    <h1 class="text-3xl font-bold text-slate-900">
-                        Opret bruger
-                    </h1>
-
-                    <p class="text-slate-500">
-                        Registrér en ny bruger i systemet
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        {{-- ROLE TABS --}}
-        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-3 mb-6">
-
-            <div class="flex gap-2">
-
-                <button
-                    type="button"
-                    wire:click="$set('role', 'Medarbejder')"
-                    class="px-5 py-3 rounded-2xl font-medium transition
-                    {{ $role === 'Medarbejder'
-                        ? 'bg-blue-600 text-white shadow'
-                        : 'hover:bg-slate-100'
-                    }}"
-                >
-                    Medarbejder
-                </button>
-
-                <button
-                    type="button"
-                    wire:click="$set('role', 'Kreditor')"
-                    class="px-5 py-3 rounded-2xl font-medium transition
-                    {{ $role === 'Kreditor'
-                        ? 'bg-blue-600 text-white shadow'
-                        : 'hover:bg-slate-100'
-                    }}"
-                >
-                    Kreditor
-                </button>
-
-                <button
-                    type="button"
-                    wire:click="$set('role', 'Admin')"
-                    class="px-5 py-3 rounded-2xl font-medium transition
-                    {{ $role === 'Admin'
-                        ? 'bg-blue-600 text-white shadow'
-                        : 'hover:bg-slate-100'
-                    }}"
-                >
-                    Admin
-                </button>
-
-            </div>
-
-        </div>
-
-        {{-- MAIN CARD --}}
-        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-
-            {{-- HEADER --}}
-            <div class="px-8 py-6 border-b bg-slate-50">
-
-                <h2 class="font-semibold text-lg">
-                    Stamdata
-                </h2>
-
-            </div>
-
-            {{-- FORM --}}
-            <form wire:submit="save">
-
-                <div class="p-8 space-y-8">
-
-                    {{-- BASIC INFO --}}
-                    <div class="grid md:grid-cols-2 gap-6">
-
-                        <div>
-
-                            <label class="block text-sm font-medium mb-2">
-                                Navn
-                            </label>
-
-                            <input
-                                type="text"
-                                wire:model.blur="name"
-                                class="w-full rounded-xl border border-slate-300 px-4 py-3"
-                                placeholder="Indtast navn"
-                            >
-
-                            @error('name')
-                                <p class="text-red-600 text-sm mt-2">
-                                    {{ $message }}
-                                </p>
-                            @enderror
-
-                        </div>
-
-                        <div>
-
-                            <label class="block text-sm font-medium mb-2">
-                                E-mail
-                            </label>
-
-                            <input
-                                type="email"
-                                wire:model.blur="email"
-                                class="w-full rounded-xl border border-slate-300 px-4 py-3"
-                                placeholder="mail@firma.dk"
-                            >
-
-                            @error('email')
-                                <p class="text-red-600 text-sm mt-2">
-                                    {{ $message }}
-                                </p>
-                            @enderror
-
-                        </div>
-
-                    </div>
-
-                    {{-- PASSWORDS --}}
-                    <div class="grid md:grid-cols-2 gap-6">
-
-                        <div>
-
-                            <label class="block text-sm font-medium mb-2">
-                                Password
-                            </label>
-
-                            <input
-                                type="password"
-                                wire:model.defer="password"
-                                class="w-full rounded-xl border border-slate-300 px-4 py-3"
-                            >
-
-                            @error('password')
-                                <p class="text-red-600 text-sm mt-2">
-                                    {{ $message }}
-                                </p>
-                            @enderror
-
-                        </div>
-
-                        <div>
-
-                            <label class="block text-sm font-medium mb-2">
-                                Bekræft password
-                            </label>
-
-                            <input
-                                type="password"
-                                wire:model.defer="password_confirmation"
-                                class="w-full rounded-xl border border-slate-300 px-4 py-3"
-                            >
-
-                        </div>
-
-                    </div>
-
-                    {{-- ROLE INFO --}}
-                    <div class="rounded-2xl bg-slate-50 border border-slate-200 p-6">
-
-                        @if($role === 'Admin')
-
-                            <div class="font-semibold text-slate-900">
-                                Administrator
-                            </div>
-
-                            <p class="text-slate-600 mt-1">
-                                Administratoren har adgang til alle funktioner i systemet.
-                            </p>
-
-                        @elseif($role === 'Medarbejder')
-
-                            <div class="font-semibold text-slate-900">
-                                Medarbejder
-                            </div>
-
-                            <p class="text-slate-600 mt-1">
-                                Medarbejderen får adgang til sagsbehandling og dagligt arbejde.
-                            </p>
-
-                        @elseif($role === 'Kreditor')
-
-                            <div class="font-semibold text-slate-900">
-                                Kreditor
-                            </div>
-
-                            <p class="text-slate-600 mt-1">
-                                Kreditorbrugere skal tilknyttes præcis én virksomhed.
-                            </p>
-
-                        @endif
-
-                    </div>
-
-                    {{-- KREDITOR SELECTOR --}}
-                    @if($role === 'Kreditor')
-
-                        <div>
-                            <div>
-
-                                <label class="block text-sm font-medium mb-2">
-                                    Kreditor
-                                </label>
-
-                                <input
-                                    type="text"
-                                    wire:model.live.debounce.300ms="kreditorSearch"
-                                    class="w-full rounded-xl border px-4 py-3"
-                                    placeholder="Søg kreditor..."
-                                >
-
-                            </div>
-
-                            <div class="mb-4">
-
-                                <h3 class="font-semibold text-lg">
-                                    Vælg kreditor
-                                </h3>
-
-                                <p class="text-slate-500 text-sm">
-                                    Brugeren tilknyttes én virksomhed.
-                                </p>
-
-                            </div>
-
-                            <div class="bg-slate-50 rounded-2xl p-2 flex gap-2 overflow-x-auto">
-
-                                @foreach($kreditorer as $kreditor)
-
-                                    <button
-                                        type="button"
-                                        wire:click="$set('kreditor_id', {{ $kreditor->id }})"
-                                        class="
-                                            whitespace-nowrap
-                                            px-4 py-2 rounded-xl transition
-
-                                            {{ $kreditor_id == $kreditor->id
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-white hover:bg-slate-100'
-                                            }}
-                                        "
-                                    >
-                                        {{ $kreditor->navn }}
-                                    </button>
-
-                                @endforeach
-
-                            </div>
-
-                            @error('kreditor_id')
-                                <p class="text-red-600 text-sm mt-3">
-                                    {{ $message }}
-                                </p>
-                            @enderror
-
-                        </div>
-
-                    @endif
-
-                    {{-- ACTIONS --}}
-                    <div class="flex justify-end gap-3 pt-4">
-
-                        <a
-                            href="{{ route('users.manage-users') }}"
-                            class="px-5 py-3 rounded-xl border border-slate-300"
-                        >
-                            Annullér
-                        </a>
-
-                        <button
-                            type="submit"
-                            class="px-6 py-3 rounded-xl bg-blue-600 text-white font-medium shadow hover:bg-blue-700"
-                        >
-                            Opret bruger
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </form>
-
-        </div>
-
+<div class="space-y-6">
+
+    {{-- ROLLE VÆLGER (FANER) --}}
+    <div class="bg-slate-100 p-1.5 rounded-2xl flex gap-1">
+        <button 
+            type="button" 
+            wire:click="$set('role', 'Medarbejder')" 
+            class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer {{ $role === 'Medarbejder' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900' }}"
+        >
+            Medarbejder
+        </button>
+
+        <button 
+            type="button" 
+            wire:click="$set('role', 'Kreditor')" 
+            class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer {{ $role === 'Kreditor' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900' }}"
+        >
+            Kreditor
+        </button>
+
+        <button 
+            type="button" 
+            wire:click="$set('role', 'Admin')" 
+            class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer {{ $role === 'Admin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900' }}"
+        >
+            Admin
+        </button>
     </div>
+
+    {{-- FORMULAR --}}
+    <form wire:submit="save" class="space-y-4">
+
+        {{-- NAVN OG EMAIL --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                    Navn *
+                </label>
+                <input 
+                    type="text" 
+                    wire:model.blur="name" 
+                    class="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none" 
+                    placeholder="Indtast navn"
+                >
+                @error('name') 
+                    <span class="text-xs text-rose-600 font-medium mt-1 block">{{ $message }}</span> 
+                @enderror
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                    E-mail *
+                </label>
+                <input 
+                    type="email" 
+                    wire:model.blur="email" 
+                    class="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none" 
+                    placeholder="mail@firma.dk"
+                >
+                @error('email') 
+                    <span class="text-xs text-rose-600 font-medium mt-1 block">{{ $message }}</span> 
+                @enderror
+            </div>
+        </div>
+
+        {{-- ADGANGSKODE & BEKRÆFTELSE --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                    Adgangskode *
+                </label>
+                <input 
+                    type="password" 
+                    wire:model="password" 
+                    class="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none"
+                >
+                @error('password') 
+                    <span class="text-xs text-rose-600 font-medium mt-1 block">{{ $message }}</span> 
+                @enderror
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                    Bekræft adgangskode *
+                </label>
+                <input 
+                    type="password" 
+                    wire:model="password_confirmation" 
+                    class="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none"
+                >
+            </div>
+        </div>
+
+        {{-- KREDITOR VÆLGER (KUN HVIS ROLLEN ER KREDITOR) --}}
+        @if($role === 'Kreditor')
+            <div class="pt-2">
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                    Tilknyt Virksomhed / Kreditor *
+                </label>
+                <select 
+                    wire:model="kreditor_id" 
+                    class="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none bg-white cursor-pointer"
+                >
+                    <option value="">Vælg virksomhed...</option>
+                    @foreach(\App\Models\Kreditorer::orderBy('navn')->get() as $kreditor)
+                        <option value="{{ $kreditor->id }}">{{ $kreditor->navn }}</option>
+                    @endforeach
+                </select>
+                @error('kreditor_id') 
+                    <span class="text-xs text-rose-600 font-medium mt-1 block">{{ $message }}</span> 
+                @enderror
+            </div>
+        @endif
+
+        {{-- ROLLE INFORUBOX --}}
+        <div class="rounded-xl bg-slate-50 border border-slate-200/80 p-3 text-xs text-slate-600">
+            @if($role === 'Admin')
+                <p><strong>Admin:</strong> Fuld adgang til alle systemets funktioner, brugere og indstillinger.</p>
+            @elseif($role === 'Kreditor')
+                <p><strong>Kreditor:</strong> Får adgang til Kreditor Portalen for sin tilknyttede virksomhed.</p>
+            @else
+                <p><strong>Medarbejder:</strong> Får adgang til den daglige sagsbehandling og sagsbehandlingsværktøjer.</p>
+            @endif
+        </div>
+
+        {{-- KNAPPER --}}
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <button 
+                type="button" 
+                wire:click="$dispatch('closeModal')" 
+                class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs transition cursor-pointer"
+            >
+                Annullér
+            </button>
+
+            <button 
+                type="submit" 
+                class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition cursor-pointer"
+            >
+                Opret {{ strtolower($role) }}
+            </button>
+        </div>
+
+    </form>
 
 </div>

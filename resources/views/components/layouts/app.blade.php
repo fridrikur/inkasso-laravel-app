@@ -122,61 +122,102 @@
                 </div>
 
                 <nav class="space-y-6 text-sm font-medium">
-                    <div class="space-y-1">
-                        <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Oversigt</div>
-                        <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dashboard*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>📊</span> Dashboard
-                        </a>
-                    </div>
 
-                    <div class="space-y-1">
-                        <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sagsbehandling</div>
-                        <a href="{{ route('showsager') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('showsager') || request()->routeIs('sager.*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>📂</span> Sager
-                        </a>
-                        <a href="{{ route('sager.search') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.search') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>🔍</span> Søg Sager
-                        </a>
-                        <a href="{{ route('sager.trash') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.trash') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>🗑️</span> Papirkurv
-                        </a>
-                    </div>
+    {{-- ============================================================ --}}
+    {{-- 👑 ADMIN & 💼 MEDARBEJDER MENU --}}
+    {{-- ============================================================ --}}
+    @hasanyrole('Admin|Medarbejder')
+        <div class="space-y-1">
+            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Oversigt</div>
+            <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dashboard*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <span>📊</span> Dashboard
+            </a>
+        </div>
 
-                    <div class="space-y-1">
-                        <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Parter</div>
-                        <a href="{{ route('kreditorer.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditorer*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>🏢</span> Kreditorer
-                        </a>
-                        <a href="{{ route('sagsbehandlere.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sagsbehandlere*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>👨‍💼</span> Sagsbehandlere
-                        </a>
-                        <a href="{{ route('manage-konsulenter') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('manage-konsulenter') || request()->routeIs('konsulenter*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>💼</span> Konsulenter
-                        </a>
-                    </div>
+        <div class="space-y-1">
+            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sagsbehandling</div>
+            <a href="{{ route('showsager') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('showsager') || request()->routeIs('sager.*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <span>📂</span> Sager
+            </a>
+            <a href="{{ route('sager.search') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.search') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <span>🔍</span> Søg Sager
+            </a>
+            <a href="{{ route('sager.breve.opret') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.breve.opret') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <span>✉️</span> Opret Brev
+            </a>
+            <a href="{{ route('sager.trash') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.trash') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <span>🗑️</span> Papirkurv
+            </a>
+            <a href="{{ route('sager.import.log') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition text-slate-300 hover:bg-slate-800 hover:text-white text-xs font-semibold">
+                <span>📊</span> Import Log
+            </a>
+        </div>
 
-                    <div class="space-y-1">
-                        <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Værktøjer & Admin</div>
-                        <a href="{{ route('sager.doctor') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.doctor') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>🩺</span> Doctor Norton 3.0
-                        </a>
-                        <a href="{{ route('gdpr.sager.retention') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('gdpr*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>🛡️</span> GDPR Retention
-                        </a>
-                        <a href="{{ route('autotekster.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('autotekster*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>💬</span> Autotekster
-                        </a>
-                        <a href="{{ route('dropdowns.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dropdowns*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>📋</span> Dropdown felter
-                        </a>
-                        <a href="{{ route('users.manage-users') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('users*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>👤</span> Brugere & Roles
-                        </a>
-                        <a href="{{ route('backups.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('backups*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                            <span>💾</span> Backups
-                        </a>
-                    </div>
-                </nav>
+        <div class="space-y-1">
+            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Parter</div>
+            <a href="{{ route('kreditorer.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditorer*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <span>🏢</span> Kreditorer
+            </a>
+            <a href="{{ route('sagsbehandlere.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sagsbehandlere*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <span>👨‍💼</span> Sagsbehandlere
+            </a>
+            <a href="{{ route('manage-konsulenter') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('manage-konsulenter') || request()->routeIs('konsulenter*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <span>💼</span> Konsulenter
+            </a>
+        </div>
+
+        {{-- KUN ADMIN VÆRKTØJER --}}
+        @role('Admin')
+            <div class="space-y-1">
+                <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Værktøjer & Admin</div>
+                <a href="{{ route('sager.doctor') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.doctor') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <span>🩺</span> Doctor Norton 3.0
+                </a>
+                <a href="{{ route('gdpr.sager.retention') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('gdpr*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <span>🛡️</span> GDPR Retention
+                </a>
+                <a href="{{ route('autotekster.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('autotekster*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <span>💬</span> Autotekster
+                </a>
+                <a href="{{ route('dropdowns.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dropdowns*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <span>📋</span> Dropdown felter
+                </a>
+                <a href="{{ route('users.manage-users') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('users*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <span>👤</span> Brugere & Roles
+                </a>
+                <a href="{{ route('backups.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('backups*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <span>💾</span> Backups
+                </a>
+            </div>
+        @endrole
+    @endhasanyrole
+
+    {{-- ============================================================ --}}
+    {{-- 🏢 KREDITOR SPECIFIK MENU --}}
+    {{-- ============================================================ --}}
+    @role('Kreditor')
+        <div class="space-y-1">
+            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kreditor Portal</div>
+            
+            <a href="{{ route('kreditor.dashboard') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.dashboard') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <span>📊</span> Dashboard
+            </a>
+
+            <a href="{{ route('kreditor.sag.create') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sag.create') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <span>➕</span> Opret Ny Sag
+            </a>
+
+            <a href="{{ route('kreditor.sager.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sager.index') || request()->routeIs('kreditor.sag.view') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <span>📂</span> Mine Sager
+            </a>
+
+            <a href="{{ route('kreditor.search') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.search') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <span>🔍</span> Søg Sager
+            </a>
+        </div>
+    @endrole
+
+</nav>
             </div>
 
             <div class="p-4 border-t border-slate-800/80 bg-slate-950/40 w-64">
@@ -286,17 +327,19 @@
                     {{-- LIVEWIRE SESSION MANAGER / TIMER --}}
                     <livewire:session-manager />
 
-                    {{-- QUICK MENU KNAP --}}
-                    <button
-                        @click="$dispatch('open-quick-menu')"
-                        type="button"
-                        class="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition shadow-sm cursor-pointer"
-                    >
-                        <span>⚡ Quick Menu</span>
-                        <svg class="w-3.5 h-3.5 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                        </svg>
-                    </button>
+                    {{-- QUICK MENU KNAP - KUN FOR ADMIN --}}
+                    @role('Admin')
+                        <button
+                            @click="$dispatch('open-quick-menu')"
+                            type="button"
+                            class="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition shadow-sm cursor-pointer"
+                        >
+                            <span>⚡ Quick Menu</span>
+                            <svg class="w-3.5 h-3.5 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    @endrole
 
                     {{-- 🔴 LOG AF KNAP --}}
                     <form method="POST" action="{{ route('logout') }}" class="inline">

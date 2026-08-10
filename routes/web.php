@@ -41,6 +41,7 @@ use App\Livewire\meta\ShowMeta;
 use App\Livewire\meta\UpdateMeta;
 use App\Livewire\Users\CreateUser;
 use App\Livewire\Users\Showkreditorusers;
+use App\Http\Controllers\Sager\ImportExecuteController;
 use App\Livewire\Users\UpdateUser;
 use App\Livewire\Users\CreateMedarbejderUser;
 use App\Livewire\Users\Createkreditoruser;
@@ -53,6 +54,7 @@ use App\Livewire\Sagervalglistetype\ShowSagervalglistetype;
 use App\Livewire\Sagervalglistetype\UpdateSagervalglistetype;
 use App\Livewire\Sager\AdminSagerFilter;
 use App\Livewire\Sager\KreditorCreateSag;
+use App\Livewire\Admin\Sager\ImportLogIndex;
 use App\Livewire\ManageKreditorFieldSettings;
 use App\Livewire\ManageDebitorFieldSettings;
 use App\Livewire\ManageKonsulenterFieldSettings;
@@ -99,7 +101,6 @@ use App\Livewire\Sager\MergeBrev;
 use App\Http\Controllers\SagerBrevPdfController;
 use App\Http\Controllers\Sager\ImportPreviewController;
 use App\Http\Controllers\Sager\ImportUploadController;
-use App\Http\Controllers\Sager\ImportExecuteController;
 use App\Http\Controllers\Sager\ImportFormController;
 use App\Http\Controllers\Sager\ImportSessionController;
 use App\Http\Controllers\DokumenterController;
@@ -146,21 +147,25 @@ Route::middleware(['auth'])->group(function () {
         $user = auth()->user();
 
         return match ($user->getRoleNames()->first()) {
-            'Admin' => redirect()->route('dashboard.admin'),
-            'Medarbejder' => redirect()->route('dashboard.medarbejder'),
-            'Kreditor' => redirect()->route('dashboard.kreditor'),
-            default => abort(403),
+            'Admin'       => redirect()->route('admin.dashboard'),
+            'Medarbejder' => redirect()->route('medarbejder.dashboard'),
+            'Kreditor'    => redirect()->route('kreditor.dashboard'),
+            default       => abort(403),
         };
     })->name('dashboard');
 
+    // 🟢 RETTET: Navne ændret så de matcher 'admin.dashboard' og 'medarbejder.dashboard'
     Route::get('/dashboard/admin', AdminDashboard::class)
-        ->name('dashboard.admin');
+        ->name('admin.dashboard');
 
     Route::get('/dashboard/medarbejder', MedarbejderDashboard::class)
-        ->name('dashboard.medarbejder');
+        ->name('medarbejder.dashboard');
 
-    Route::get('/dashboard/kreditor', Dashboard::class)
-        ->name('dashboard.kreditor');
+    // Keep Alive Ping
+    Route::post('/keep-alive', function () {
+        session(['last_activity' => time()]);
+        return response()->json(['status' => 'session extended']);
+    });
 
     // Keep Alive Ping (Session Forlængelse)
     Route::post('/keep-alive', function () {
@@ -213,7 +218,24 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             ->whereNumber('sag')
             ->name('sager.edit');
         Route::get('/sager/search', SagSearch::class)->name('sager.search');
+        Route::get('/admin/sager/import-log', ImportLogIndex::class)->name('sager.import.log');
+        // 1. Når filen er valgt -> Åbn mapping-siden
+        Route::post('/sager/import/{kreditor}/mapping', [ImportExecuteController::class, 'previewMapping'])
+            ->name('sager.import.mapping');
 
+        // 2. Når Admin har parret og trykker "Start Import" -> Kør importen
+        Route::post('/sager/import/{kreditor}/run', [ImportExecuteController::class, 'run'])
+            ->name('sager.import.run');
+
+        Route::get('/sager/import/session/{session}/retry', [ImportExecuteController::class, 'retrySession'])
+            ->name('sager.import.session.retry');
+
+        Route::put('/sager/import/templates/{template}', [ImportExecuteController::class, 'updateTemplate'])
+                ->name('sager.import.templates.update');
+
+        Route::delete('/sager/import/templates/{template}', [ImportExecuteController::class, 'destroyTemplate'])
+            ->name('sager.import.templates.destroy');
+        
         /* SYSTEM & SECURITY */
         Route::get('/system-security', SystemSecurity::class)
             ->name('system-security');
@@ -229,11 +251,9 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
 
         /* KREDITORER */
         Route::prefix('kreditorer')->group(function () {
-            // Oversigt over alle kreditorer
             Route::get('/', ManageKreditorer::class)->name('kreditorer.index');
             Route::get('/create', CreateKreditor::class)->name('kreditorer.create');
             Route::get('/{kreditor}/edit', UpdateKreditor::class)->name('kreditorer.edit');
-            // Enkelt kreditor administration (Tidligere ShowKreditor)
             Route::get('/{kreditor}', ManageKreditor::class)->name('kreditor.manage');
             Route::get('/{kreditor}/sager', ShowKreditorSager::class)->name('kreditorer.sager');
             Route::get('/{kreditor}/import', ImportKreditor::class)->name('kreditorer.import');
@@ -329,7 +349,9 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             });
 
         Route::get('/admin/doctor-norton', SagDoctorDashboard::class)->name('sager.doctor');
-        Route::view('/admin/breve/opret', 'admin.breve.opret')->name('admin.breve.opret');
+        Route::get('/sager/breve/opret', function () {
+            return view('admin.breve.opret');
+        })->name('sager.breve.opret');
     });
 
 /*
@@ -364,13 +386,14 @@ Route::middleware(['auth', 'verified', 'role:Kreditor'])
     ->prefix('kreditor')
     ->name('kreditor.')
     ->group(function () {
+        Route::get('/dashboard', Dashboard::class)->name('dashboard');
         Route::get('/sag/opret', KreditorSagEditor::class)->name('sag.create');
-        Route::get('/sager/{sag}', KreditorSagView::class)->whereNumber('sag')->name('sag.view');
         Route::get('/sager', KreditorSagerIndex::class)->name('sager.index');
+        Route::get('/sager/{sag}', KreditorSagView::class)->whereNumber('sag')->name('sag.view');
         Route::get('/sager/{sag}/klientinformation', Klientinformation::class)->name('sager.klientinformation');
         Route::get('/sager/{sag}/dokumenter', [DokumenterController::class, 'index'])->name('sager.dokumenter.index');
         Route::post('/sager/{sag}/dokumenter', [DokumenterController::class, 'store'])->name('sager.dokumenter.store');
-        Route::get('/kreditor/search', Search::class)->name('search');
+        Route::get('/search', Search::class)->name('search');
     });
 
 /*
@@ -393,7 +416,6 @@ Route::get('/sager/papirkurv', \App\Livewire\Sager\Papirkurv::class)->name('sage
 Route::get('/two-factor-login', TwoFactorLogin::class)->name('two-factor.login');
 Route::get('/two-factor-setup-required', TwoFactorSetupRequired::class)->name('two-factor.setup-required');
 
-// Hent et nyt frisk CSRF-token ved udløbet session
 Route::get('/refresh-csrf', function () {
     return response()->json([
         'token' => csrf_token()

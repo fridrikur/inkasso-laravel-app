@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo; // 🟢 Tilføjet denne linje
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ImportSession extends Model
 {
@@ -19,7 +21,7 @@ class ImportSession extends Model
         'meta' => 'array',
     ];
 
-    public function sager()
+    public function sager(): BelongsToMany
     {
         return $this->belongsToMany(
             Sager::class,
@@ -27,5 +29,13 @@ class ImportSession extends Model
             'import_session_id',
             'sag_id'
         )->withTimestamps();
+    }
+
+    /**
+     * Relationen til Kreditor-modellen
+     */
+    public function kreditor(): BelongsTo
+    {
+        return $this->belongsTo(Kreditorer::class, 'kreditor_id');
     }
 }

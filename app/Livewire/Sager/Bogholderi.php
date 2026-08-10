@@ -19,7 +19,7 @@ class Bogholderi extends Component
         return 'bogholderi';
     }
 
-    public function mount(Sager $sag)
+    public function mount(Sager $sag): void
     {
         $this->sag = $sag;
 
@@ -34,16 +34,15 @@ class Bogholderi extends Component
         $this->konsulent_id = $hoved?->id ?? $firstAssigned?->id;
     }
 
-    public function save()
+    public function save(): void
     {
         $this->validate([
-            'tekst'        => 'required|string',
-            'konsulent_id' => 'required|exists:konsulenters,id',
+            'tekst' => 'required|string|min:1',
         ]);
 
+        // 🟢 Gemmes direkte med den indloggede brugers (auth) ID
         $this->sendMessage(
-            senderId: (int) $this->konsulent_id,
-            senderType: 'konsulent'
+            senderId: auth()->id()
         );
     }
 

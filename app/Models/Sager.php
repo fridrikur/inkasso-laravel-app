@@ -30,7 +30,7 @@ class Sager extends Model
         'gebyr',
         'ialt',
         'startgebyr',
-        'restgaeld_dkg', // gammelt statistik felt
+        'restgaeld_dkg',
         'indbetalt',
         'n_mdlydelse',
         'stelnr',
@@ -240,25 +240,28 @@ class Sager extends Model
             $sag->activities()->delete();
         });
 
+        // 🟢 AFGRÆNS KUN TIL KREDITOR ROLLER FOR AT UNDGÅ SQL-FEJL OG BEGRÆNSNING AF ADMINS
         static::addGlobalScope('kreditor', function ($query) {
             if (! auth()->check()) {
                 return;
             }
 
-            $kreditorId = auth()->user()
-                ->kreditorer()
-                ->value('kreditors.id');
+            $user = auth()->user();
 
-            if ($kreditorId) {
-                $query->whereHas('sagerkreditor', function ($q) use ($kreditorId) {
-                    $q->whereKey($kreditorId);
-                });
+            if ($user->hasRole('Kreditor')) {
+                $kreditorId = $user->kreditorer()->value('kreditors.id');
+
+                if ($kreditorId) {
+                    $query->whereHas('sagerkreditor', function ($q) use ($kreditorId) {
+                        $q->whereKey($kreditorId);
+                    });
+                }
             }
         });
     }
 
     /* =========================================================================
-     * GDPR & RETENTION (OPDATERET OG OPTIMERET)
+     * GDPR & RETENTION
      * ========================================================================= */
 
     public function getRetentionDateAttribute()
@@ -326,19 +329,16 @@ class Sager extends Model
 
     public function anonymize(): void
     {
-        // 1. Detach personhenførbare relationer
         $this->sagerdebitor()->detach();
         $this->sagerkreditor()->detach();
         $this->sagersagsbehandler()->detach();
         $this->sagerkonsulent()->detach();
         $this->sagertokens()->detach();
 
-        // 2. Slet relaterede følsomme samtaler og dokumenter
         $this->dialogs()->delete();
         $this->dokumenter()->delete();
         $this->activities()->delete();
 
-        // 3. Anonymiser selve sagens felter
         $this->sagsnr = 'ANONYMISERET-' . $this->id;
         $this->stelnr = null;
         $this->fakturanr = null;
@@ -353,7 +353,6 @@ class Sager extends Model
         $this->anonymize();
     }
 
-    /* Scopes til direkte database-forespørgsler */
     public function scopeGdprExpired($query)
     {
         return $query->whereNotNull('afsluttet')
@@ -369,7 +368,6 @@ class Sager extends Model
             ]);
     }
 
-    // Bagudkompatible scopes
     public function scopeEligibleForRetention($query)
     {
         return $this->scopeGdprExpired($query);

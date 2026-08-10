@@ -45,7 +45,6 @@ class SagEditor extends Component
 
     public ?Sager $sag = null;
 
-    // 🟢 1. Tilføj denne egenskab (standard til 'stamdata')
     public string $activeTab = 'stamdata';
 
     public bool $isSearchMode = false;
@@ -81,17 +80,18 @@ class SagEditor extends Component
     public array $kreditorSuggestions = [];
     public bool $showKreditorDropdown = false;
     public string $kreditorSearch = '';
-    public string $kreditor_navn_search = '';   // what user types
+    public string $kreditor_navn_search = '';
     public array $debitorAliases = [];
     public array $debitorRequiredFields = [];
 
     public $sagerFieldSettings = [];
     public $debitorFieldSettings = [];
 
-    public SagForm $form; // ✅ must be typed exactly like this
+    public SagForm $form;
     public $isEditMode = false;
     public $message;
     public $token_id = '';
+
     // Calculation fields
     public float $hovedstol = 0;
     public float $renter = 0;
@@ -109,7 +109,6 @@ class SagEditor extends Component
     public array $columns = [];
     public array $readonlyFields = [];
     public $preparedFields = [];
-    // Add a public property at the top
     public array $renderFields = [];
     public array $bySuggestions = [];
     public bool $showByDropdown = false;
@@ -119,9 +118,8 @@ class SagEditor extends Component
     public $klientinformationUnread = 0;
     public ?array $lock = null;
     
-    // Add these properties to your SagEditor class
     public bool $showUnlockModal = false;
-    public   string $unlock_code = '';
+    public string $unlock_code = '';
     
     public bool $currentsagLocked = false;
     public string $unlockCode = '';
@@ -136,7 +134,6 @@ class SagEditor extends Component
 
     public bool $showAcceptedModal = false;
 
-    // Add these methods to your SagEditor class
     public function lockSag(): void
     {
         \App\Models\SagLock::updateOrCreate(
@@ -150,29 +147,26 @@ class SagEditor extends Component
         $this->syncLockState();
     }
 
-    
+    public function openUnlockModal(): void
+    {
+        $this->showUnlockModal = true;
+    }
 
-public function openUnlockModal(): void
-{
-    $this->showUnlockModal = true;
-}
+    public function unlockSag(): void
+    {
+        if (!$this->sag?->id) return;
 
-public function unlockSag(): void
-{
-    if (!$this->sag?->id) return;
+        SagLock::where('sag_id', $this->sag->id)
+            ->where('user_id', auth()->id())
+            ->delete();
 
-    SagLock::where('sag_id', $this->sag->id)
-        ->where('user_id', auth()->id())
-        ->delete();
+        $this->syncLockState();
+    }
 
-    $this->syncLockState();
-}
-
-public function refreshKlientinformation()
-{
-    // Ask the child component for the unread count
-    $this->dispatch('sager.klientinformation', 'updateUnreadCount');
-}
+    public function refreshKlientinformation()
+    {
+        $this->dispatch('sager.klientinformation', 'updateUnreadCount');
+    }
     
     protected function loadFormRelations()
     {
@@ -181,35 +175,27 @@ public function refreshKlientinformation()
         $this->form->sag = $this->sag;
         $this->form->sag_id = $this->sag->id;
 
-        
-         foreach (['status', 'bemaerkning', 'ktr', 'afslutning','konsulent','udlaeg'] as $relation) {
+        foreach (['status', 'bemaerkning', 'ktr', 'afslutning','konsulent','udlaeg'] as $relation) {
             $this->form->setRelation($relation, $this->sag);
         }
         
-        // $this->form->SetKonsulent($this->sag);
         $this->form->SetKreditor($this->sag);
         $this->form->SetDebitor($this->sag);
         $this->form->SetSag($this->sag);
     }
 
-    /**
-     * Load dropdown options, excluding hidden konsulenter
-     */
     protected function loadSelectOptions(): void
     {
-        // Konsulenter (exclude skjult)
         $this->selectOptions['konsulent'] = Konsulenter::query()
             ->leftJoin('skjult_konsulent', 'konsulenters.id', '=', 'skjult_konsulent_id')
             ->whereNull('skjult_konsulent_id')
             ->pluck('konsulenters.navn', 'konsulenters.id')
             ->toArray();
 
-        // Preselect hovedkonsulent for new sag
         if (!$this->sag->exists) {
             $this->form->konsulent = DB::table('hoved_konsulent')->value('hoved_konsulent_id');
         }
 
-        // Cached static dropdowns
         $this->selectOptions['status']      = Cache::rememberForever('select.status', fn () => Status::pluck('tekst', 'id')->toArray());
         $this->selectOptions['bemaerkning'] = Cache::rememberForever('select.bemaerkning', fn () => Bemaerkning::pluck('tekst', 'id')->toArray());
         $this->selectOptions['afslutning']  = Cache::rememberForever('select.afslutning', fn () => Afslutning::pluck('tekst', 'id')->toArray());
@@ -217,10 +203,6 @@ public function refreshKlientinformation()
         $this->selectOptions['udlaeg']      = Cache::rememberForever('select.udlaeg', fn () => Udlaeg::pluck('tekst', 'id')->toArray());
     }
 
-
-    /**
-     * Called when the lotusID is typed
-     */
     public function updatedFormKreditorLotusID($lotusId)
     {
         if (!$lotusId) {
@@ -241,13 +223,9 @@ public function refreshKlientinformation()
             return;
         }
 
-        // Set kreditor name
         $this->form->kreditor_navn = $kreditor->navn;
-
-        // Populate sagsbehandler options for this kreditor
         $this->selectOptions['sagsbehandler'] = Sagsbehandler::forKreditor($kreditor->id) ?? [];
 
-        // ✅ Auto-select hovedsagsbehandler if exists
         $firstHoved = $kreditor->hovedsagsbehandlere->first();
         if ($firstHoved && array_key_exists($firstHoved->id, $this->selectOptions['sagsbehandler'])) {
             $this->form->sagsbehandler = $firstHoved->id;
@@ -257,17 +235,10 @@ public function refreshKlientinformation()
         }
     }
 
-    /**
-     * Get hovedkonsulent ID for new sager
-     */
-    
     public function mount($sag = null, $isSearchMode = false)
     {
         $this->loading = true;
 
-        // =========================================
-        // LOAD SAG FIRST
-        // =========================================
         $this->sag = $sag?->load([
             'sagerkreditor',
             'sagersagsbehandler',
@@ -276,109 +247,59 @@ public function refreshKlientinformation()
 
         $this->isEditMode = $this->sag->exists;
 
-        // =========================================
-        // LOCK STATE
-        // =========================================
         if ($this->isEditMode) {
-
             $lock = SagLock::where('sag_id', $this->sag->id)->first();
 
             if ($lock) {
-
                 if ($lock->user_id === auth()->id()) {
-
                     $this->hasLock = true;
                     $this->isLockedByOther = false;
-
                 } else {
-
                     $this->hasLock = false;
                     $this->isLockedByOther = true;
-
                     $this->lock = [
                         'user_name' => $lock->user?->name ?? 'Ukendt',
                     ];
                 }
-
             } else {
-
                 $this->hasLock = false;
                 $this->isLockedByOther = false;
             }
         }
 
-        // =========================================
-        // DEFAULTS
-        // =========================================
         $this->selectOptions['sagsbehandler'] = [];
 
-        // =========================================
-        // ACQUIRE LOCK
-        // =========================================
         if ($this->isEditMode) {
             $this->acquireLock();
         }
 
-        // =========================================
-        // HYDRATE KREDITOR
-        // =========================================
         if ($this->isEditMode) {
-
             $kreditor = $this->sag->sagerkreditor->first();
-
             if ($kreditor) {
                 $this->hydrateFromKreditor($kreditor);
             }
-
         } else {
-
             $this->form->konsulent = null;
             $this->loadKonsulentOptions();
         }
 
-        // =========================================
-        // BADGES
-        // =========================================
         if ($this->isEditMode) {
             $this->refreshBadge();
         }
 
-        // =========================================
-        // FORM RELATIONS
-        // =========================================
         $this->loadFormRelations();
-
-        // =========================================
-        // SELECT OPTIONS
-        // =========================================
         $this->loadSelectOptions();
 
-        // =========================================
-        // TOTALS
-        // =========================================
+        // 🟢 Beregn og formater alle tal ved opstart
         $this->calculateTotals();
 
-        // =========================================
-        // POSTNR / BY
-        // =========================================
         $this->databaseValuePostnr();
 
-        // =========================================
-        // SEARCH DROPDOWNS
-        // =========================================
         $this->kreditorSuggestions = [];
         $this->showKreditorDropdown = false;
-
-        // =========================================
-        // SEARCH MODE
-        // =========================================
         $this->isSearchMode = $isSearchMode;
 
-        // =========================================
-        // ACTIVITY TRACKING
-        // =========================================
         if ($this->isEditMode) {
-
             SagActivity::updateOrCreate(
                 [
                     'sag_id' => $this->sag->id,
@@ -392,23 +313,16 @@ public function refreshKlientinformation()
             );
         }
 
-        // =========================================
-        // SYNC LOCK STATE
-        // =========================================
         if ($this->isEditMode) {
             $this->syncLockState();
         }
 
-        // =========================================
-        // DONE
-        // =========================================
         $this->loading = false;
+        $this->pendingRequests = collect();
 
-         $this->pendingRequests = collect();
+        $this->loadMyTakeoverRequest();
 
-         $this->loadMyTakeoverRequest();
-
-         $myLock = SagLock::where('sag_id', $this->sag->id)
+        $myLock = SagLock::where('sag_id', $this->sag->id)
             ->where('user_id', auth()->id())
             ->first();
 
@@ -417,29 +331,13 @@ public function refreshKlientinformation()
         }
     }
 
-    public function updatedForm($value, $name)
-    {
-        if (in_array($name, [
-            'hovedstol',
-            'renter',
-            'gebyr',
-            'indbetalt',
-            'restgaeld_kreditor',
-            // 'ialt',
-            'restgaeld_dkg',
-            // 'resterende'
-        ])) {
-            $this->calculateTotals();
-        }
-    }
+    
 
     public function parseNumber(string|float|int|null $value): float
     {
         if ($value === null) return 0;
-
         if (is_numeric($value)) return (float) $value;
 
-        // Remove thousands separator and convert comma to dot
         $normalized = str_replace('.', '', $value);
         $normalized = str_replace(',', '.', $normalized);
 
@@ -450,10 +348,9 @@ public function refreshKlientinformation()
     {
         if ($value === null || $value === '') return '0,00';
 
-        // Normalize string numbers: remove thousands separator, convert comma to dot
         if (is_string($value)) {
-            $normalized = str_replace('.', '', $value); // remove dots
-            $normalized = str_replace(',', '.', $normalized); // comma to dot
+            $normalized = str_replace('.', '', $value);
+            $normalized = str_replace(',', '.', $normalized);
             $number = (float) $normalized;
         } elseif (is_numeric($value)) {
             $number = (float) $value;
@@ -464,57 +361,85 @@ public function refreshKlientinformation()
         return number_format($number, 2, ',', '.');
     }
 
+    
+    public function formatOnBlur(string $field): void
+    {
+        if (!property_exists($this->form, $field)) {
+            return;
+        }
+
+        $value = $this->parseNumber($this->form->$field);
+        $this->form->$field = $this->formatNumber($value);
+
+        $this->calculateTotals();
+    }
+
+    public function updatedForm($value, $name): void
+    {
+        if (in_array($name, [
+            'hovedstol',
+            'renter',
+            'gebyr',
+            'indbetalt',
+            'restgaeld_kreditor',
+            'startgebyr',
+            'n_mdlydelse',
+        ])) {
+            $this->calculateTotals();
+        }
+    }
+
     public function calculateTotals(): void
     {
-        $hovedstol = $this->parseNumber($this->form->hovedstol);
-        $renter    = $this->parseNumber($this->form->renter);
-        $gebyr     = $this->parseNumber($this->form->gebyr);
-        $indbetalt = $this->parseNumber($this->form->indbetalt);
-        $restKred  = $this->parseNumber($this->form->restgaeld_kreditor);
-        $startgebyr  = $this->parseNumber($this->form->startgebyr);
-        $n_mdlydelse  = $this->parseNumber($this->form->n_mdlydelse);
+        // Indtastede felter (A, B, C, F, G)
+        $A_hovedstol = $this->parseNumber($this->form->hovedstol ?? 0);
+        $B_renter    = $this->parseNumber($this->form->renter ?? 0);
+        $C_gebyr     = $this->parseNumber($this->form->gebyr ?? 0);
+        $F_indbetalt = $this->parseNumber($this->form->indbetalt ?? 0);
+        $G_restKred  = $this->parseNumber($this->form->restgaeld_kreditor ?? 0);
 
-        // ✅ Correct math (floats)
-        $ialt = $hovedstol + $renter + $gebyr;
-        $restgaeld = $ialt - $indbetalt;
-        $restgaeldDkg = $restKred + $gebyr;
-        $resterende = $ialt - $indbetalt;
+        // Øvrige felter
+        $startgebyr  = $this->parseNumber($this->form->startgebyr ?? 0);
+        $n_mdlydelse  = $this->parseNumber($this->form->n_mdlydelse ?? 0);
 
-        // ✅ Format ONCE for display
-        $this->form->hovedstol          = $this->formatNumber($hovedstol);
-        $this->form->renter          = $this->formatNumber($renter);
-        $this->form->gebyr          = $this->formatNumber($gebyr);
-        $this->form->indbetalt          = $this->formatNumber($indbetalt);
-        $this->form->restgaeld_kreditor = $this->formatNumber($restKred);
-        $this->form->ialt          = $this->formatNumber($ialt);
-        $this->form->restgaeld     = $this->formatNumber($restgaeld);
-        $this->form->restgaeld_dkg = $this->formatNumber($restgaeldDkg);
-        $this->form->resterende          = $this->formatNumber($resterende);
-        $this->form->startgebyr          = $this->formatNumber($startgebyr);
-        $this->form->n_mdlydelse          = $this->formatNumber($n_mdlydelse);
+        // 🟢 Formler jf. arket (D, E, H)
+        $D_ialt          = $A_hovedstol + $B_renter + $C_gebyr;  // D = A + B + C
+        $E_resterende    = $D_ialt - $F_indbetalt;               // E = D - F
+        $H_restgaeldDkg  = $G_restKred + $C_gebyr;               // H = G + C
+
+        // Gem formaterede tal i formularen
+        $this->form->hovedstol          = $this->formatNumber($A_hovedstol);
+        $this->form->renter             = $this->formatNumber($B_renter);
+        $this->form->gebyr              = $this->formatNumber($C_gebyr);
+        $this->form->indbetalt          = $this->formatNumber($F_indbetalt);
+        $this->form->restgaeld_kreditor = $this->formatNumber($G_restKred);
+
+        // Beregnede felter
+        $this->form->ialt               = $this->formatNumber($D_ialt);
+        $this->form->resterende         = $this->formatNumber($E_resterende);
+        $this->form->restgaeld          = $this->formatNumber($E_resterende);
+        $this->form->restgaeld_dkg      = $this->formatNumber($H_restgaeldDkg);
+
+        // Øvrige felter
+        $this->form->startgebyr         = $this->formatNumber($startgebyr);
+        $this->form->n_mdlydelse        = $this->formatNumber($n_mdlydelse);
     }
 
     public function save()
     {
-        
         try {
-            // 1️⃣ Validate
-        $validated = $this->form->validate();
+            $validated = $this->form->validate();
 
-        // 2️⃣ HARD guarantee Sager instance
-        if (!($this->sag instanceof Sager)) {
-            $this->sag = new Sager();
-            $isNew = true;
-        } else {
-            $isNew = !$this->sag->exists;
-        }
+            if (!($this->sag instanceof Sager)) {
+                $this->sag = new Sager();
+                $isNew = true;
+            } else {
+                $isNew = !$this->sag->exists;
+            }
 
-        // 3️⃣ NOW it is safe
-        $this->sag->fill($validated);
-        $this->sag->save();
-        
-            
-            // 4️⃣ Handle token for new Sager
+            $this->sag->fill($validated);
+            $this->sag->save();
+
             if ($isNew) {
                 $token = Tokens::create([
                     'token' => bin2hex(random_bytes(16)),
@@ -523,20 +448,15 @@ public function refreshKlientinformation()
                 $this->sag->sagertokens()->sync([$token->id]);
             }
 
-            // 5️⃣ Update pivot relations safely
             if ($this->sag && $this->sag->exists) {
-
-                // Status, bemaerkning, ktr, afslutning, udlaeg, konsulent, sagsbehandler
                 $pivotRelations = ['status', 'bemaerkning', 'ktr', 'afslutning', 'udlaeg', 'konsulent', 'sagsbehandler'];
                 foreach ($pivotRelations as $relation) {
                     $this->form->updateRelation($relation, $this->sag->id);
                 }
 
-                // Debitor
                 $debitorId = $this->form->UpdateDebitor($this->sag);
                 if ($debitorId) $this->sag->sagerdebitor()->sync([$debitorId]);
 
-                // Kreditor
                 $kreditorId = $this->form->UpdateKreditor($this->sag);
                 if ($kreditorId) {
                     $this->sag->sagerkreditor()->sync([$kreditorId]);
@@ -544,17 +464,14 @@ public function refreshKlientinformation()
                     $this->sag->sagerkreditor()->detach();
                 }
 
-                // Sagsbehandler
                 $sagsbehandlerId = $this->form->UpdateSagsbehandler();
                 if ($sagsbehandlerId) {
                     $this->sag->sagersagsbehandler()->sync([$sagsbehandlerId]);
                 } else {
                     $this->sag->sagersagsbehandler()->detach();
                 }
-                
             }
 
-            // 6️⃣ Success toast
             $this->dispatch('toast', message: 'Sagen gemt succesfuldt!', type: 'success', icon: 'check');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -572,47 +489,36 @@ public function refreshKlientinformation()
     }
 
     public function render()
-{
-    $currentsagLocked = SagLock::where('sag_id', $this->sag->id)
-        ->where('user_id', auth()->id())
-        ->whereNotNull('locked_at')
-        ->exists();
+    {
+        $currentsagLocked = SagLock::where('sag_id', $this->sag->id)
+            ->where('user_id', auth()->id())
+            ->whereNotNull('locked_at')
+            ->exists();
 
-    // Safety cleanup (prevents stuck modal)
-    if ($this->showAcceptedModal && $this->acceptedModalUntil) {
-        if (now()->timestamp >= $this->acceptedModalUntil) {
-            $this->showAcceptedModal = false;
-            $this->acceptedModalUntil = null;
+        if ($this->showAcceptedModal && $this->acceptedModalUntil) {
+            if (now()->timestamp >= $this->acceptedModalUntil) {
+                $this->showAcceptedModal = false;
+                $this->acceptedModalUntil = null;
+            }
         }
+
+        if ($this->sag?->exists && $this->sag->isEligibleForGdprDeletion()) {
+            abort(403, 'Adgang nægtet: Sagen har overskredet GDPR 5-års grænsen og er låst for visning indtil anonymisering/sletning.');
+        }
+
+        return view('livewire.sager.sag-editor', [
+            'currentsagLocked' => $currentsagLocked,
+        ]);
     }
 
-    // ✅ Tjekker om SAGEN (Eloquent-modellen) har overskredet 5-års grænsen
-    if ($this->sag?->exists && $this->sag->isEligibleForGdprDeletion()) {
-        abort(403, 'Adgang nægtet: Sagen har overskredet GDPR 5-års grænsen og er låst for visning indtil anonymisering/sletning.');
-    }
-
-    return view('livewire.sager.sag-editor', [
-        'currentsagLocked' => $currentsagLocked,
-    ]);
-}
-
-
-    /**
-     * If you fire an event from other components: onKreditorChanged(payload)
-     * keep it compatible with your earlier listener mapping:
-     * protected $listeners = ['kreditor-changed' => 'onKreditorChanged'];
-     */
-    
     protected function loadKonsulentOptions(): void
     {
-        // Get all konsulenter except hidden ones
         $allKonsulenter = Konsulenter::all()->filter(function ($k) {
             return !$k->isSkjult();
         });
 
         $this->selectOptions['konsulent'] = $allKonsulenter->pluck('navn', 'id')->toArray();
 
-        // Preselect hovedkonsulent if creating a new sag
         if (!$this->sag || !$this->sag->exists) {
             $hoved = Konsulenter::all()->firstWhere(fn($k) => $k->isHoved());
             if ($hoved) {
@@ -627,11 +533,8 @@ public function refreshKlientinformation()
         $this->form->kreditor_navn = $kreditor->navn;
         $this->form->kreditor_lotusID = $kreditor->lotusID;
 
-        // ✅ ONLY these sagsbehandlere
-        $this->selectOptions['sagsbehandler'] =
-            Sagsbehandler::forKreditor($kreditor->id) ?? [];
+        $this->selectOptions['sagsbehandler'] = Sagsbehandler::forKreditor($kreditor->id) ?? [];
 
-        // Restore saved selection
         $saved = $this->sag?->sagersagsbehandler->first()?->id;
 
         $this->form->sagsbehandler =
@@ -655,16 +558,6 @@ public function refreshKlientinformation()
 
         $this->calculateTotals();
         $this->totalsReady = true;
-    }
-
-    public function formatOnBlur(string $field): void
-    {
-        if (!property_exists($this->form, $field)) {
-            return;
-        }
-
-        $value = $this->parseNumber($this->form->$field);
-        $this->form->$field = $this->formatNumber($value);  
     }
 
     
@@ -692,7 +585,6 @@ public function refreshKlientinformation()
     
     public function updatedFormPostnr($value)
     {
-        // 👇 only close dropdown if postnr was user-entered
         if ($value !== '' && $this->showByDropdown === false) {
             return;
         }
@@ -713,7 +605,6 @@ public function refreshKlientinformation()
         $this->form->by = $by ?? '';
     }
 
-    
     public function updatedFormBy($value): void
     {
         $term = trim(mb_strtolower($value));
@@ -739,12 +630,9 @@ public function refreshKlientinformation()
             return;
         }
 
-        // ✅ ONLY suggest — NEVER overwrite input
         $this->bySuggestions = $results->toArray();
         $this->showByDropdown = true;
     }
-
-
 
     public function selectBy(string $by, string $postnr): void
     {
@@ -768,7 +656,6 @@ public function refreshKlientinformation()
         });
     }
 
-    
     public function updatedFormKreditorNavn($value): void
     {
         $term = trim(mb_strtolower($value));
@@ -794,7 +681,6 @@ public function refreshKlientinformation()
             return;
         }
 
-        // ✅ Auto-select ONLY if there is exactly ONE strong match
         if ($results->count() === 1 && $results->first()['score'] <= 3) {
             $k = $results->first();
 
@@ -802,17 +688,14 @@ public function refreshKlientinformation()
             $this->form->kreditor_lotusID = $k['lotusID'];
             $this->form->kreditor         = $k['id'];
 
-            // hydrate dependent data
             $this->updatedFormKreditorLotusID($k['lotusID']);
             return;
         }
 
-        // Otherwise: suggest only
         $this->kreditorSuggestions = $results->toArray();
         $this->kreditorHighlightIndex = 0;
         $this->showKreditorDropdown = true;
     }
-
 
     public function selectKreditor(int $id): void
     {
@@ -830,10 +713,8 @@ public function refreshKlientinformation()
         $this->kreditorSuggestions = [];
         $this->showKreditorDropdown = false;
 
-        // 🔥 IMPORTANT: hydrate sagsbehandlere etc.
         $this->updatedFormKreditorLotusID($k['lotusID']);
     }
-
 
     protected function getKreditorIndex(): Collection
     {
@@ -888,17 +769,14 @@ public function refreshKlientinformation()
 
     protected function fuzzyScore(string $needle, string $haystack): int
     {
-        // Exact start match = strongest
         if (str_starts_with($haystack, $needle)) {
             return 0;
         }
 
-        // Contains match
         if (str_contains($haystack, $needle)) {
             return 5;
         }
 
-        // Levenshtein (typos)
         $distance = levenshtein($needle, $haystack);
 
         return $distance < 10 ? 10 + $distance : 100;
@@ -906,7 +784,6 @@ public function refreshKlientinformation()
 
     public function getDokumenterCountPropertyOLD()
     {
-        // This will return the number of dokumenter for the current sag
         return $this->sag->dokumenter()->count();
     }
 
@@ -963,62 +840,34 @@ public function refreshKlientinformation()
             return;
         }
 
+        // 1. Opdatér låsens seneste aktivitet
         SagLock::where('sag_id', $this->sag->id)
             ->where('user_id', auth()->id())
             ->update([
                 'locked_at' => now(),
             ]);
 
-        // restore lock state from DB
+        // 2. Genindlæs låsens tilstand
         $lock = SagLock::where('sag_id', $this->sag->id)
             ->where('user_id', auth()->id())
             ->first();
 
         $this->currentsagLocked = (bool) $lock?->currentsag_locked;
 
-        $this->syncLockState();
-
-        $this->loadMyTakeoverRequest();
-    }
-
-    protected function syncLockState(): void
-    {
-        if (!$this->sag?->id) {
-            $this->lockState = 'unlocked';
-            $this->hasLock = false;
-            $this->isLockedByOther = false;
-            return;
-        }
-
-        $lock = SagLock::where('sag_id', $this->sag->id)->first();
-
-        // Load pending takeover requests
+        // 3. 🟢 HENT DE SENESTE OVERTAGELSES-ANMODNINGER
         $this->pendingRequests = SagEditRequest::where('sag_id', $this->sag->id)
-        ->where('status', 'pending')
-        ->latest()
-        ->get();
+            ->where('status', 'pending')
+            ->with('requester')
+            ->latest()
+            ->get();
 
-        if (!$lock) {
-            $this->lockState = 'unlocked';
-            $this->lock = null;
-            return;
+        // 4. 🟢 HVIS DER ER KOMMET NYE ANMODNINGER, ÅBN MODALEN AUTOMATISK
+        if ($this->pendingRequests->isNotEmpty() && !$this->showTakeoverModal) {
+            $this->showTakeoverModal = true;
         }
 
-        if ($lock->user_id === auth()->id()) {
-            $this->lockState = 'mine';
-            $this->hasLock = true;
-            $this->isLockedByOther = false;
-            $this->lock = null;
-            return;
-        }
-
-        $this->lockState = 'foreign';
-        $this->hasLock = false;
-        $this->isLockedByOther = true;
-
-        $this->lock = [
-            'user_name' => $lock->user?->name ?? 'Ukendt',
-        ];
+        $this->syncLockState();
+        $this->loadMyTakeoverRequest();
     }
 
     public function rejectTakeover(int $requestId): void
@@ -1026,8 +875,6 @@ public function refreshKlientinformation()
         SagEditRequest::where('id', $requestId)
             ->update(['status' => 'rejected']);
     }
-
-    // Lyt på Alpine-events og reagér:
 
     #[On('currentsagLockActivated')]
     public function activatecurrentsagLock(): void
@@ -1075,12 +922,10 @@ public function refreshKlientinformation()
         $hash = SystemSetting::get('global_unlock_code');
 
         if (!$hash || !Hash::check($this->unlockCode, $hash)) {
-
             $this->dispatch('toast',
                 message: 'Forkert kode',
                 type: 'error'
             );
-
             return;
         }
 
@@ -1104,26 +949,26 @@ public function refreshKlientinformation()
     {
         $request = SagEditRequest::findOrFail($requestId);
 
+        // 1. Slet eksisterende lås
         SagLock::where('sag_id', $this->sag->id)->delete();
 
+        // 2. Opret ny lås til den bruger, der anmodede
         SagLock::create([
             'sag_id' => $this->sag->id,
             'user_id' => $request->requested_by,
             'locked_at' => now(),
         ]);
 
+        // 3. Markér anmodningen som accepteret
         $request->update([
             'status' => 'accepted',
             'responded_at' => now(),
         ]);
 
-        // 🔥 ONLY requester gets modal
-        if ($request->requested_by === auth()->id()) {
-            $this->showAcceptedModal = true;
-            $this->acceptedModalUntil = now()->addSeconds(5)->timestamp;
-        }
-
+        $this->showTakeoverModal = false;
         $this->syncLockState();
+
+        $this->dispatch('toast', message: 'Overtagelse accepteret. Låsen er overdraget.', type: 'success');
     }
 
     public function getLockStateProperty(): string
@@ -1143,7 +988,7 @@ public function refreshKlientinformation()
     {
         return SagEditRequest::where('sag_id', $this->sag->id)
             ->where('status', 'pending')
-            ->with('requester') // ✅ important
+            ->with('requester')
             ->get();
     }
 
@@ -1162,6 +1007,12 @@ public function refreshKlientinformation()
 
     public function requestTakeover(): void
     {
+        if (! $this->sag?->id) {
+            $this->dispatch('toast', message: 'Ingen aktiv sag fundet.', type: 'error');
+            return;
+        }
+
+        // Tjek om brugeren allerede har en aktiv eller rejected anmodning
         $request = SagEditRequest::firstOrCreate(
             [
                 'sag_id' => $this->sag->id,
@@ -1172,39 +1023,119 @@ public function refreshKlientinformation()
             ]
         );
 
-        // If previously rejected/cancelled → reopen request
+        // Hvis den var afvist eller behandlet tidligere, genåbn den som pending
         if ($request->status !== 'pending') {
             $request->update([
                 'status' => 'pending',
+                'created_at' => now(),
             ]);
         }
 
         $this->loadMyTakeoverRequest();
+        $this->syncLockState();
+
+        // 🟢 Giv øjeblikkelig visuel feedback til brugeren!
+        $this->dispatch('toast', 
+            message: 'Anmodning om overtagelse er sendt til ' . ($this->lock['user_name'] ?? 'brugeren') . '!', 
+            type: 'success'
+        );
     }
-    
+
     public function continueAfterTakeoverAccepted(): void
     {
         if ($this->myTakeoverRequest?->status === 'accepted') {
-
             $this->myTakeoverRequest->delete();
-
             $this->myTakeoverRequest = null;
-
             $this->syncLockState();
-
             $this->redirect(request()->header('Referer'));
         }
     }
 
-    // I SagEditor.php
     public function getIsExpiringSoonProperty(): bool
     {
         if (!$this->sag?->exists) {
             return false;
         }
 
-        // Tjekker om sagen er i advarselszonen (4-5 år gammel)
         return $this->sag->gdpr_status['code'] === 'warning';
     }
 
+    /**
+     * Tjekker i baggrunden om ANDRE brugere har anmodet om overtagelse
+     */
+    public function checkTakeoverRequests(): void
+    {
+        if (!$this->sag?->id) {
+            return;
+        }
+
+        // Hent KUN anmodninger fra ANDRE brugere (frafiltrerer dig selv)
+        $newRequests = SagEditRequest::where('sag_id', $this->sag->id)
+            ->where('requested_by', '!=', auth()->id())
+            ->where('status', 'pending')
+            ->with('requester')
+            ->latest()
+            ->get();
+
+        // Åbn modalen ELLER opdatér listen HVIS der er nye anmodninger
+        if ($newRequests->isNotEmpty()) {
+            $this->pendingRequests = $newRequests;
+            if (!$this->showTakeoverModal) {
+                $this->showTakeoverModal = true;
+            }
+        } else {
+            // Nulstil hvis der ikke er nogen ventende
+            $this->pendingRequests = collect();
+        }
+
+        // Tjek om din egen anmodning blev accepteret af den anden bruger
+        if ($this->myTakeoverRequest?->status === 'pending') {
+            $this->loadMyTakeoverRequest();
+            if ($this->myTakeoverRequest?->status === 'accepted') {
+                $this->syncLockState();
+            }
+        }
+    }
+
+    protected function syncLockState(): void
+    {
+        if (!$this->sag?->id) {
+            $this->lockState = 'unlocked';
+            $this->hasLock = false;
+            $this->isLockedByOther = false;
+            return;
+        }
+
+        $lock = SagLock::where('sag_id', $this->sag->id)->first();
+
+        // 🟢 VIGTIGT: Hent KUN anmodninger fra ANDRE brugere!
+        $this->pendingRequests = SagEditRequest::where('sag_id', $this->sag->id)
+            ->where('requested_by', '!=', auth()->id())
+            ->where('status', 'pending')
+            ->latest()
+            ->get();
+
+        if (!$lock) {
+            $this->lockState = 'unlocked';
+            $this->lock = null;
+            return;
+        }
+
+        if ($lock->user_id === auth()->id()) {
+            $this->lockState = 'mine';
+            $this->hasLock = true;
+            $this->isLockedByOther = false;
+            $this->lock = null;
+            return;
+        }
+
+        $this->lockState = 'foreign';
+        $this->hasLock = false;
+        $this->isLockedByOther = true;
+
+        $this->lock = [
+            'user_name' => $lock->user?->name ?? 'Ukendt',
+        ];
+    }
+    
 }

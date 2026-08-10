@@ -10,6 +10,10 @@ trait HasSagDialog
 {
     public string $tekst = '';
 
+    // 🟢 Egenskaber til redigering af eksisterende beskeder
+    public ?int $editingMessageId = null;
+    public string $editingText = '';
+
     /**
      * Angiv dialogtypen i din Livewire-komponent ('klientinformation' | 'historik' | 'bogholderi')
      */
@@ -27,7 +31,6 @@ trait HasSagDialog
 
     /**
      * Hent beskeder og markér dem som læst.
-     * Returtypen er sat til Illuminate\Support\Collection for at acceptere både Eloquent Collections og tomme collect()
      */
     public function getDialogMessages(): Collection
     {
@@ -89,5 +92,63 @@ trait HasSagDialog
         $this->reset('tekst');
 
         $this->dispatch('dialogUpdated');
+    }
+
+    // =========================================================================
+    // 🟢 REDIGERING AF BESKEDER
+    // =========================================================================
+
+    /**
+     * Klargør redigering af en besked
+     */
+    public function editMessage(int $messageId): void
+    {
+        $dialog = $this->dialog;
+        if (! $dialog) {
+            return;
+        }
+
+        $message = $dialog->messages()->find($messageId);
+        if (! $message) {
+            return;
+        }
+
+        $this->editingMessageId = $message->id;
+        $this->editingText      = $message->tekst;
+    }
+
+    /**
+     * Gemmer den opdaterede beskedtekst
+     */
+    public function updateMessage(): void
+    {
+        if (trim($this->editingText) === '' || ! $this->editingMessageId) {
+            return;
+        }
+
+        $dialog = $this->dialog;
+        if ($dialog) {
+            $message = $dialog->messages()->find($this->editingMessageId);
+
+            if ($message) {
+                $message->update([
+                    'tekst' => $this->editingText,
+                ]);
+
+                $this->dispatch('toast', message: 'Notat opdateret!', type: 'success');
+            }
+        }
+
+        $this->cancelEdit();
+        $this->dispatch('dialogUpdated');
+    }
+
+    /**
+     * Afbryd redigering
+     */
+    public function cancelEdit(): void
+    {
+        $this->editingMessageId = null;
+        $this->editingText      = '';
     }
 }

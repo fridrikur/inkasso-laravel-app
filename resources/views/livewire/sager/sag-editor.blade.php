@@ -1,9 +1,22 @@
- {{-- Poller KUN så længe brugeren IKKE er markeret som idle --}}
-<div class="relative">
+<div class="relative min-h-[400px]">
 
-    {{-- ============================================================ --}}
-    {{-- TOP BAR: LIVEWIRE 3 FANER --}}
-    {{-- ============================================================ --}}
+    {{-- 🟢 SPINNER OVERLAY: Aktiveres nu OGSÅ ved blur/form-events så den reagerer ved 1. tryk --}}
+    <div 
+        wire:loading.flex
+        wire:target="save, setTab, formatOnBlur, form"
+        class="absolute inset-0 bg-white/75 backdrop-blur-sm z-50 items-center justify-center rounded-2xl transition-all"
+        style="display: none;"
+    >
+        <div class="bg-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 text-slate-800 text-xs font-bold">
+            <svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Indlæser sagen...</span>
+        </div>
+    </div>
+
+    {{-- TOP BAR: FANER --}}
     <div class="mb-6">
         <livewire:sager.sag-tabs :sag="$sag" :activeTab="$activeTab" :key="'sag-tabs-'.($sag->id ?? 'new')" />
     </div>
@@ -34,25 +47,48 @@
         </div>
     @endif
 
-    {{-- ============================================================ --}}
-    {{-- LOCK STATUS BAR & HANDLINGSKNAPPER (LÅS SKÆRM M.M.) --}}
-    {{-- ============================================================ --}}
-    @if($lockState === 'foreign')
-        <div class="mb-4 p-3 rounded-xl border bg-red-50 border-red-200 text-red-700 text-xs font-medium flex items-center justify-between">
-            <span>🔒 Låst af <strong>{{ $lock['user_name'] ?? 'en anden bruger' }}</strong></span>
-            <button wire:click="requestTakeover" class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg transition shadow-sm cursor-pointer">
-                Anmod om overtagelse
-            </button>
-        </div>
-    @elseif($lockState === 'unlocked' && isset($sag) && $sag->exists)
-        <div class="mb-4 p-3 rounded-xl border bg-slate-50 border-slate-200 text-slate-600 text-xs font-medium flex items-center justify-between">
-            <span>🔓 Ingen redigerer sagen lige nu</span>
+    {{-- LOCK STATUS BAR --}}
+    @if($lockState === 'foreign' || $this->lockState === 'foreign')
+        <div class="mb-4 p-3 rounded-xl border bg-red-50 border-red-200 text-red-700 text-xs font-medium flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <span>🔒 Låst af <strong>{{ $lock['user_name'] ?? ($this->currentLock?->user?->name ?? 'en anden bruger') }}</strong></span>
+                
+                @if($myTakeoverRequest?->status === 'pending')
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
+                        ⏳ Anmodning afventer godkendelse...
+                    </span>
+                @endif
+            </div>
+
+            <div>
+                @if($myTakeoverRequest?->status === 'pending')
+                    <button 
+                        disabled 
+                        class="px-3 py-1.5 bg-gray-300 text-gray-600 font-bold rounded-lg text-xs cursor-not-allowed opacity-75"
+                    >
+                        Anmodning sendt
+                    </button>
+                @else
+                    <button 
+                        type="button"
+                        wire:click="requestTakeover" 
+                        wire:loading.attr="disabled"
+                        class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 active:bg-yellow-800 text-white font-bold rounded-lg transition shadow-sm cursor-pointer flex items-center gap-2"
+                    >
+                        <svg wire:loading wire:target="requestTakeover" class="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Anmod om overtagelse</span>
+                    </button>
+                @endif
+            </div>
         </div>
     @endif
-
-    {{-- KNAPPER TIL DIN EGEN LÅS / HANDLINGER --}}
+    
+    {{-- LÅSE- OG HANDLINGSKNAPPER --}}
     <div class="flex items-center gap-2 mb-6">
-        @if($lockState === 'mine')
+        @if($this->lockState === 'mine')
             {{-- 🔒 LÅS SKÆRM KNAP --}}
             <button
                 type="button"
@@ -66,39 +102,46 @@
             </button>
 
             {{-- 🔓 FRIGIV SAG --}}
-            @if($pendingRequests->isNotEmpty())
-                <button
-                    type="button"
-                    wire:click="unlockSag"
-                    class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl transition shadow-sm cursor-pointer"
-                >
-                    Frigiv sag
-                </button>
+            <button
+                type="button"
+                wire:click="unlockSag"
+                class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl transition shadow-sm cursor-pointer"
+            >
+                Frigiv sag
+            </button>
 
+            @if($this->pendingRequests->isNotEmpty())
                 <button
                     type="button"
                     wire:click="$toggle('showTakeoverModal')"
                     class="px-4 py-2 bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs rounded-xl transition shadow-sm cursor-pointer"
                 >
-                    Overtagelses-anmodninger ({{ $pendingRequests->count() }})
+                    Overtagelses-anmodninger ({{ $this->pendingRequests->count() }})
                 </button>
             @endif
         @endif
     </div>
 
-    {{-- ========================================================= --}}
     {{-- TAB INDHOLD --}}
-    {{-- ========================================================= --}}
     
-    {{-- FANE 1: SAGSSTAMME & FORMULAR --}}
+    {{-- FANE 1: SAGSSTAMME --}}
     @if($activeTab === 'stamdata')
-        <div wire:key="tab-stamdata-{{ $sag->id ?? 'new' }}">
-            <form wire:submit.prevent="save" class="{{ $lockState === 'foreign' ? 'opacity-40 pointer-events-none blur-sm' : '' }}">
+        <div wire:key="tab-stamdata-{{ $sag->id ?? 'new' }}" class="transition-opacity duration-300">
+            <form wire:submit.prevent="save" class="{{ $this->lockState === 'foreign' ? 'opacity-40 pointer-events-none blur-sm' : '' }}">
+                
                 @include('livewire.sager.partials.form-fields')
 
                 <div class="flex justify-end mt-4">
-                    <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-sm cursor-pointer" wire:loading.attr="disabled">
-                        Gem sag
+                    <button 
+                        type="submit" 
+                        wire:loading.attr="disabled"
+                        class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-sm cursor-pointer flex items-center gap-2"
+                    >
+                        <svg wire:loading wire:target="save" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Gem sag</span>
                     </button>
                 </div>
             </form>
@@ -107,7 +150,7 @@
 
     {{-- FANE 2: BREVE --}}
     @if($activeTab === 'breve')
-        <div wire:key="tab-breve-{{ $sag->id }}" class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div wire:key="tab-breve-{{ $sag->id }}" class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm transition-opacity duration-300">
             @if($sag->exists)
                 @livewire('sager.merge-brev', ['sag' => $sag], key('merge-brev-component-'.$sag->id))
             @else
@@ -118,10 +161,9 @@
         </div>
     @endif
 
-    {{-- FANE 3: DIALOG & NOTER (KLIENTINFO, HISTORIK, BOGHOLDERIDIALOG) --}}
+    {{-- FANE 3: DIALOG & NOTER --}}
     @if($activeTab === 'dialog')
-        <div wire:key="tab-dialog-{{ $sag->id }}" class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6" x-data="{ subTab: 'klientinformation' }">
-            
+        <div wire:key="tab-dialog-{{ $sag->id }}" class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6 transition-opacity duration-300" x-data="{ subTab: 'klientinformation' }">
             <div class="border-b border-slate-100 pb-3 flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center gap-2">
                     <button 
@@ -166,13 +208,12 @@
             <div x-show="subTab === 'bogholderi'">
                 @livewire('sager.bogholderi', ['sag' => $sag], key('dialog-bogholderi-'.$sag->id))
             </div>
-
         </div>
     @endif
 
-    {{-- FANE 4: BOGHOLDERI (POSTERINGER & ØKONOMI) --}}
+    {{-- FANE 4: BOGHOLDERI --}}
     @if($activeTab === 'bogholderi')
-        <div wire:key="tab-bogholderi-{{ $sag->id }}" class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div wire:key="tab-bogholderi-{{ $sag->id }}" class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm transition-opacity duration-300">
             @if($sag->exists)
                 @livewire('sager.bogholderi', ['sag' => $sag], key('bogholderi-component-'.$sag->id))
             @else
@@ -183,9 +224,7 @@
         </div>
     @endif
 
-    {{-- ============================================================ --}}
-    {{-- MODALS (LÅS SKÆRM, OVERTAGELSE M.M.) --}}
-    {{-- ============================================================ --}}
+    {{-- MODALS --}}
     @if($currentsagLocked)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
             <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm text-center border border-slate-100">
@@ -217,9 +256,12 @@
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
             <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
                 <h2 class="font-bold text-slate-900 mb-4 text-sm">Overtagelses-anmodninger</h2>
-                @forelse($pendingRequests as $request)
+                
+                @forelse ($pendingRequests ?? [] as $request)
                     <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl mb-2 border border-slate-100">
-                        <div class="text-xs font-medium text-slate-700">{{ $request->requester?->name ?? ('Bruger #' . $request->requested_by) }}</div>
+                        <div class="text-xs font-medium text-slate-700">
+                            {{ $request->requester?->name ?? ('Bruger #' . $request->requested_by) }}
+                        </div>
                         <div class="flex gap-2">
                             <button wire:click="acceptTakeover({{ $request->id }})" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition">Accepter</button>
                             <button wire:click="rejectTakeover({{ $request->id }})" class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-lg transition">Afvis</button>
@@ -228,9 +270,19 @@
                 @empty
                     <div class="text-xs text-slate-400">Ingen aktive anmodninger</div>
                 @endforelse
+
                 <button wire:click="$set('showTakeoverModal', false)" class="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl w-full transition">Luk</button>
             </div>
         </div>
+    @endif
+
+    {{-- 🟢 STILLE BAGGRUNDS-POLLER (Uden flimmer) --}}
+    @if($sag?->exists)
+        <div 
+            wire:poll.5s="checkTakeoverRequests" 
+            wire:ignore
+            class="hidden"
+        ></div>
     @endif
 
 </div>
