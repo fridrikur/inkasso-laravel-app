@@ -298,7 +298,7 @@
         <h2 class="text-lg font-medium text-gray-700 border-b pb-2 mb-4">Debitor</h2>
 
         <div class="grid grid-cols-3 gap-6">
-            {{-- Kolonne 1: Stamdata --}}
+            {{-- Column 1: Stamdata --}}
             <div class="space-y-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Navn(e)</label>
@@ -355,7 +355,7 @@
                 </div>
             </div>
 
-            {{-- Kolonne 2: Kontakter (Mails & Telefoner) --}}
+            {{-- Column 2: Kontakter --}}
             <div class="space-y-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Mail #1</label>
@@ -379,7 +379,7 @@
                 </div>
             </div>
 
-            {{-- Kolonne 3: Bemærkningsfelt --}}
+            {{-- Column 3: Bemærkningsfelt --}}
             <div class="flex flex-col">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Bemærkningsfelt vedr. fx kontakt</label>
                 <textarea wire:model.lazy="form.kontakt_bemaerkning" placeholder="TEKST" class="w-full flex-1 rounded-md border-gray-300 min-h-[220px]"></textarea>

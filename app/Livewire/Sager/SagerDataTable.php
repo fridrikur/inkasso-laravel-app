@@ -5,6 +5,7 @@ namespace App\Livewire\Sager;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\On; 
+use Livewire\Attributes\Computed;
 use App\Models\Sager;
 use App\Models\Kreditorer;
 use App\Services\Search\SagerSearchService;
@@ -20,14 +21,11 @@ class SagerDataTable extends Component
     public bool $showDeleteModal = false;
     public $search = '';
 
-    // 🔥 Fjernet #[Reactive] så den kan bruges både standalone og i Dashboard
     public $selectedKreditor = null;
-
     public $recordsByKreditor = [];
     public $mode = 'all';
     public $uiMode = 'full';
     public $modeCount = 0;
-    public int $trashCount = 0;
     public $kreditor = null;
     public $kreditors = [];
 
@@ -45,9 +43,81 @@ class SagerDataTable extends Component
         }
 
         if ($uiMode === 'full') {
-            $this->trashCount = Sager::onlyTrashed()->count();
             $this->loadKreditorStats();
         }
+    }
+
+    /**
+     * 🟢 Dynamisk computed property til papirkurv-tælleren
+     * Bruger baseQuery() så tælleren altid matcher tabellens reelle indhold
+     */
+    #[Computed]
+    public function trashCount(): int
+    {
+        $query = $this->baseQuery()->onlyTrashed();
+
+        if ($this->selectedKreditor) {
+            $query->whereHas('sagerkreditor', fn($k) => $k->where('kreditors.navn', $this->selectedKreditor));
+        }
+
+        return $query->count();
+    }
+
+    /**
+     * 🟢 Dynamisk computed property til ulæste beskeder KUN fra Kreditorer
+     * Bruger baseQuery() så tælleren altid matcher tabellens reelle indhold
+     */
+    #[Computed]
+    public function unreadCount(): int
+    {
+        $query = $this->baseQuery()->whereHas('dialogs.messages', function ($q) {
+            $q->whereNull('read_at')
+              ->whereHas('sender.roles', fn($r) => $r->where('name', 'Kreditor'));
+        });
+
+        if ($this->selectedKreditor) {
+            $query->whereHas('sagerkreditor', fn($k) => $k->where('kreditors.navn', $this->selectedKreditor));
+        }
+
+        return $query->count();
+    }
+
+    /**
+     * Genberegner tællerne for kreditor-fanebrikkerne
+     */
+    public function loadKreditorStats()
+    {
+        if ($this->uiMode === 'table') {
+            return;
+        }
+
+        $this->kreditors = Kreditorer::all();
+
+        $this->recordsByKreditor = $this->kreditors->mapWithKeys(function ($kreditor) {
+            return [
+                $kreditor->navn => $this->applyMode(
+                    $this->baseQuery()->whereHas('sagerkreditor', function ($q) use ($kreditor) {
+                        $q->where('kreditors.id', $kreditor->id);
+                    })
+                )->count()
+            ];
+        })->toArray();
+
+        $this->modeCount = $this->applyMode($this->baseQuery())->count();
+    }
+
+    /**
+     * Skifter visningstilstand/fane og nulstiller pagineringen
+     */
+    public function setMode(string $mode): void
+    {
+        $this->mode = $mode;
+        
+        if ($this->uiMode === 'full') {
+            $this->loadKreditorStats();
+        }
+
+        $this->resetPage();
     }
 
     #[On('kreditor-selected')]
@@ -60,12 +130,8 @@ class SagerDataTable extends Component
 
     public function filterByKreditor($kreditor = null)
     {
-        // Skift filter eller nulstil hvis der trykkes på den samme
         $this->selectedKreditor = ($this->selectedKreditor === $kreditor) ? null : $kreditor;
-
-        // Informér eventuelle overordnede komponenter (f.eks. AdminDashboard)
         $this->dispatch('kreditor-filter-changed', kreditor: $this->selectedKreditor);
-
         $this->resetPage();
     }
 
@@ -84,6 +150,15 @@ class SagerDataTable extends Component
         switch ($this->mode) {
             case 'trash':
                 $query->onlyTrashed()->latest('deleted_at');
+                break;
+
+            case 'closed':
+            case 'afsluttet':
+                $query->whereNotNull('sagers.afsluttet');
+                break;
+
+            case 'active':
+                $query->whereNull('sagers.afsluttet');
                 break;
             
             case 'unhandled':
@@ -106,16 +181,6 @@ class SagerDataTable extends Component
                     ->orderByDesc('sagers.created_at');
                 break;
 
-            case 'active':
-                $query->whereHas('activities', function ($q) {
-                    $q->where(function ($sub) {
-                        $sub->where('last_viewed_at', '>=', now()->subDays(3))
-                            ->orWhere('last_edited_at', '>=', now()->subDays(3))
-                            ->orWhere('heartbeat_at', '>=', now()->subMinutes(5));
-                    });
-                });
-                break;
-
             case 'live_editing':
                 $query->whereHas('activities', function ($q) {
                     $q->where('is_editing', true)
@@ -126,9 +191,7 @@ class SagerDataTable extends Component
             case 'unread_messages':
                 $query->whereHas('dialogs.messages', function ($q) {
                     $q->whereNull('read_at')
-                      ->whereHas('sender.roles', function ($q2) {
-                          $q2->where('name', 'Kreditor');
-                      });
+                      ->whereHas('sender.roles', fn($r) => $r->where('name', 'Kreditor'));
                 });
                 break;
 
@@ -142,9 +205,6 @@ class SagerDataTable extends Component
         return $query;
     }
 
-    /**
-     * 🔍 SEARCH + FILTERS (Ren Eloquent - UDEN rå SQL kolonne-fejl)
-     */
     protected function applyFilters($query)
     {
         $query->when($this->search, function ($q) {
@@ -155,7 +215,6 @@ class SagerDataTable extends Component
             });
         });
 
-        // Kreditor filter via relation
         $query->when($this->selectedKreditor, function ($q) {
             $q->whereHas('sagerkreditor', function ($k) {
                 $k->where('kreditors.navn', $this->selectedKreditor);
@@ -167,25 +226,27 @@ class SagerDataTable extends Component
 
     public function render()
     {
-        // 1. Grundlæggende query for den valgte mode/tilstand
         $baseModeQuery = $this->applyMode($this->baseQuery());
-
-        // 🟢 Totalt antal sager i denne tilstand (FØR søgning og ekstra filtre)
         $totalInMode = (clone $baseModeQuery)->count();
 
-        // 2. Påfør ekstra brugerfiltre og frisøgning
         $query = $this->applyFilters($baseModeQuery);
         $query = app(SagerSearchService::class)->apply($query, $this->filters);
 
+        // 🟢 Tjekker KUN for ulæste beskeder, hvor afsenderen har rollen 'Kreditor'
         $sagers = $query
+            ->withExists(['dialogs as has_unread_messages' => function ($q) {
+                $q->whereHas('messages', function ($m) {
+                    $m->whereNull('read_at')
+                      ->whereHas('sender.roles', fn($r) => $r->where('name', 'Kreditor'));
+                });
+            }])
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate(10);
 
         return view('livewire.sager.sager-data-table', [
             'sagers' => $sagers,
-            'modeCount' => $totalInMode, // 🟢 Vis det reelle samlede antal i denne mode
-            'totalRecords' => $sagers->total(), // Antallet der matcher den aktuelle søgning
-            'trashCount' => Sager::onlyTrashed()->count(),
+            'modeCount' => $totalInMode,
+            'totalRecords' => $sagers->total(),
         ]);
     }
 
@@ -203,27 +264,6 @@ class SagerDataTable extends Component
     {
         return redirect()->route('sager.create');
     }
-    
-    public function loadKreditorStats()
-    {
-        if ($this->uiMode === 'table') {
-            return;
-        }
-
-        $this->kreditors = Kreditorer::all();
-
-        $this->recordsByKreditor = $this->kreditors->mapWithKeys(function ($kreditor) {
-            return [
-                $kreditor->navn => $this->applyMode(
-                    Sager::whereHas('sagerkreditor', function ($q) use ($kreditor) {
-                        $q->where('kreditors.id', $kreditor->id);
-                    })
-                )->count()
-            ];
-        })->toArray();
-
-        $this->modeCount = $this->applyMode(Sager::query())->count();
-    } 
 
     public function placeholder()
     {
@@ -232,13 +272,31 @@ class SagerDataTable extends Component
         HTML;
     }
 
-    // 🟢 Håndterer både det første klik på skraldespanden ($id medsendes) 
-    // OG bekræftelsen i <x-confirm-delete-modal> (køres uden parametre)
+    /**
+     * ♻️ Gendanner en sag fra papirkurven
+     */
+    public function restoreSag($id)
+    {
+        $sag = Sager::onlyTrashed()->find($id);
+
+        if ($sag) {
+            $sag->restore();
+
+            $this->dispatch('toast', [
+                'message' => 'Sagen er blevet gendannet.',
+                'type' => 'success',
+            ]);
+
+            if ($this->uiMode === 'full') {
+                $this->loadKreditorStats();
+            }
+        }
+    }
+
     public function confirmDelete($id = null)
     {
-        // 1. Hvis et $id sendes med fra tabellen, gemmer vi det og åbner modalen
         if ($id) {
-            $sag = Sager::find($id);
+            $sag = Sager::withTrashed()->find($id);
 
             if ($sag && $sag->isEligibleForGdprDeletion()) {
                 $this->dispatch('toast', [
@@ -253,7 +311,6 @@ class SagerDataTable extends Component
             return;
         }
 
-        // 2. Hvis metoden kaldes uden parametre (fra <x-confirm-delete-modal> Ja-knappen)
         if ($this->deleteId) {
             $this->deleteSag();
         }
@@ -269,7 +326,7 @@ class SagerDataTable extends Component
     {
         if (!$this->deleteId) return;
 
-        $sag = Sager::findOrFail($this->deleteId);
+        $sag = Sager::withTrashed()->findOrFail($this->deleteId);
 
         if ($sag->isEligibleForGdprDeletion()) {
             $this->showDeleteModal = false;
@@ -281,8 +338,25 @@ class SagerDataTable extends Component
         }
 
         $this->showDeleteModal = false;
-        $this->dispatch('row-deleted', id: $sag->id);
-        $sag->delete();
+
+        if ($sag->trashed()) {
+            $sag->forceDelete();
+            $toastMsg = 'Sagen er slettet permanent.';
+        } else {
+            $sag->delete();
+            $toastMsg = 'Sagen er lagt i papirkurven.';
+        }
+
+        $this->dispatch('row-deleted', id: $this->deleteId);
+        $this->dispatch('toast', [
+            'message' => $toastMsg,
+            'type' => 'success',
+        ]);
+
         $this->deleteId = null;
+
+        if ($this->uiMode === 'full') {
+            $this->loadKreditorStats();
+        }
     }
 }

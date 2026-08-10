@@ -1,25 +1,28 @@
 <div class="relative min-h-[400px]">
 
-    {{-- 🟢 SPINNER OVERLAY: Aktiveres nu OGSÅ ved blur/form-events så den reagerer ved 1. tryk --}}
-    <div 
-        wire:loading.flex
-        wire:target="save, setTab, formatOnBlur, form"
-        class="absolute inset-0 bg-white/75 backdrop-blur-sm z-50 items-center justify-center rounded-2xl transition-all"
-        style="display: none;"
-    >
-        <div class="bg-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 text-slate-800 text-xs font-bold">
-            <svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Indlæser sagen...</span>
-        </div>
-    </div>
-
     {{-- TOP BAR: FANER --}}
     <div class="mb-6">
         <livewire:sager.sag-tabs :sag="$sag" :activeTab="$activeTab" :key="'sag-tabs-'.($sag->id ?? 'new')" />
     </div>
+
+    {{-- VISES KUN HVIS SAGEN REELT ER GEMT I DATABASEN SOM AFSLUTTET --}}
+    @if($sag->exists && $sag->afsluttet)
+        <div class="mb-4 p-3.5 rounded-2xl border bg-slate-100/80 border-slate-200 text-slate-700 text-xs font-medium flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-2.5">
+                <span class="text-base">🏁</span>
+                <div>
+                    <strong>Denne sag er afsluttet</strong> pr. 
+                    <span class="font-bold text-slate-900">{{ \Carbon\Carbon::parse($sag->afsluttet)->format('d-m-Y') }}</span>
+                    @if($sag->sagerAfslutning->first())
+                        • Årsag: <span class="italic text-slate-800">{{ $sag->sagerAfslutning->first()->tekst }}</span>
+                    @endif
+                </div>
+            </div>
+            <span class="text-[10px] bg-slate-200 px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider text-slate-600">
+                Afsluttet sag
+            </span>
+        </div>
+    @endif
 
     {{-- GDPR ADVARSEL BANNER I EDITOR --}}
     @if ($this->isExpiringSoon)
@@ -133,15 +136,37 @@
 
                 <div class="flex justify-end mt-4">
                     <button 
-                        type="submit" 
+                        type="button" 
+                        wire:click="save"
                         wire:loading.attr="disabled"
-                        class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-sm cursor-pointer flex items-center gap-2"
+                        :disabled="$wire.savedRecently"
+                        class="min-w-[140px] h-10 px-6 font-bold text-xs rounded-xl transition-all duration-200 shadow-sm cursor-pointer inline-flex items-center justify-center gap-2 relative overflow-hidden text-white
+                            {{ $savedRecently ? 'bg-emerald-600 hover:bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-700' }} 
+                            disabled:opacity-90 disabled:cursor-not-allowed"
                     >
-                        <svg wire:loading wire:target="save" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>Gem sag</span>
+                        {{-- 1. TILSTAND: GEMMER (Spinner) --}}
+                        <span wire:loading wire:target="save" class="inline-flex items-center gap-2">
+                            <svg class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Gemmer...</span>
+                        </span>
+
+                        {{-- 2. TILSTAND: GEMT SUCCESFULDT (Grøn knap) --}}
+                        @if($savedRecently)
+                            <span wire:loading.remove wire:target="save" class="inline-flex items-center gap-1.5 animate-pulse">
+                                <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>Gemt!</span>
+                            </span>
+                        {{-- 3. TILSTAND: STANDARD (Individuel gem-knap) --}}
+                        @else
+                            <span wire:loading.remove wire:target="save">
+                                Gem sag
+                            </span>
+                        @endif
                     </button>
                 </div>
             </form>
@@ -272,6 +297,54 @@
                 @endforelse
 
                 <button wire:click="$set('showTakeoverModal', false)" class="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl w-full transition">Luk</button>
+            </div>
+        </div>
+    @endif
+
+    {{-- MODAL: PÅMINDELSE OM AFSLUTNINGSDATO --}}
+    @if($showAfsluttetDateReminder)
+        <div 
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4"
+            x-data
+            @keydown.escape.window="$wire.set('showAfsluttetDateReminder', false)"
+        >
+            <div class="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md border border-slate-100 space-y-4">
+                
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg shrink-0">
+                        📅
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Mangler afslutningsdato</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            Du har valgt en afslutningsårsag, men feltet <strong>Afsluttet (dato)</strong> er tomt.
+                        </p>
+                    </div>
+                </div>
+
+                <p class="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    Vil du udfylde feltet <strong>Afsluttet</strong> med dags dato ({{ now()->format('d-m-Y') }})?
+                </p>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    {{-- ESC / LUK KNAP --}}
+                    <button 
+                        type="button" 
+                        wire:click="$set('showAfsluttetDateReminder', false)"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer"
+                    >
+                        Spring over (Esc)
+                    </button>
+
+                    {{-- UDFYLD MED DAGS DATO --}}
+                    <button 
+                        type="button" 
+                        wire:click="applyTodayAfsluttetDate"
+                        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-sm cursor-pointer"
+                    >
+                        Udfyld dags dato
+                    </button>
+                </div>
             </div>
         </div>
     @endif

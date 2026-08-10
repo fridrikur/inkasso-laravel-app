@@ -54,6 +54,8 @@ class SagEditor extends Component
     public bool $hasLock = false;
 
     public bool $isLockedByOther = false;
+
+    public bool $savedRecently = false;
     
     protected bool $ready = false;
 
@@ -117,6 +119,8 @@ class SagEditor extends Component
     public $newKlientinformation = 0;
     public $klientinformationUnread = 0;
     public ?array $lock = null;
+
+    public bool $showAfsluttetDateReminder = false;
     
     public bool $showUnlockModal = false;
     public string $unlock_code = '';
@@ -472,20 +476,51 @@ class SagEditor extends Component
                 }
             }
 
-            $this->dispatch('toast', message: 'Sagen gemt succesfuldt!', type: 'success', icon: 'check');
+            // 🟢 Marker at sagen er gemt (Viser grøn knap)
+            $this->savedRecently = true;
+            $this->js('setTimeout(() => { $wire.savedRecently = false; }, 2500)');
+
+            // 🟢 SAMLET TOAST-LOGIK (Kun 1 samlet notifikation afsendes)
+            if ($this->sag->wasChanged('afsluttet')) {
+                if (!empty($this->form->afsluttet)) {
+                    $this->dispatch('toast', 
+                        message: 'Sagen er gemt og markeret som AFSLUTTET.', 
+                        type: 'success', 
+                        icon: 'check'
+                    );
+                } else {
+                    $this->dispatch('toast', 
+                        message: 'Afslutningsdatoen blev fjernet – sagen er nu aktiv igen.', 
+                        type: 'warning', 
+                        icon: 'warning'
+                    );
+                }
+            } elseif (!empty($this->form->afsluttet)) {
+                $this->dispatch('toast', 
+                    message: 'Sagen er gemt (AFSLUTTET).', 
+                    type: 'success', 
+                    icon: 'check'
+                );
+            } else {
+                $this->dispatch('toast', 
+                    message: 'Sagen er gemt.', 
+                    type: 'success', 
+                    icon: 'check'
+                );
+            }
+
+            SagActivity::where('sag_id', $this->sag->id)
+                ->where('user_id', auth()->id())
+                ->update([
+                    'last_edited_at' => now(),
+                ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            $this->dispatch('toast', message: 'Tjek dine inputfelter! Fejlbeskrivelse(engelsk): '.$e->getMessage(), type: 'error', icon: 'error');
+            $this->dispatch('toast', message: 'Tjek dine inputfelter! Fejlbeskrivelse: '.$e->getMessage(), type: 'error', icon: 'error');
         } catch (\Exception $e) {
             \Log::error("Sag save error: " . $e->getMessage());
-            $this->dispatch('toast', message: 'Der opstod en fejl ved gemning af sagen! Fejlbeskrivelse(engelsk): '.$e->getMessage(), type: 'error', icon: 'error');
+            $this->dispatch('toast', message: 'Der opstod en fejl ved gemning af sagen! Fejlbeskrivelse: '.$e->getMessage(), type: 'error', icon: 'error');
         }
-        
-        SagActivity::where('sag_id', $this->sag->id)
-            ->where('user_id', auth()->id())
-            ->update([
-                'last_edited_at' => now(),
-            ]);
     }
 
     public function render()
@@ -1136,6 +1171,31 @@ class SagEditor extends Component
         $this->lock = [
             'user_name' => $lock->user?->name ?? 'Ukendt',
         ];
+    }
+
+    /**
+     * Reagerer øjeblikkeligt når brugeren vælger en afslutningsårsag i dropdown'en
+     */
+    public function updatedFormAfslutning($value): void
+    {
+        // Hvis der er valgt en afslutningsårsag, men datoen 'afsluttet' mangler
+        if (!empty($value) && empty($this->form->afsluttet)) {
+            $this->showAfsluttetDateReminder = true;
+        }
+    }
+
+    /**
+     * Hjælpemetode fra modalen: Sætter dags dato i Afsluttet-feltet
+     */
+    public function applyTodayAfsluttetDate(): void
+    {
+        $this->form->afsluttet = now()->format('Y-m-d');
+        $this->showAfsluttetDateReminder = false;
+
+        $this->dispatch('toast', 
+            message: 'Afslutningsdato sat til i dag. Husk at gemme sagen.', 
+            type: 'info'
+        );
     }
     
 }
