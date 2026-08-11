@@ -125,22 +125,54 @@ class ManageKonsulenter extends Component
     }
 
     // 🟢 Sletning tilpasset HasCrudModal ($deletingId)
-    public function confirmDelete()
+    /**
+     * Håndterer både åbning af modal (med $id) og selve sletningen (uden $id)
+     */
+    public function confirmDelete($id = null): void
     {
-        if (!$this->deletingId) return;
+        // 1. Åbn modal ved tryk på tabellen
+        if ($id) {
+            $this->deletingId = $id; // $deletingId kommer direkte fra HasCrudModal traiten
+            $this->showDeleteModal = true;
+            return;
+        }
 
-        $k = Konsulenter::findOrFail($this->deletingId);
+        // 2. Udfør sletning ved bekræftelse i modal
+        if (!$this->deletingId) {
+            $this->cancelDelete();
+            return;
+        }
+
+        $k = Konsulenter::find($this->deletingId);
+
+        if (!$k) {
+            $this->cancelDelete();
+            return;
+        }
 
         if ($k->sager()->exists()) {
-            $this->addError('delete', 'Kan ikke slette konsulent med aktive sager.');
             $this->cancelDelete();
+            
+            $this->dispatch('toast', [
+                'message' => 'Kan ikke slette konsulent med aktive sager.',
+                'type'    => 'error'
+            ]);
             return;
         }
 
         $this->service()->delete($k);
         $this->cancelDelete();
 
-        $this->dispatch('notify', message: 'Konsulenten blev slettet.', type: 'success');
+        $this->dispatch('toast', [
+            'message' => 'Konsulenten blev slettet.',
+            'type'    => 'success'
+        ]);
+    }
+
+    public function cancelDelete(): void
+    {
+        $this->showDeleteModal = false;
+        $this->deletingId = null;
     }
 
     public function render()

@@ -30,10 +30,11 @@
                         Annuller
                     </button>
 
+                    {{-- Inde i resources/views/components/confirm-delete-modal.blade.php --}}
                     <button 
                         type="button" 
-                        wire:click="confirmDelete" 
-                        class="rounded-lg bg-red-600 hover:bg-red-700 px-4 py-2 text-xs font-semibold text-white transition shadow-sm cursor-pointer"
+                        wire:click="confirmDelete"
+                        class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-sm cursor-pointer"
                     >
                         Slet
                     </button>

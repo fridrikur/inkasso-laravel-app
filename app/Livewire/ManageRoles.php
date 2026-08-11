@@ -6,7 +6,7 @@ use Livewire\Component;
 use Spatie\Permission\Models\Role;
 use App\Models\User;
 
-class Roles extends Component
+class ManageRoles extends Component
 {
     public $roles;
     public $selectedRoleId = null;

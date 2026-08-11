@@ -72,6 +72,14 @@
 
                                 <button
                                     type="button"
+                                    wire:click="goToCreateKonsulent"
+                                    class="rounded-xl border border-slate-200 px-4 py-3 text-left font-semibold text-slate-700 hover:bg-slate-50 hover:border-indigo-500 transition shadow-sm"
+                                >
+                                    👤 Opret konsulent
+                                </button>
+
+                                <button
+                                    type="button"
                                     wire:click="openImportSagerMenu"
                                     class="rounded-xl bg-indigo-600 px-4 py-3 text-left font-semibold text-white hover:bg-indigo-700 transition shadow-sm mt-2 flex items-center justify-between"
                                 >

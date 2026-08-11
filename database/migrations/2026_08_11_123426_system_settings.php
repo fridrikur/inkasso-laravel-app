@@ -9,11 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('system_settings', function (Blueprint $table) {
-            $table->id();
-
-            $table->string('key')->unique();
+            $table->string('key')->primary(); // Fx 'twilio_sid', 'twilio_enabled'
             $table->text('value')->nullable();
-
             $table->timestamps();
         });
     }

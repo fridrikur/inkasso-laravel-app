@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
 use App\Livewire\Admin\DropdownIndex;
 use App\Livewire\AdminDashboard;
+use App\Livewire\Admin\SystemSettings\ManageSettings;
 use App\Livewire\Sager\SagEditor;
 use App\Livewire\Sager\KreditorSagEditor;
 use App\Livewire\Sager\KreditorSagerIndex;
@@ -14,7 +15,7 @@ use App\Livewire\Sager\Klientinformation;
 use App\Livewire\Sager\KreditorSagView;
 use App\Livewire\Counter;
 use App\Livewire\ManageUsers;
-use App\Livewire\Roles;
+use App\Livewire\ManageRoles;
 use App\Livewire\Admin\SagFieldManager;
 use App\Livewire\Users\AssignMedarbejder;
 use App\Livewire\forms\UserForm;
@@ -28,18 +29,9 @@ use App\Livewire\kreditorer\UpdateKreditor;
 use App\Livewire\debitorer\CreateDebitor;
 use App\Livewire\debitorer\showDebitorer;
 use App\Livewire\debitorer\UpdateDebitor;
-use App\Livewire\sagsbehandlere\CreateSagsbehandler;
-use App\Livewire\sagsbehandlere\Sagsbehandlere;
-use App\Livewire\sagsbehandlere\UpdateSagsbehandler;
-use App\Livewire\konsulenter\CreateKonsulent;
-use App\Livewire\konsulenter\ShowKonsulenter;
-use App\Livewire\konsulenter\UpdateKonsulent;
 use App\Livewire\medarbejdere\CreateMedarbejder;
 use App\Livewire\medarbejdere\ShowMedarbejdere;
 use App\Livewire\medarbejdere\UpdateMedarbejder;
-use App\Livewire\meta\CreateMeta;
-use App\Livewire\meta\ShowMeta;
-use App\Livewire\meta\UpdateMeta;
 use App\Livewire\Users\CreateUser;
 use App\Livewire\Users\Showkreditorusers;
 use App\Http\Controllers\Sager\ImportExecuteController;
@@ -60,12 +52,9 @@ use App\Livewire\ManageKreditorFieldSettings;
 use App\Livewire\ManageDebitorFieldSettings;
 use App\Livewire\ManageKonsulenterFieldSettings;
 use App\Livewire\Konsulenter\ManageKonsulenter;
+use App\Livewire\Konsulenter\CreateKonsulent;
 use App\Livewire\ManageSagsbehandlerFieldSettings;
 use App\Livewire\ManageSagerFieldSettings;
-use App\Livewire\Kreditorer\ImportKreditor;
-use App\Livewire\Debitorer\ImportDebitor;
-use App\Livewire\sagsbehandlere\ImportSagsbehandler;
-use App\Livewire\konsulenter\ImportKonsulenter;
 use App\Models\Sager;
 use App\Models\Debitorer;
 use App\Models\Kreditorer;
@@ -99,7 +88,6 @@ use App\Http\Controllers\SagerSortController;
 use App\Livewire\Admin\FormBuilder;
 use App\Livewire\Generated\DynamicFormRenderer;
 use App\Livewire\Sager\MergeBrev;
-use App\Http\Controllers\SagerBrevPdfController;
 use App\Http\Controllers\Sager\ImportPreviewController;
 use App\Http\Controllers\Sager\ImportUploadController;
 use App\Http\Controllers\Sager\ImportFormController;
@@ -241,6 +229,10 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         Route::get('/system-security', SystemSecurity::class)
             ->name('system-security');
 
+            // Systemindstillinger
+        Route::get('/admin/system-settings', ManageSettings::class)
+            ->name('admin.system-settings.index');
+
         /* FIELD SETTINGS */
         Route::prefix('fields')->group(function () {
             Route::get('/kreditor', ManageKreditorFieldSettings::class)->name('fields.kreditor');
@@ -257,7 +249,6 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             Route::get('/{kreditor}/edit', UpdateKreditor::class)->name('kreditorer.edit');
             Route::get('/{kreditor}', ManageKreditor::class)->name('kreditor.manage');
             Route::get('/{kreditor}/sager', ShowKreditorSager::class)->name('kreditorer.sager');
-            Route::get('/{kreditor}/import', ImportKreditor::class)->name('kreditorer.import');
         });
 
         /* DEBITORER */
@@ -266,24 +257,6 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             Route::get('/create', CreateDebitor::class)->name('debitorer.create');
             Route::get('/{debitor}/edit', UpdateDebitor::class)->name('debitorer.edit');
         });
-
-        /* SAGSBEHANDLERE */
-        Route::prefix('sagsbehandlere')->group(function () {
-            Route::get('/', Sagsbehandlere::class)->name('sagsbehandlere.index');
-            Route::get('/import', ImportSagsbehandler::class)->name('sagsbehandlere.import');
-            Route::get('/{kreditor}/create', CreateSagsbehandler::class)->name('sagsbehandlere.create');
-            Route::get('/{sagsbehandler}/edit', UpdateSagsbehandler::class)->name('sagsbehandlere.edit');
-        });
-
-        /* KONSULENTER */
-        Route::get('/konsulenter', ManageKonsulenter::class)->name('konsulenter.index');
-        Route::get('/konsulenter/create', CreateKonsulent::class)->name('konsulenter.create');
-        Route::get('/manage-konsulenter', ManageKonsulenter::class)->name('manage-konsulenter');
-
-        /* META / STATUS / KTR / BEMAERKNING / UDLÆG / AFSLUTNING */
-        Route::get('/meta', ShowMeta::class)->name('meta.index');
-        Route::get('/meta/create', CreateMeta::class)->name('meta.create');
-        Route::get('/meta/{meta}/edit', UpdateMeta::class)->name('meta.edit');
 
         Route::get('/autotekster', AutotekstIndex::class)->name('autotekster.index');
 
@@ -314,15 +287,21 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         Route::get('/afslutning/create', Createafslutning::class)->name('afslutning.create');
         Route::get('/afslutning/{afslutning}/edit', Updateafslutning::class)->name('afslutning.edit');
 
-        /* USERS / ROLES */
-        Route::prefix('users')->group(function () {
-            Route::get('/', ManageUsers::class)->name('users.manage-users');
-            Route::get('/create', CreateUser::class)->name('users.create');
-            Route::get('/{user}/edit', UserForm::class)->name('users.edit');
-            Route::get('/{user}/update', UpdateUser::class)->name('users.update');
+        /* BRUGERE (Styres via ManageUsers + Modal) */
+        Route::prefix('users')->as('users.')->group(function () {
+            Route::get('/', ManageUsers::class)->name('index');
+            Route::get('/manage-users', ManageUsers::class)->name('manage-users');
+            Route::get('/create', CreateUser::class)->name('create');
         });
 
-        Route::get('/roles', Roles::class)->name('roles.index');
+        /* KONSULENTER (Styres på samme måde) */
+        Route::prefix('konsulenter')->as('konsulenter.')->group(function () {
+            Route::get('/', ManageKonsulenter::class)->name('index');
+            Route::get('/manage-konsulenter', ManageKonsulenter::class)->name('manage-konsulenter');
+            Route::get('/create', CreateKonsulent::class)->name('create');
+        });
+
+        Route::get('/manage-roles', ManageRoles::class)->name('roles.index');
 
         /* BACKUPS & SYSTEM TOOLS */
         Route::get('/backups', BackupManager::class)->name('backups.index');

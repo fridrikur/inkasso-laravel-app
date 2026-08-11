@@ -59,7 +59,7 @@ class QuickMenu extends Component
 
     public function goToCreateBrev()
     {
-        return redirect()->route('admin.breve.opret');
+        return redirect()->route('sager.breve.opret');
     }
 
     public function goToFindSag()
@@ -75,6 +75,16 @@ class QuickMenu extends Component
     public function goToCreateUser()
     {
         return redirect()->route('users.create');
+    }
+
+    public function goToCreateKonsulent()
+    {
+        return redirect()->route('konsulenter.create');
+    }
+
+    public function goToSystemSettings()
+    {
+        return redirect()->route('admin.system-settings.index');
     }
 
     public function render()

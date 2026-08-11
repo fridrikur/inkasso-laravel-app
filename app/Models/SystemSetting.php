@@ -3,25 +3,23 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Hash;
 
 class SystemSetting extends Model
 {
-    protected $fillable = [
-        'key',
-        'value',
-    ];
+    protected $table = 'system_settings';
+    protected $primaryKey = 'key';
+    public $incrementing = false;
+    protected $keyType = 'string';
 
-    public static function get(string $key, $default = null)
+    protected $fillable = ['key', 'value'];
+
+    public static function is2FaEnabled(): bool
     {
-        return static::where('key', $key)->value('value') ?? $default;
+        return static::get('enable_2fa', '0') === '1';
     }
 
-    public static function set(string $key, $value): void
+    public static function get2FaProvider(): string
     {
-        static::updateOrCreate(
-            ['key' => $key],
-            ['value' => $value]
-        );
+        return static::get('two_factor_provider', 'totp'); // 'totp' eller 'twilio'
     }
 }

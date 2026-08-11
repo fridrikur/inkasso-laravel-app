@@ -3,17 +3,22 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Sagsbehandling' }}</title>
+    <title>{{ setting('app_name', 'Sagsbehandling') }} - {{ $title ?? 'Dashboard' }}</title>
+
+    {{-- DYNAMISK FARVETEMA FRA SYSTEMSETTINGS --}}
+    <style>    
+    :root {
+            --theme-primary: {{ setting('theme_primary', '#4f46e5') }};
+            --theme-sidebar-bg: {{ setting('theme_sidebar_bg', '#0f172a') }};
+            --theme-sag-editor-bg: {{ setting('theme_sag_editor_bg', '#ffffff') }};
+            --theme-sag-editor-wrapper-bg: {{ setting('theme_sag_editor_wrapper_bg', '#f1f5f9') }};
+            --theme-sag-editor-header: {{ setting('theme_sag_editor_header', '#4f46e5') }};
+        }
+        [x-cloak] { display: none !important; }
+    </style>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-    
-    {{-- CHART.JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
 </head>
 <body 
     x-data="{ 
@@ -48,14 +53,14 @@
 
                 <button type="button" 
                         onclick="extendSession()"
-                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition shadow-sm cursor-pointer text-sm">
+                        class="w-full bg-[var(--theme-primary)] hover:opacity-90 text-white font-semibold px-4 py-2.5 rounded-xl transition shadow-sm cursor-pointer text-sm">
                     Fortsæt med at være logget på
                 </button>
             </div>
 
             {{-- TRIN 2: LÅST SKÆRM / RE-AUTH (Efter de 30 sekunder er løbet ud) --}}
             <div id="modal-step-reauth" class="space-y-4" style="display:none;">
-                <div class="mx-auto w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div class="mx-auto w-12 h-12 rounded-2xl bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] flex items-center justify-center">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
@@ -74,7 +79,7 @@
                                id="re-auth-password"
                                placeholder="Indtast din adgangskode"
                                required
-                               class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-center">
+                               class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary)]/10 outline-none text-center">
                         <p id="re-auth-error" class="text-xs text-rose-600 font-semibold mt-1 text-center" style="display:none;"></p>
                     </div>
 
@@ -105,15 +110,20 @@
         <aside 
             x-cloak
             :class="sidebarOpen ? 'w-64 translate-x-0 opacity-100' : 'w-0 -translate-x-full opacity-0 pointer-events-none lg:w-0'"
-            class="fixed inset-y-0 left-0 z-40 bg-slate-900 text-white transition-all duration-300 ease-in-out lg:static shrink-0 overflow-y-auto flex flex-col justify-between shadow-2xl border-r border-slate-800"
+            class="fixed inset-y-0 left-0 z-40 bg-[var(--theme-sidebar-bg)] text-white transition-all duration-300 ease-in-out lg:static shrink-0 overflow-y-auto flex flex-col justify-between shadow-2xl border-r border-slate-800"
         >
             <div class="p-5 space-y-6 w-64">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-4">
                     <div class="flex items-center gap-2.5">
-                        <span class="p-2 rounded-xl bg-indigo-600 text-white font-bold text-base shadow-sm">⚖️</span>
+                        <span class="p-2 rounded-xl bg-[var(--theme-primary)] text-white font-bold text-base shadow-sm">⚖️</span>
                         <div>
-                            <span class="font-bold text-base tracking-wide text-white block">InkassoApp</span>
-                            <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Sagsadministration</span>
+                            <div class="flex items-center gap-2.5">
+                                <span class="p-2 rounded-xl bg-[var(--theme-primary)] text-white font-bold text-base shadow-sm">⚖️</span>
+                                <div>
+                                    <span class="font-bold text-base tracking-wide text-white block">{{ setting('app_name', 'InkassoApp') }}</span>
+                                    <span class="text-[10px] text-slate-400 uppercase tracking-wider block">{{ setting('app_slogan', 'Sagsadministration') }}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <button @click="toggleSidebar" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer" title="Skjul menu">
@@ -129,43 +139,48 @@
     @hasanyrole('Admin|Medarbejder')
         <div class="space-y-1">
             <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Oversigt</div>
-            <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dashboard*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <a href="{{ route('dashboard') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dashboard*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>📊</span> Dashboard
             </a>
         </div>
 
         <div class="space-y-1">
             <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sagsbehandling</div>
-            <a href="{{ route('showsager') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('showsager') || request()->routeIs('sager.*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <a href="{{ route('showsager') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('showsager') || request()->routeIs('sager.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>📂</span> Sager
             </a>
-            {{-- 🟢 NYT MENUPUNKT: SAGSSTATUS --}}
-            <a href="{{ route('admin.sager.status.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition text-slate-300 hover:bg-slate-800 hover:text-white">
+            <a href="{{ route('admin.sager.status.index') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('admin.sager.status.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>🏷️</span> Sagsstatus
             </a>
-            <a href="{{ route('sager.search') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.search') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <a href="{{ route('sager.search') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.search') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>🔍</span> Søg Sager
             </a>
-            <a href="{{ route('sager.breve.opret') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.breve.opret') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <a href="{{ route('sager.breve.opret') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.breve.opret') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>✉️</span> Opret Brev
             </a>
-            <a href="{{ route('sager.trash') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.trash') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <a href="{{ route('sager.trash') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.trash') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>🗑️</span> Papirkurv
             </a>
-            <a href="{{ route('sager.import.log') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition text-slate-300 hover:bg-slate-800 hover:text-white text-xs font-semibold">
+            <a href="{{ route('sager.import.log') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.import.log') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} text-xs font-semibold">
                 <span>📊</span> Import Log
             </a>
         </div>
 
         <div class="space-y-1">
             <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Parter</div>
-            <a href="{{ route('kreditorer.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditorer*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <a href="{{ route('kreditorer.index') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditorer*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>🏢</span> Kreditorer
             </a>
-            <a href="{{ route('sagsbehandlere.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sagsbehandlere*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>👨‍💼</span> Sagsbehandlere
-            </a>
-            <a href="{{ route('manage-konsulenter') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('manage-konsulenter') || request()->routeIs('konsulenter*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <a href="{{ route('konsulenter.manage-konsulenter') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('manage-konsulenter') || request()->routeIs('konsulenter*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>💼</span> Konsulenter
             </a>
         </div>
@@ -174,22 +189,32 @@
         @role('Admin')
             <div class="space-y-1">
                 <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Værktøjer & Admin</div>
-                <a href="{{ route('sager.doctor') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.doctor') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <a href="{{ route('sager.doctor') }}" 
+                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.doctor') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <span>🩺</span> Doctor Norton 3.0
                 </a>
-                <a href="{{ route('gdpr.sager.retention') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('gdpr*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <a href="{{ route('gdpr.sager.retention') }}" 
+                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('gdpr*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <span>🛡️</span> GDPR Retention
                 </a>
-                <a href="{{ route('autotekster.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('autotekster*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <a href="{{ route('autotekster.index') }}" 
+                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('autotekster*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <span>💬</span> Autotekster
                 </a>
-                <a href="{{ route('dropdowns.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dropdowns*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <a href="{{ route('dropdowns.index') }}" 
+                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dropdowns*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <span>📋</span> Dropdown felter
                 </a>
-                <a href="{{ route('users.manage-users') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('users*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <a href="{{ route('users.manage-users') }}" 
+                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('users*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <span>👤</span> Brugere & Roles
                 </a>
-                <a href="{{ route('backups.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('backups*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                <a href="{{ route('admin.system-settings.index') }}" 
+                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('admin.system-settings.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <span>⚙️</span> Systemindstillinger
+                </a>
+                <a href="{{ route('backups.index') }}" 
+                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('backups*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <span>💾</span> Backups
                 </a>
             </div>
@@ -203,19 +228,23 @@
         <div class="space-y-1">
             <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kreditor Portal</div>
             
-            <a href="{{ route('kreditor.dashboard') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.dashboard') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <a href="{{ route('kreditor.dashboard') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.dashboard') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>📊</span> Dashboard
             </a>
 
-            <a href="{{ route('kreditor.sag.create') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sag.create') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <a href="{{ route('kreditor.sag.create') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sag.create') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>➕</span> Opret Ny Sag
             </a>
 
-            <a href="{{ route('kreditor.sager.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sager.index') || request()->routeIs('kreditor.sag.view') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <a href="{{ route('kreditor.sager.index') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sager.index') || request()->routeIs('kreditor.sag.view') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>📂</span> Mine Sager
             </a>
 
-            <a href="{{ route('kreditor.search') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.search') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <a href="{{ route('kreditor.search') }}" 
+               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.search') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>🔍</span> Søg Sager
             </a>
         </div>
@@ -226,12 +255,12 @@
 
             <div class="p-4 border-t border-slate-800/80 bg-slate-950/40 w-64">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center border border-indigo-500/30 shrink-0">
-                        {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                    <div class="w-8 h-8 rounded-full bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] font-bold flex items-center justify-center border border-[var(--theme-primary)]/30 shrink-0">
+                        {{ strtoupper(substr(auth()->user()?->name ?? 'U', 0, 1)) }}
                     </div>
                     <div class="truncate text-xs">
-                        <p class="font-bold text-slate-200 truncate">{{ auth()->user()->name ?? 'Bruger' }}</p>
-                        <p class="text-slate-500 truncate">{{ auth()->user()->email ?? '' }}</p>
+                        <p class="font-bold text-slate-200 truncate">{{ auth()->user()?->name ?? 'Bruger' }}</p>
+                        <p class="text-slate-500 truncate">{{ auth()->user()?->email ?? '' }}</p>
                     </div>
                 </div>
             </div>
@@ -240,7 +269,7 @@
         {{-- HOVED INDHOLDSOMRÅDE --}}
         <div class="flex-1 flex flex-col min-w-0 w-full">
             
-            {{-- 🟢 OPGRADERET TOPHEADER --}}
+            {{-- TOPHEADER --}}
             <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-20 shadow-sm">
                 
                 {{-- VENSTRE SIDE: MENU KNAP & DATO/KLOKKESLÆT --}}
@@ -251,7 +280,7 @@
                         class="p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 transition flex items-center gap-2 text-xs font-bold shadow-sm cursor-pointer"
                         title="Åbn/Skjul hovedmenu"
                     >
-                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 text-[var(--theme-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                         </svg>
                         <span x-text="sidebarOpen ? 'Skjul menu' : 'Hovedmenu'">Hovedmenu</span>
@@ -280,53 +309,55 @@
                 </div>
 
                 {{-- SESSION NEDTÆLLING I HEADER --}}
-<div 
-    x-data="{ 
-        timeLeft: 900,
-        timer: null,
-        formatTime(sec) {
-            let m = String(Math.floor(sec / 60)).padStart(2, '0');
-            let s = String(sec % 60).padStart(2, '0');
-            return `${m}:${s}`;
-        },
-        resetTimer() {
-            let modal = document.getElementById('session-warning');
-            if (!modal || modal.style.display === 'none') {
-                this.timeLeft = 900;
-            }
-        }
-    }"
-    x-init="
-        timer = setInterval(() => { if (timeLeft > 0) timeLeft--; }, 1000);
-        ['mousemove', 'keydown', 'click', 'scroll'].forEach(evt => {
-            window.addEventListener(evt, () => resetTimer());
-        });
-    "
-    class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600"
->
-    <span class="text-slate-400">⏳</span>
-    <span>Session udløber:</span>
-    <span x-text="formatTime(timeLeft)" 
-          :class="timeLeft < 60 ? 'text-rose-600 animate-pulse font-bold' : 'text-slate-900 font-mono font-bold'">
-        15:00
-    </span>
-</div>
+                <div 
+                    x-data="{ 
+                        timeLeft: 900,
+                        timer: null,
+                        formatTime(sec) {
+                            let m = String(Math.floor(sec / 60)).padStart(2, '0');
+                            let s = String(sec % 60).padStart(2, '0');
+                            return `${m}:${s}`;
+                        },
+                        resetTimer() {
+                            let modal = document.getElementById('session-warning');
+                            if (!modal || modal.style.display === 'none') {
+                                this.timeLeft = 900;
+                            }
+                        }
+                    }"
+                    x-init="
+                        timer = setInterval(() => { if (timeLeft > 0) timeLeft--; }, 1000);
+                        ['mousemove', 'keydown', 'click', 'scroll'].forEach(evt => {
+                            window.addEventListener(evt, () => resetTimer());
+                        });
+                    "
+                    class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600"
+                >
+                    <span class="text-slate-400">⏳</span>
+                    <span>Session udløber:</span>
+                    <span x-text="formatTime(timeLeft)" 
+                          :class="timeLeft < 60 ? 'text-rose-600 animate-pulse font-bold' : 'text-slate-900 font-mono font-bold'">
+                        15:00
+                    </span>
+                </div>
 
                 {{-- HØJRE SIDE: BRUGERINFO, SESSION, QUICK MENU & LOG UD --}}
                 <div class="flex items-center gap-3">
                     
                     {{-- BRUGER BADGE MED ROLLE --}}
-                    <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
-                        <div class="w-6 h-6 rounded-lg bg-indigo-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
-                            {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                    @auth
+                        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+                            <div class="w-6 h-6 rounded-lg bg-[var(--theme-primary)] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+                                {{ strtoupper(substr(auth()->user()?->name ?? 'U', 0, 1)) }}
+                            </div>
+                            <div class="text-left">
+                                <span class="font-bold text-slate-800 block leading-tight">{{ auth()->user()?->name ?? 'Bruger' }}</span>
+                                <span class="text-[10px] text-[var(--theme-primary)] font-semibold block leading-tight">
+                                    {{ auth()->user()?->getRoleNames()?->first() ?? 'Bruger' }}
+                                </span>
+                            </div>
                         </div>
-                        <div class="text-left">
-                            <span class="font-bold text-slate-800 block leading-tight">{{ auth()->user()->name }}</span>
-                            <span class="text-[10px] text-indigo-600 font-semibold block leading-tight">
-                                {{ auth()->user()->getRoleNames()->first() ?? 'Bruger' }}
-                            </span>
-                        </div>
-                    </div>
+                    @endauth
 
                     {{-- LIVEWIRE SESSION MANAGER / TIMER --}}
                     <livewire:session-manager />
@@ -336,29 +367,31 @@
                         <button
                             @click="$dispatch('open-quick-menu')"
                             type="button"
-                            class="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition shadow-sm cursor-pointer"
+                            class="inline-flex items-center gap-1.5 rounded-xl bg-[var(--theme-primary)] hover:opacity-90 px-3.5 py-2 text-xs font-bold text-white transition shadow-sm cursor-pointer"
                         >
                             <span>⚡ Quick Menu</span>
-                            <svg class="w-3.5 h-3.5 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                             </svg>
                         </button>
                     @endrole
 
                     {{-- 🔴 LOG AF KNAP --}}
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button 
-                            type="submit" 
-                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 hover:border-rose-300 font-bold text-xs transition shadow-sm cursor-pointer"
-                            title="Log af systemet"
-                        >
-                            <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            <span class="hidden md:inline">Log af</span>
-                        </button>
-                    </form>
+                    @auth
+                        <form method="POST" action="{{ route('logout') }}" class="inline">
+                            @csrf
+                            <button 
+                                type="submit" 
+                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 hover:border-rose-300 font-bold text-xs transition shadow-sm cursor-pointer"
+                                title="Log af systemet"
+                            >
+                                <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                <span class="hidden md:inline">Log af</span>
+                            </button>
+                        </form>
+                    @endauth
 
                 </div>
             </header>

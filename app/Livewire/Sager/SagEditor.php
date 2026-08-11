@@ -56,6 +56,8 @@ class SagEditor extends Component
     public bool $isLockedByOther = false;
 
     public bool $savedRecently = false;
+
+    public string $reminderType = 'date'; // 'date' eller 'reason'
     
     protected bool $ready = false;
 
@@ -1174,17 +1176,6 @@ class SagEditor extends Component
     }
 
     /**
-     * Reagerer øjeblikkeligt når brugeren vælger en afslutningsårsag i dropdown'en
-     */
-    public function updatedFormAfslutning($value): void
-    {
-        // Hvis der er valgt en afslutningsårsag, men datoen 'afsluttet' mangler
-        if (!empty($value) && empty($this->form->afsluttet)) {
-            $this->showAfsluttetDateReminder = true;
-        }
-    }
-
-    /**
      * Hjælpemetode fra modalen: Sætter dags dato i Afsluttet-feltet
      */
     public function applyTodayAfsluttetDate(): void
@@ -1196,6 +1187,28 @@ class SagEditor extends Component
             message: 'Afslutningsdato sat til i dag. Husk at gemme sagen.', 
             type: 'info'
         );
+    }
+
+    /**
+     * Reagerer i realtid når afslutningsårsag vælges
+     */
+    public function updatedFormAfslutning($value): void
+    {
+        if (!empty($value) && empty($this->form->afsluttet)) {
+            $this->reminderType = 'date';
+            $this->showAfsluttetDateReminder = true;
+        }
+    }
+
+    /**
+     * Reagerer i realtid når afslutningsdato vælges
+     */
+    public function updatedFormAfsluttet($value): void
+    {
+        if (!empty($value) && empty($this->form->afslutning)) {
+            $this->reminderType = 'reason';
+            $this->showAfsluttetDateReminder = true;
+        }
     }
     
 }
