@@ -29,14 +29,25 @@ class SagerDataTable extends Component
     public $kreditor = null;
     public $kreditors = [];
 
+    public ?int $statusId = null;
+
     protected $paginationTheme = 'tailwind';
     public array $filters = [];
     public ?int $deleteId = null;
 
-    public function mount($mode = 'all', $uiMode = 'table', $selectedKreditor = null)
+    #[On('status-changed')]
+    public function handleStatusChanged(int $statusId)
+    {
+        $this->statusId = $statusId;
+        $this->mode = 'status';
+        $this->resetPage();
+    }
+
+    public function mount($mode = 'all', $uiMode = 'table', $selectedKreditor = null, $statusId = null)
     {
         $this->mode = $mode;
         $this->uiMode = $uiMode;
+        $this->statusId = $statusId;
         
         if ($selectedKreditor) {
             $this->selectedKreditor = $selectedKreditor;
@@ -198,6 +209,12 @@ class SagerDataTable extends Component
             case 'kreditor':
                 if ($this->kreditor) {
                     $query->whereHas('sagerkreditor', fn ($q) => $q->whereKey($this->kreditor->id));
+                }
+                break;
+
+            case 'status':
+                if ($this->statusId) {
+                    $query->whereHas('sagerStatus', fn($s) => $s->where('status.id', $this->statusId));
                 }
                 break;
         }

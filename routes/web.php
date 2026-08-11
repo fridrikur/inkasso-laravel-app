@@ -23,6 +23,7 @@ use App\Livewire\sager\ShowKreditorSager;
 use App\Livewire\kreditorer\CreateKreditor;
 use App\Livewire\Kreditorer\ManageKreditor;
 use App\Livewire\kreditorer\ManageKreditorer;
+use App\Livewire\Sager\StatusPage;
 use App\Livewire\kreditorer\UpdateKreditor;
 use App\Livewire\debitorer\CreateDebitor;
 use App\Livewire\debitorer\showDebitorer;
@@ -75,7 +76,7 @@ use App\Models\Sagsbehandler;
 use App\Livewire\Autotekster\ShowAutotekster;
 use App\Livewire\Autotekster\UpdateAutotekst;
 use App\Livewire\Autotekster\CreateAutotekst;
-use App\Livewire\Status\Statusindex;
+use App\Livewire\Status\Index; // Din admin status-oversigt
 use App\Livewire\Status\Updatestatus;
 use App\Livewire\Status\CreateStatus;
 use App\Livewire\KTR\KTRindex;
@@ -286,9 +287,14 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
 
         Route::get('/autotekster', AutotekstIndex::class)->name('autotekster.index');
 
-        Route::get('/status', StatusIndex::class)->name('status.index');
-        Route::get('/status/create', CreateStatus::class)->name('status.create');
-        Route::get('/status/{status}/edit', Updatestatus::class)->name('status.edit');
+        /* STATUS ROUTES */
+        // 🟢 NYT (Opretter navne som admin.sager.status.show osv.):
+        Route::prefix('admin/sager/status')->name('admin.sager.status.')->group(function () {
+            Route::get('/', Index::class)->name('index');             // admin.sager.status.index
+            Route::get('/create', CreateStatus::class)->name('create');      // admin.sager.status.create
+            Route::get('/{status}', StatusPage::class)->name('show');        // admin.sager.status.show
+            Route::get('/{status}/edit', Updatestatus::class)->name('edit'); // admin.sager.status.edit
+        });
 
         Route::get('/ktr', KtrIndex::class)->name('ktr.index');
         Route::get('/ktr/create', CreateKTR::class)->name('ktr.create');
@@ -330,10 +336,6 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         })->name('lukkede.sager.search');
 
         Route::get('/saved-search/{saved}/results', SavedSearchResults::class)->name('saved-search.results');
-
-        Route::get('/admin/sager/status/{status}', function (Status $status) {
-            return view('livewire.admin.sager.status', compact('status'));
-        })->name('admin.sager.status');
 
         /* IMPORT FLOW */
         Route::prefix('sager/import')

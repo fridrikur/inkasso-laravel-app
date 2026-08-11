@@ -139,6 +139,10 @@
             <a href="{{ route('showsager') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('showsager') || request()->routeIs('sager.*') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>📂</span> Sager
             </a>
+            {{-- 🟢 NYT MENUPUNKT: SAGSSTATUS --}}
+            <a href="{{ route('admin.sager.status.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                <span>🏷️</span> Sagsstatus
+            </a>
             <a href="{{ route('sager.search') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.search') ? 'bg-indigo-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <span>🔍</span> Søg Sager
             </a>

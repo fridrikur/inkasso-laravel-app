@@ -2,137 +2,257 @@
 
 namespace App\Livewire\Kreditorer;
 
-use Livewire\Component;
 use App\Models\Kreditorer;
-use App\Models\Sagsbehandler;
 use App\Models\User;
-use App\Models\SystemSetting;
-use App\Services\KreditorManagementService;
-use App\Services\KreditorTransferService;
-use App\Services\ToastService; // 🟢
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\Rule;
+use App\Models\Sagsbehandler;
+use App\Models\Sager;
+use Livewire\Component;
 use Illuminate\Support\Facades\Hash;
 
 class ManageKreditor extends Component
 {
-    public ?int $kreditorId = null;
-    public ?Kreditorer $kreditor = null;
+    public Kreditorer $kreditor;
 
-    public string $securityCode = '';
-    public ?int $transferToKreditorId = null;
-
-    public ?Collection $transferTargets = null;
-
-    protected KreditorManagementService $management;
-    protected KreditorTransferService $transfer;
-    protected ToastService $toast;
-
+    // Modal synlighed
+    public bool $showDeleteModal = false;
     public bool $showUserModal = false;
+    public bool $showSagsModal = false;
+
+    // Slette/overførsel egenskaber
+    public ?int $transferToKreditorId = null;
+    public string $securityCode = '';
+
+    // Bruger modal felter
     public ?User $activeUser = null;
     public string $userName = '';
     public string $userEmail = '';
-    public ?string $userPassword = null;
+    public string $userPassword = '';
 
-    public bool $showSagsModal = false;
+    // Sagsbehandler modal felter
     public ?Sagsbehandler $activeSagsbehandler = null;
     public string $modalNavn = '';
-    public ?string $modalEmail = null;
-    public ?string $modalTlf = null;
-    public ?string $modalMobil = null;
+    public string $modalEmail = '';
+    public string $modalTlf = '';
+    public string $modalMobil = '';
 
-    public bool $showDeleteModal = false;
-
-    public function boot(
-        KreditorManagementService $management,
-        KreditorTransferService $transfer,
-        ToastService $toast
-    ): void {
-        $this->management = $management;
-        $this->transfer = $transfer;
-        $this->toast = $toast;
+    public function mount(Kreditorer $kreditor)
+    {
+        $this->kreditor = $kreditor;
+        $this->loadRelations();
     }
 
-    public function mount(Kreditorer $kreditor): void
+    /**
+     * Genindlæser relationer og tællere
+     */
+    protected function loadRelations()
     {
-        $this->kreditorId = $kreditor->id;
-        $this->loadKreditorData();
+        $this->kreditor->loadCount(['sager', 'users', 'sagsbehandlere']);
+        $this->kreditor->load([
+            'users',
+            'sagsbehandlere',
+            'sager' => fn($q) => $q->latest()->take(10)
+        ]);
     }
 
-    public function loadKreditorData()
+    public function render()
     {
-        if (!$this->kreditorId) {
-            return;
+        $transferTargets = $this->showDeleteModal
+            ? Kreditorer::where('id', '!=', $this->kreditor->id)->orderBy('navn')->get()
+            : collect();
+
+        return view('livewire.kreditorer.manage-kreditor', [
+            'transferTargets' => $transferTargets,
+        ]);
+    }
+
+    // =========================================================================
+    // MODAL LUKNING & NULSTILLING
+    // =========================================================================
+    public function closeModals(): void
+    {
+        $this->showDeleteModal = false;
+        $this->showUserModal = false;
+        $this->showSagsModal = false;
+
+        $this->reset([
+            'activeUser', 'userName', 'userEmail', 'userPassword',
+            'activeSagsbehandler', 'modalNavn', 'modalEmail', 'modalTlf', 'modalMobil',
+            'transferToKreditorId', 'securityCode'
+        ]);
+    }
+
+    // =========================================================================
+    // BRUGER-HANDLINGER (PORTALBRUGERE)
+    // =========================================================================
+    public function openUserModal(?int $userId = null): void
+    {
+        $this->reset(['userName', 'userEmail', 'userPassword']);
+
+        if ($userId) {
+            $this->activeUser = User::findOrFail($userId);
+            $this->userName = $this->activeUser->name;
+            $this->userEmail = $this->activeUser->email;
+        } else {
+            $this->activeUser = null;
         }
 
-        $this->kreditor = Kreditorer::query()
-            ->with([
-                'users:id,name,email',
-                'sagsbehandlere:id,navn,email,tlf,mobil',
-                'sager' => fn($q) => $q->with('sagerdebitor')->latest()->take(10),
-            ])
-            ->withCount('sager')
-            ->find($this->kreditorId);
+        $this->showUserModal = true;
     }
 
-    public function requestDelete()
+    public function saveUser(): void
     {
-        $this->resetValidation();
-        $this->securityCode = '';
-        $this->transferToKreditorId = null;
+        $userId = $this->activeUser?->id;
 
-        if ($this->kreditorId) {
-            $this->transferTargets = Kreditorer::query()
-                ->whereKeyNot($this->kreditorId)
-                ->orderBy('navn')
-                ->get();
+        $rules = [
+            'userName'  => 'required|string|max:255',
+            'userEmail' => 'required|email|max:255|unique:users,email,' . ($userId ?? 'NULL'),
+        ];
+
+        if (!$userId) {
+            $rules['userPassword'] = 'required|string|min:8';
+        } else {
+            $rules['userPassword'] = 'nullable|string|min:8';
         }
 
+        $this->validate($rules);
+
+        if ($this->activeUser) {
+            // Opdater eksisterende bruger
+            $this->activeUser->update([
+                'name'  => $this->userName,
+                'email' => $this->userEmail,
+            ]);
+
+            if (!empty($this->userPassword)) {
+                $this->activeUser->update([
+                    'password' => Hash::make($this->userPassword),
+                ]);
+            }
+
+            $toastMsg = 'Brugeren er blevet opdateret.';
+        } else {
+            // Opret ny bruger og tilknyt kreditoren
+            $user = User::create([
+                'name'     => $this->userName,
+                'email'    => $this->userEmail,
+                'password' => Hash::make($this->userPassword),
+            ]);
+
+            if (method_exists($user, 'assignRole')) {
+                $user->assignRole('Kreditor');
+            }
+
+            $this->kreditor->users()->attach($user->id);
+            $toastMsg = 'Ny bruger oprettet og tilknyttet kreditoren.';
+        }
+
+        $this->dispatch('toast', ['message' => $toastMsg, 'type' => 'success']);
+        $this->closeModals();
+        $this->loadRelations();
+    }
+
+    public function detachUser(int $userId): void
+    {
+        $this->kreditor->users()->detach($userId);
+
+        $this->dispatch('toast', ['message' => 'Brugeren er fjernet fra kreditoren.', 'type' => 'success']);
+        $this->loadRelations();
+    }
+
+    // =========================================================================
+    // SAGSBEHANDLER-HANDLINGER
+    // =========================================================================
+    public function openSagsbehandlerModal(?int $id = null): void
+    {
+        $this->reset(['modalNavn', 'modalEmail', 'modalTlf', 'modalMobil']);
+
+        if ($id) {
+            $this->activeSagsbehandler = Sagsbehandler::findOrFail($id);
+            $this->modalNavn  = $this->activeSagsbehandler->navn;
+            $this->modalEmail = $this->activeSagsbehandler->email ?? '';
+            $this->modalTlf   = $this->activeSagsbehandler->tlf ?? '';
+            $this->modalMobil = $this->activeSagsbehandler->mobil ?? '';
+        } else {
+            $this->activeSagsbehandler = null;
+        }
+
+        $this->showSagsModal = true;
+    }
+
+    public function saveSagsbehandler(): void
+    {
+        $this->validate([
+            'modalNavn'  => 'required|string|max:255',
+            'modalEmail' => 'nullable|email|max:255',
+            'modalTlf'   => 'nullable|string|max:50',
+            'modalMobil' => 'nullable|string|max:50',
+        ]);
+
+        if ($this->activeSagsbehandler) {
+            $this->activeSagsbehandler->update([
+                'navn'  => $this->modalNavn,
+                'email' => $this->modalEmail,
+                'tlf'   => $this->modalTlf,
+                'mobil' => $this->modalMobil,
+            ]);
+
+            $toastMsg = 'Sagsbehandler opdateret.';
+        } else {
+            $sagsbehandler = Sagsbehandler::create([
+                'navn'  => $this->modalNavn,
+                'email' => $this->modalEmail,
+                'tlf'   => $this->modalTlf,
+                'mobil' => $this->modalMobil,
+            ]);
+
+            $this->kreditor->sagsbehandlere()->attach($sagsbehandler->id);
+            $toastMsg = 'Sagsbehandler oprettet og tilknyttet.';
+        }
+
+        $this->dispatch('toast', ['message' => $toastMsg, 'type' => 'success']);
+        $this->closeModals();
+        $this->loadRelations();
+    }
+
+    public function detachSagsbehandler(int $id): void
+    {
+        $this->kreditor->sagsbehandlere()->detach($id);
+
+        $this->dispatch('toast', ['message' => 'Sagsbehandleren er fjernet fra kreditoren.', 'type' => 'success']);
+        $this->loadRelations();
+    }
+
+    // =========================================================================
+    // SLETTEMODAL OG OVERFØRSEL AF SAGER
+    // =========================================================================
+    public function requestDelete(): void
+    {
         $this->showDeleteModal = true;
     }
 
     public function confirmDelete()
     {
-        $this->resetValidation();
+        // Hvis der er sager tilknyttet, skal modtager-kreditor vælges
+        if ($this->kreditor->sager_count > 0) {
+            $this->validate([
+                'transferToKreditorId' => 'required|exists:kreditors,id',
+            ], [
+                'transferToKreditorId.required' => 'Vælg venligst en modtager-kreditor til sagerne.',
+            ]);
 
-        if (!$this->kreditor) {
-            return $this->redirect(route('kreditorer.index'));
+            // Overfør alle sager i pivot/relation til den nye kreditor
+            $targetKreditor = Kreditorer::findOrFail($this->transferToKreditorId);
+
+            foreach ($this->kreditor->sager as $sag) {
+                $sag->sagerkreditor()->sync([$targetKreditor->id]);
+            }
         }
 
-        if ($this->kreditor->sager()->exists()) {
-            $code = SystemSetting::get('global_unlock_code');
+        // Slet kreditoren
+        $this->kreditor->delete();
 
-            if (!$code || !Hash::check($this->securityCode, $code)) {
-                $this->addError('securityCode', 'Forkert sikkerhedskode.');
-                return;
-            }
+        $this->dispatch('toast', ['message' => 'Kreditoren er blevet slettet.', 'type' => 'success']);
 
-            if (!$this->transferToKreditorId) {
-                $this->addError('transferToKreditorId', 'Vælg en modtager.');
-                return;
-            }
-
-            $target = Kreditorer::findOrFail($this->transferToKreditorId);
-            $this->transfer->transferAndDelete($this->kreditor, $target);
-        } else {
-            $this->management->delete($this->kreditor);
-        }
-
-        session()->flash('toast', $this->toast->success('Kreditor slettet.'));
-
-        return $this->redirect(route('kreditorer.index'));
-    }
-
-    public function closeModals()
-    {
-        $this->showUserModal = false;
-        $this->showSagsModal = false;
-        $this->showDeleteModal = false;
-        $this->resetValidation();
-    }
-
-    public function render()
-    {
-        return view('livewire.kreditorer.manage-kreditor');
+        return redirect()->route('kreditorer.index');
     }
 }

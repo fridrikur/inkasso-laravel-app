@@ -54,7 +54,16 @@
                                     {{ $status->forkortelse }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-right space-x-2">
+                            <td class="px-6 py-4 text-right space-x-1.5">
+                                {{-- 🟢 KNAP TIL AT SE SAGER UNDER DENNE STATUS --}}
+                                <a 
+                                    href="{{ route('admin.sager.status.show', $status->id) }}" 
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition cursor-pointer"
+                                    title="Vis alle sager med denne status"
+                                >
+                                    🔍 Vis sager
+                                </a>
+
                                 <button 
                                     type="button"
                                     wire:click="openEditModal({{ $status->id }})" 
