@@ -71,8 +71,7 @@ class Papirkurv extends Component
             $sag->sagerBemaerkning()->detach();
             $sag->sagerAfslutning()->detach();
             $sag->sagerUdlaeg()->detach();
-            $sag->sagervalgliste()->detach();
-
+            
             /*
             |--------------------------------------------------------------------------
             | Delete child records

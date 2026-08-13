@@ -46,31 +46,42 @@ class OnboardingWizard extends Component
         }
     }
 
-    // 🚀 TRIN 0: Kør migrationer og seeders
-    public function executeSystemInstallation(): void
+    public function executeSystemInstallation(): bool
     {
         try {
-            // 1. Kør alle database-migrationer
-            Artisan::call('migrate', ['--force' => true]);
+            @set_time_limit(180);
 
-            // 2. Opret standardroller og Admin-bruger
-            Artisan::call('db:seed', [
-                '--class' => 'Database\\Seeders\\UserSeeder',
-                '--force' => true,
-            ]);
+            try {
+                Schema::disableForeignKeyConstraints();
+
+                Artisan::call('migrate', ['--force' => true]);
+
+                if (class_exists(\Database\Seeders\UserSeeder::class)) {
+                    Artisan::call('db:seed', [
+                        '--class' => \Database\Seeders\UserSeeder::class,
+                        '--force' => true,
+                    ]);
+                }
+            } finally {
+                Schema::enableForeignKeyConstraints();
+            }
 
             $this->checkDatabaseState();
 
             $this->dispatch('toast', [
-                'message' => 'Systemet og databasen blev installeret med succes!',
+                'message' => 'Systemet er installeret med succes!',
                 'type'    => 'success'
             ]);
 
-        } catch (\Exception $e) {
+            return true;
+
+        } catch (\Throwable $e) {
             $this->dispatch('toast', [
-                'message' => 'Fejl under migrering: ' . $e->getMessage(),
+                'message' => 'Fejl under installation: ' . $e->getMessage(),
                 'type'    => 'error'
             ]);
+
+            return false;
         }
     }
 
@@ -80,7 +91,7 @@ class OnboardingWizard extends Component
         $this->showWizard = false;
 
         $this->dispatch('toast', [
-            'message' => 'Ren installation startet! Databasen er klar.',
+            'message' => 'Ren installation startet! Velkommen.',
             'type'    => 'success'
         ]);
     }
@@ -91,29 +102,73 @@ class OnboardingWizard extends Component
         $this->redirect(route('sager.import.log'));
     }
 
-    public function installDemoData(): void
+    public function installDemoData(): bool
     {
         try {
-            Artisan::call('db:seed', [
-                '--class' => 'Database\\Seeders\\DemoDataSeeder',
-                '--force' => true,
-            ]);
+            @set_time_limit(180);
+
+            try {
+                Schema::disableForeignKeyConstraints();
+
+                // 1. Seed Brugere & Roller
+                if (class_exists(\Database\Seeders\UserSeeder::class)) {
+                    Artisan::call('db:seed', [
+                        '--class' => \Database\Seeders\UserSeeder::class,
+                        '--force' => true,
+                    ]);
+                }
+
+                // 2. Seed Kreditorer
+                if (class_exists(\Database\Seeders\KreditorSeeder::class)) {
+                    Artisan::call('db:seed', [
+                        '--class' => \Database\Seeders\KreditorSeeder::class,
+                        '--force' => true,
+                    ]);
+                }
+
+                // 3. Seed Sager
+                if (class_exists(\Database\Seeders\SagerSeeder::class)) {
+                    Artisan::call('db:seed', [
+                        '--class' => \Database\Seeders\SagerSeeder::class,
+                        '--force' => true,
+                    ]);
+                }
+
+                // 4. Seed samlet DemoDataSeeder eller DatabaseSeeder
+                if (class_exists(\Database\Seeders\DemoDataSeeder::class)) {
+                    Artisan::call('db:seed', [
+                        '--class' => \Database\Seeders\DemoDataSeeder::class,
+                        '--force' => true,
+                    ]);
+                } elseif (class_exists(\Database\Seeders\DatabaseSeeder::class)) {
+                    Artisan::call('db:seed', [
+                        '--class' => \Database\Seeders\DatabaseSeeder::class,
+                        '--force' => true,
+                    ]);
+                }
+
+            } finally {
+                Schema::enableForeignKeyConstraints();
+            }
 
             app(SettingsService::class)->set('setup_completed', true);
-            $this->showWizard = false;
+            $this->showWizard = false; // 🟢 Lukker guiden i Livewire state
+            
+            return true;
 
-            $this->dispatch('toast', [
-                'message' => 'Testdata (Brugere, Kreditorer og Sager) er installeret!',
-                'type'    => 'success'
+        } catch (\Throwable $e) {
+            Schema::enableForeignKeyConstraints();
+
+            logger()->error('Fejl under seeding af demo-data: ' . $e->getMessage(), [
+                'exception' => $e
             ]);
 
-            $this->redirect(route('dashboard'));
-
-        } catch (\Exception $e) {
             $this->dispatch('toast', [
                 'message' => 'Fejl ved indlæsning af demo-data: ' . $e->getMessage(),
                 'type'    => 'error'
             ]);
+
+            return false;
         }
     }
 

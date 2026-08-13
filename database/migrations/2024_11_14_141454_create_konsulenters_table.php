@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('navn')->unique();
             $table->string('email')->unique();
-            $table->integer('tlf')->unique();
-            $table->integer('mobil')->unique();
+            $table->string('tlf')->unique(); // 🟢 Ændret fra integer til string
+            $table->string('mobil')->unique(); // 🟢 Ændret fra integer til string
             $table->timestamps();
         });
     }

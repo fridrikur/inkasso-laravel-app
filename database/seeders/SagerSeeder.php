@@ -16,7 +16,6 @@ use App\Models\ktr;
 use App\Models\bemaerkning;
 use App\Models\afslutning;
 use App\Models\udlaeg;
-use App\Models\Sagervalgliste;
 
 class SagerSeeder extends Seeder
 {
@@ -33,7 +32,6 @@ class SagerSeeder extends Seeder
                     'cvr' => rand(10000000, 99999999),
                     'adresse' => fake()->streetAddress(),
                     'postnr' => rand(1000, 9999),
-                    'by' => fake()->city(),
                     'email' => fake()->companyEmail(),
                     'tlf' => '70' . rand(100000, 999999),
                 ]);
@@ -41,16 +39,35 @@ class SagerSeeder extends Seeder
         }
 
         if (Debitorer::count() === 0) {
+            // Liste af ægte danske postnumre og tilhørende byer
+            $danskeByer = [
+                ['postnr' => 6400, 'by' => 'Sønderborg'],
+                ['postnr' => 6200, 'by' => 'Aabenraa'],
+                ['postnr' => 6100, 'by' => 'Haderslev'],
+                ['postnr' => 6300, 'by' => 'Gråsten'],
+                ['postnr' => 6470, 'by' => 'Sydals'],
+                ['postnr' => 6330, 'by' => 'Padborg'],
+                ['postnr' => 6000, 'by' => 'Kolding'],
+                ['postnr' => 6700, 'by' => 'Esbjerg'],
+                ['postnr' => 5000, 'by' => 'Odense C'],
+                ['postnr' => 8000, 'by' => 'Aarhus C'],
+                ['postnr' => 1050, 'by' => 'København K'],
+                ['postnr' => 2100, 'by' => 'København Ø'],
+                ['postnr' => 4000, 'by' => 'Roskilde'],
+                ['postnr' => 3000, 'by' => 'Helsingør'],
+                ['postnr' => 9000, 'by' => 'Aalborg'],
+            ];
+
             for ($d = 1; $d <= 100; $d++) {
+                $tilfaeldigLokation = fake()->randomElement($danskeByer);
+
                 Debitorer::create([
                     'navn' => fake()->name(),
-                    'cpr_cvr' => rand(100000, 999999) . '-' . rand(1000, 9999),
+                    'pnr' => rand(100000, 999999) . '-' . rand(1000, 9999),
                     'adresse' => fake()->streetAddress(),
-                    'postnr' => rand(1000, 9999),
-                    'by' => fake()->city(),
+                    'postnr' => $tilfaeldigLokation['postnr'],
                     'tlf' => '20' . rand(100000, 999999),
                     'email' => fake()->safeEmail(),
-                    'notat' => 'Fuldstændig oprettet test-debitor.',
                 ]);
             }
         }
@@ -66,55 +83,82 @@ class SagerSeeder extends Seeder
         }
 
         if (Konsulenter::count() === 0) {
-            foreach (['Anders Fogh', 'Helle Thorning', 'Poul Nyrup', 'Sven Auken'] as $navn) {
-                Konsulenter::create([
-                    'navn' => $navn,
-                    'email' => Str::slug($navn) . '@konsulent.dk',
-                    'tlf' => '40' . rand(100000, 999999),
-                ]);
-            }
-        }
+                    $konsulenterData = ['Anders Fogh', 'Helle Thorning', 'Poul Nyrup', 'Sven Auken'];
+                    
+                    foreach ($konsulenterData as $index => $navn) {
+                        Konsulenter::create([
+                            'navn' => $navn,
+                            'email' => Str::slug($navn) . '.' . ($index + 1) . '@konsulent.dk',
+                            'tlf' => '40' . rand(1000000, 9999999),
+                            'mobil' => '50' . rand(1000000, 9999999),
+                        ]);
+                    }
+                }
 
         if (Status::count() === 0) {
-            foreach (['Modtaget', 'Varsel sendt', 'Fogedret berammet', 'Afdragsvis betaling', 'Afsluttet - Indbetalt', 'Opgivet'] as $titel) {
-                Status::create(['navn' => $titel]);
+            $statuser = [
+                ['tekst' => 'Modtaget', 'forkortelse' => 'MOD'],
+                ['tekst' => 'Varsel sendt', 'forkortelse' => 'VAR'],
+                ['tekst' => 'Fogedret berammet', 'forkortelse' => 'FOG'],
+                ['tekst' => 'Afdragsvis betaling', 'forkortelse' => 'AFD'],
+                ['tekst' => 'Afsluttet - Indbetalt', 'forkortelse' => 'IND'],
+                ['tekst' => 'Opgivet', 'forkortelse' => 'OPG'],
+            ];
+
+            foreach ($statuser as $status) {
+                Status::create($status);
             }
         }
 
         if (ktr::count() === 0) {
-            foreach (['KTR-100 Konto i berod', 'KTR-200 Kontaktet pr. tlf', 'KTR-300 Retslig inkasso', 'KTR-400 Afdragsordning'] as $titel) {
-                ktr::create(['navn' => $titel]);
+            $ktrListeData = [
+                ['tekst' => 'KTR-100 Konto i berod', 'forkortelse' => 'KTR100'],
+                ['tekst' => 'KTR-200 Kontaktet pr. tlf', 'forkortelse' => 'KTR200'],
+                ['tekst' => 'KTR-300 Retslig inkasso', 'forkortelse' => 'KTR300'],
+                ['tekst' => 'KTR-400 Afdragsordning', 'forkortelse' => 'KTR400'],
+            ];
+
+            foreach ($ktrListeData as $item) {
+                ktr::create($item);
             }
         }
 
         if (bemaerkning::count() === 0) {
-            foreach (['Debitor har lovet indbetaling fredag', 'Strider mod hovedstol', 'Afventer svar fra kreditor', 'Udvidet bopælsattest indhentet'] as $titel) {
-                bemaerkning::create(['navn' => $titel]);
+            $bemaerkningerData = [
+                ['tekst' => 'Debitor har lovet indbetaling fredag', 'forkortelse' => 'BEM1'],
+                ['tekst' => 'Strider mod hovedstol', 'forkortelse' => 'BEM2'],
+                ['tekst' => 'Afventer svar fra kreditor', 'forkortelse' => 'BEM3'],
+                ['tekst' => 'Udvidet bopælsattest indhentet', 'forkortelse' => 'BEM4'],
+            ];
+
+            foreach ($bemaerkningerData as $item) {
+                bemaerkning::create($item);
             }
         }
 
         if (afslutning::count() === 0) {
-            foreach (['Fuld indfrielse', 'Forlig indgået', 'Insolvenserklæring i fogedret', 'Kreditor trukket tilbage'] as $titel) {
-                afslutning::create(['navn' => $titel]);
+            $afslutningData = [
+                ['tekst' => 'Fuld indfrielse', 'forkortelse' => 'AFSL1'],
+                ['tekst' => 'Forlig indgået', 'forkortelse' => 'AFSL2'],
+                ['tekst' => 'Insolvenserklæring i fogedret', 'forkortelse' => 'AFSL3'],
+                ['tekst' => 'Kreditor trukket tilbage', 'forkortelse' => 'AFSL4'],
+            ];
+
+            foreach ($afslutningData as $item) {
+                afslutning::create($item);
             }
         }
 
         if (udlaeg::count() === 0) {
-            foreach (['Ingen aktiver', 'Udlæg i bil', 'Udlæg i fast ejendom', 'Lønindeholdelse iværksat'] as $titel) {
-                udlaeg::create(['navn' => $titel]);
-            }
-        }
-
-        if (Sagervalgliste::count() === 0) {
-            $valglister = [
-                ['navn' => 'Standard inkasso', 'forkortelse' => 'STD'],
-                ['navn' => 'Haste-sag', 'forkortelse' => 'HASTE'],
-                ['navn' => 'Erhvervsinkasso', 'forkortelse' => 'ERH'],
-                ['navn' => 'Udenlandsk debitor', 'forkortelse' => 'UDL'],
+            $udlaegData = [
+                ['tekst' => 'Ingen aktiver', 'forkortelse' => 'UDL1'],
+                ['tekst' => 'Udlæg i bil', 'forkortelse' => 'UDL2'],
+                ['tekst' => 'Udlæg i fast ejendom', 'forkortelse' => 'UDL3'],
+                ['tekst' => 'Lønindeholdelse iværksat', 'forkortelse' => 'UDL4'],
             ];
 
-            foreach ($valglister as $item) {
-                Sagervalgliste::create($item);
+            foreach ($udlaegData as $item) {
+                udlaeg::create($item);
             }
         }
 
@@ -128,8 +172,7 @@ class SagerSeeder extends Seeder
         $bemaerkninger = bemaerkning::all();
         $afslutninger = afslutning::all();
         $udlaegListe = udlaeg::all();
-        $valglister = Sagervalgliste::all();
-
+        
         // -------------------------------------------------------------------------
         // 2. NULSTIL PIPOT OG Hoved-TABELLER
         // -------------------------------------------------------------------------
@@ -144,7 +187,6 @@ class SagerSeeder extends Seeder
         DB::table('sager_bemaerkning')->truncate();
         DB::table('sager_afslutning')->truncate();
         DB::table('sager_udlaeg')->truncate();
-        DB::table('sager_valgliste')->truncate();
         DB::table('sagers')->truncate();
 
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
@@ -240,8 +282,7 @@ class SagerSeeder extends Seeder
             $sag->sagerStatus()->attach($statuser->random()->id);
             $sag->sagerKtr()->attach($ktrListe->random()->id);
             $sag->sagerBemaerkning()->attach($bemaerkninger->random()->id);
-            $sag->sagervalgliste()->attach($valglister->random()->id);
-
+            
             // Valgfrie dropdowns tilknyttes til 70-80% af sagerne for variation
             if (fake()->boolean(80)) {
                 $sag->sagerAfslutning()->attach($afslutninger->random()->id);

@@ -13,26 +13,23 @@
                         this.audioCtx = new AudioContext();
                         
                         this.gainNode = this.audioCtx.createGain();
-                        this.gainNode.gain.setValueAtTime(0.05, this.audioCtx.currentTime); // Lav, rolig lydstyrke
+                        this.gainNode.gain.setValueAtTime(0.04, this.audioCtx.currentTime);
                         
-                        // Lavpas filter for en blød, ambient tone
                         const filter = this.audioCtx.createBiquadFilter();
                         filter.type = 'lowpass';
-                        filter.frequency.setValueAtTime(320, this.audioCtx.currentTime);
+                        filter.frequency.setValueAtTime(280, this.audioCtx.currentTime);
 
-                        // Rolig ambient synth akkord (A maj9 pad: A2, E3, C#4, G#4)
-                        const freqs = [110.00, 164.81, 277.18, 415.30];
+                        const freqs = [138.59, 207.65, 261.63, 349.23];
                         
                         freqs.forEach(freq => {
                             const osc = this.audioCtx.createOscillator();
                             osc.type = 'sine';
                             osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
                             
-                            // Lidt LFO for blød vibrato/bevægelse
                             const lfo = this.audioCtx.createOscillator();
-                            lfo.frequency.setValueAtTime(0.2, this.audioCtx.currentTime);
+                            lfo.frequency.setValueAtTime(0.15, this.audioCtx.currentTime);
                             const lfoGain = this.audioCtx.createGain();
-                            lfoGain.gain.setValueAtTime(1.5, this.audioCtx.currentTime);
+                            lfoGain.gain.setValueAtTime(1.2, this.audioCtx.currentTime);
                             lfo.connect(osc.frequency);
                             lfo.start();
 
@@ -45,7 +42,7 @@
                         this.gainNode.connect(this.audioCtx.destination);
                         this.isPlaying = true;
                     } catch(e) {
-                        console.log('Web Audio ikke understøttet eller blokeret:', e);
+                        console.log('Audio error:', e);
                     }
                 },
                 toggleAudio() {
@@ -63,220 +60,254 @@
                 },
                 stopAudio() {
                     if (this.audioCtx) {
-                        this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + 1);
-                        setTimeout(() => this.audioCtx.close(), 1000);
+                        this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + 1.5);
+                        setTimeout(() => this.audioCtx.close(), 1500);
                     }
                 }
             }"
             x-init="
-                // Start lyd ved første klik hvor som helst i modalen hvis autoplay var blokeret
                 window.addEventListener('click', () => { if (!isPlaying) initAudio(); }, { once: true });
             "
-            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-2xl p-4 select-none"
         >
-            <div class="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden text-center p-8 space-y-6 relative">
+            <div wire:ignore.self class="w-full max-w-xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 rounded-[38px] shadow-2xl border border-slate-800/80 overflow-hidden text-center p-8 sm:p-12 relative transition-all duration-700">
                 
-                {{-- LYDSTYRKE / AMBIENT TOGGLE KNAP --}}
+                {{-- AMBIENT TOGGLE --}}
                 <button 
                     type="button" 
                     @click="toggleAudio()"
-                    class="absolute top-5 right-5 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition text-xs font-bold flex items-center gap-1.5 cursor-pointer z-10"
-                    :title="isPlaying ? 'Sluk ambient musik' : 'Tænd ambient musik'"
+                    class="absolute top-6 right-6 p-2.5 rounded-2xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 transition text-xs font-medium flex items-center gap-2 border border-slate-700/50 cursor-pointer z-20 backdrop-blur-md"
+                    :title="isPlaying ? 'Sluk ambient lyd' : 'Tænd ambient lyd'"
                 >
                     <span x-text="isPlaying ? '🔊' : '🔇'"></span>
-                    <span x-text="isPlaying ? 'Ambient Lyd Til' : 'Lyd Fra'" class="text-[10px] text-slate-500 hidden sm:inline"></span>
+                    <span x-text="isPlaying ? 'Ambient Lyd' : 'Lyd Fra'" class="text-[11px] text-slate-400 hidden sm:inline"></span>
                 </button>
 
-                {{-- 🔴 TRIN 0: INGEN TABELLER I DATABASEN (INSTALLATION) --}}
+                {{-- TRIN 0: INGEN TABELLER --}}
                 @if(! $hasDatabaseTables)
                     
                     <div 
                         x-data="{ 
                             migrating: false,
                             progress: 0,
-                            statusText: 'Klar til opstart...',
-                            logs: [],
+                            statusText: 'Klargør din nye arbejdsplads...',
                             startInstallation() {
                                 this.migrating = true;
-                                this.progress = 5;
-                                this.statusText = 'Forbinder til MySQL databasen...';
-                                this.logs.push('[INIT] Opretter forbindelse til databasen...');
+                                this.progress = 10;
+                                
+                                let timer = setInterval(() => {
+                                    if (this.progress < 85) {
+                                        this.progress += Math.floor(Math.random() * 8) + 3;
+                                        if (this.progress > 30 && this.progress < 60) {
+                                            this.statusText = 'Opbygger struktur og databasetabeller...';
+                                        } else if (this.progress >= 60) {
+                                            this.statusText = 'Konfigurerer sikkerhed og admin-bruger...';
+                                        }
+                                    }
+                                }, 300);
 
-                                setTimeout(() => {
-                                    this.progress = 25;
-                                    this.statusText = 'Udfører php artisan migrate...';
-                                    this.logs.push('[MIGRATE] Opretter systemtabeller, system_settings & roles...');
-                                }, 600);
-
-                                setTimeout(() => {
-                                    this.progress = 60;
-                                    this.statusText = 'Kører database migrationer...';
-                                    this.logs.push('[MIGRATE] Bygger tabelstrukturer for sager, kreditorer & brugere...');
-                                }, 1200);
-
-                                setTimeout(() => {
-                                    this.progress = 85;
-                                    this.statusText = 'Opretter standardroller og Admin-bruger...';
-                                    this.logs.push('[SEED] Afvikler UserSeeder (Admin: admin / 123456)...');
-                                }, 1800);
-
-                                $wire.executeSystemInstallation().then(() => {
-                                    this.progress = 100;
-                                    this.statusText = 'Systemet blev installeret med succes!';
-                                    this.logs.push('[SUCCESS] Databasen er nu 100% klar.');
-                                });
+                                $wire.executeSystemInstallation()
+                                    .then((success) => {
+                                        clearInterval(timer);
+                                        if (success) {
+                                            this.progress = 100;
+                                            this.statusText = 'Alt er klar!';
+                                            setTimeout(() => {
+                                                window.location.reload();
+                                            }, 800);
+                                        } else {
+                                            this.migrating = false;
+                                        }
+                                    })
+                                    .catch((err) => {
+                                        clearInterval(timer);
+                                        this.migrating = false;
+                                    });
                             }
                         }"
-                        class="space-y-6"
+                        class="space-y-8"
                     >
-                        <div class="mx-auto w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-amber-400 font-mono text-2xl shadow-xl border border-slate-800">
-                            &gt;_
+                        <div class="mx-auto w-20 h-20 bg-gradient-to-tr from-slate-800 to-slate-700 rounded-3xl flex items-center justify-center shadow-2xl border border-slate-600/30">
+                            <span class="text-4xl"></span>
                         </div>
 
-                        <div class="space-y-1">
-                            <h2 class="text-2xl font-black text-slate-900 tracking-tight">
-                                System Installation
+                        <div class="space-y-2">
+                            <h2 class="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
+                                Velkommen.
                             </h2>
-                            <p class="text-xs text-slate-500 max-w-md mx-auto">
-                                Der blev ikke fundet nogle tabeller i databasen. Klik herunder for at opbygge databasestrukturen.
+                            <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                                Lad os konfigurere systemet og klargøre din nye digitale arbejdsplads.
                             </p>
                         </div>
 
-                        {{-- KNAP FØR START --}}
-                        <div x-show="!migrating" class="pt-2 flex justify-center">
+                        <div x-show="!migrating" class="pt-2">
                             <button 
                                 type="button" 
                                 @click="startInstallation()"
-                                class="px-8 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-emerald-400 font-mono font-bold text-xs shadow-xl transition cursor-pointer flex items-center gap-2.5 border border-slate-700"
+                                class="w-full sm:w-auto px-10 py-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-semibold text-xs transition-all duration-200 transform hover:scale-[1.02] shadow-2xl cursor-pointer"
                             >
-                                <span>⚡ $ php artisan migrate --install</span>
+                                Installér System Nu
                             </button>
                         </div>
 
-                        {{-- 💻 UNIX STYLE TERMINAL PROGRESS BAR --}}
-                        <div x-show="migrating" x-cloak class="w-full bg-slate-950 rounded-2xl p-5 border border-slate-800 text-left font-mono space-y-4 shadow-2xl">
-                            
-                            {{-- TERMINAL HEADER --}}
-                            <div class="flex items-center justify-between border-b border-slate-800 pb-2 text-[10px] text-slate-500">
-                                <div class="flex items-center gap-1.5">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80 inline-block"></span>
-                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block"></span>
-                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block"></span>
-                                    <span class="ml-2 text-slate-400">bash - root@dkg-app:~#</span>
-                                </div>
-                                <span class="text-emerald-400 animate-pulse">SYSTEM_BUILDING</span>
-                            </div>
-
-                            {{-- STATUS-TEKST --}}
-                            <div class="text-xs text-emerald-400 flex items-center justify-between">
-                                <span x-text="statusText"></span>
-                                <span x-text="progress + '%'" class="font-bold"></span>
-                            </div>
-
-                            {{-- GRAFISK RETRO BAR --}}
-                            <div class="w-full bg-slate-900 rounded-lg p-1 border border-slate-800">
+                        <div x-show="migrating" x-cloak class="space-y-4 pt-4 max-w-xs mx-auto">
+                            <div class="w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden p-0.5 border border-slate-700/40 shadow-inner">
                                 <div 
-                                    class="h-3 bg-gradient-to-r from-emerald-600 to-emerald-400 rounded transition-all duration-300 ease-out shadow-sm"
+                                    class="bg-gradient-to-r from-blue-500 via-indigo-400 to-white h-full rounded-full transition-all duration-300 ease-out shadow-sm"
                                     :style="'width: ' + progress + '%'"
                                 ></div>
                             </div>
-
-                            {{-- UNIX ASCII PROGRESSTEXT BAR ([▓▓▓▓▓░░░░░]) --}}
-                            <div class="text-[11px] text-slate-400 tracking-widest text-center">
-                                [<span class="text-emerald-400" x-text="'▓'.repeat(Math.floor(progress / 5))"></span><span class="text-slate-800" x-text="'░'.repeat(20 - Math.floor(progress / 5))"></span>]
-                            </div>
-
-                            {{-- LØBENDE LOG OUTPUT --}}
-                            <div class="space-y-1 text-[10px] text-slate-400 pt-1 border-t border-slate-900 max-h-24 overflow-y-auto">
-                                <template x-for="(log, idx) in logs" :key="idx">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-emerald-500">&gt;</span>
-                                        <span x-text="log" class="text-slate-300"></span>
-                                    </div>
-                                </template>
-                            </div>
-
+                            <p class="text-[11px] text-slate-400 font-medium animate-pulse" x-text="statusText"></p>
                         </div>
 
                     </div>
 
-                {{-- ⚖️ TRIN 1: TABELLER ER OPRETTET, MEN Systemet mangler indhold --}}
+                {{-- TRIN 1: VALG AF OPSTART --}}
                 @else
 
-                    {{-- NY SAGSBEHANDLINGS-IKON BADGE (⚖️ & 📂) --}}
-                    <div class="mx-auto w-20 h-20 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center justify-center text-3xl shadow-sm animate-pulse relative">
-                        <span>⚖️</span>
-                        <span class="absolute -bottom-1 -right-1 text-lg">📂</span>
-                    </div>
+                    <div 
+                        x-data="{
+                            unboxing: false,
+                            progress: 0,
+                            statusText: 'Udpakker arbejdsplads...',
+                            startUnboxing() {
+                                this.unboxing = true;
+                                this.progress = 5;
+                                this.statusText = 'Åbner den digitale æske...';
 
-                    <div>
-                        <h2 class="text-2xl font-black text-slate-900 tracking-tight">
-                            Velkommen til dit nye sagsbehandlingssystem!
-                        </h2>
-                        <p class="text-xs text-slate-500 mt-1">
-                            Databasen er oprettet. Hvordan ønsker du at opstarte løsningen?
-                        </p>
-                    </div>
+                                let timer = setInterval(() => {
+                                    if (this.progress < 90) {
+                                        this.progress += Math.floor(Math.random() * 5) + 2;
+                                        if (this.progress > 25 && this.progress < 50) {
+                                            this.statusText = 'Opretter test-kreditorer & brugere...';
+                                        } else if (this.progress >= 50 && this.progress < 75) {
+                                            this.statusText = 'Genererer demo-sager og journaler...';
+                                        } else if (this.progress >= 75) {
+                                            this.statusText = 'Sliber grænsefladen og finpudser detaljer...';
+                                        }
+                                    }
+                                }, 250);
 
-                    {{-- VALGMULIGHEDER (3 KORT) --}}
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-left pt-2">
-                        
-                        {{-- KORT 1: REN INSTALLATION --}}
-                        <button 
-                            type="button" 
-                            @click="stopAudio()"
-                            wire:click="startFresh"
-                            class="p-5 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/30 transition group flex flex-col justify-between cursor-pointer"
-                        >
-                            <div>
-                                <div class="text-2xl mb-2">✨</div>
-                                <div class="font-bold text-xs text-slate-900 group-hover:text-indigo-600">
-                                    Start ny installation
-                                </div>
-                                <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                                    Begynd med en helt tom database klar til dine egne data.
+                                $wire.installDemoData()
+                                    .then((success) => {
+                                        clearInterval(timer);
+                                        if (success) {
+                                            this.progress = 100;
+                                            this.statusText = 'Velkommen. Alt er klar.';
+                                            stopAudio();
+                                            setTimeout(() => {
+                                                window.location.href = '{{ route('dashboard') }}';
+                                            }, 1000);
+                                        } else {
+                                            this.unboxing = false;
+                                        }
+                                    })
+                                    .catch((err) => {
+                                        clearInterval(timer);
+                                        this.unboxing = false;
+                                        console.error('Demo-data install error:', err);
+                                    });
+                            }
+                        }"
+                    >
+                        <div x-show="!unboxing" class="space-y-8">
+                            
+                            <div class="mx-auto w-20 h-20 bg-gradient-to-tr from-slate-800 to-slate-700 rounded-3xl flex items-center justify-center text-3xl shadow-2xl border border-slate-600/30">
+                                <span>✨</span>
+                            </div>
+
+                            <div class="space-y-2">
+                                <h2 class="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
+                                    Næsten i mål.
+                                </h2>
+                                <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                                    Vælg hvordan du vil starte din nye sagsbehandlingsløsning.
                                 </p>
                             </div>
-                            <span class="mt-4 text-[10px] font-bold text-indigo-600">Vælg tom DB &rarr;</span>
-                        </button>
 
-                        {{-- KORT 2: IMPORTER FRA GAMMELT SYSTEM --}}
-                        <button 
-                            type="button" 
-                            @click="stopAudio()"
-                            wire:click="goToImport"
-                            class="p-5 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/30 transition group flex flex-col justify-between cursor-pointer"
-                        >
-                            <div>
-                                <div class="text-2xl mb-2">📥</div>
-                                <div class="font-bold text-xs text-slate-900 group-hover:text-indigo-600">
-                                    Importér fra gammelt system
-                                </div>
-                                <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                                    Upload eksisterende sager og kreditorer via importøren.
-                                </p>
-                            </div>
-                            <span class="mt-4 text-[10px] font-bold text-indigo-600">Gå til import &rarr;</span>
-                        </button>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-left pt-2">
+                                
+                                <button 
+                                    type="button" 
+                                    @click="stopAudio()"
+                                    wire:click="startFresh"
+                                    class="p-5 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-slate-500 transition-all duration-200 group flex flex-col justify-between cursor-pointer"
+                                >
+                                    <div>
+                                        <div class="text-2xl mb-3">🌱</div>
+                                        <div class="font-semibold text-xs text-white group-hover:text-blue-400 transition">
+                                            Tom database
+                                        </div>
+                                        <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                            Start fra bunden med en ren og tom arbejdsplads.
+                                        </p>
+                                    </div>
+                                    <span class="mt-4 text-[10px] font-semibold text-slate-500 group-hover:text-blue-400 transition">Start tom &rarr;</span>
+                                </button>
 
-                        {{-- KORT 3: INSTALLER TEST DATA --}}
-                        <button 
-                            type="button" 
-                            @click="stopAudio()"
-                            wire:click="installDemoData"
-                            class="p-5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/30 transition group flex flex-col justify-between cursor-pointer"
-                        >
-                            <div>
-                                <div class="text-2xl mb-2">🧪</div>
-                                <div class="font-bold text-xs text-slate-900 group-hover:text-emerald-600">
-                                    Installér testdata
-                                </div>
-                                <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                                    Fyld systemet med demo-brugere, kreditorer og sager.
-                                </p>
+                                <button 
+                                    type="button" 
+                                    @click="stopAudio()"
+                                    wire:click="goToImport"
+                                    class="p-5 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-slate-500 transition-all duration-200 group flex flex-col justify-between cursor-pointer"
+                                >
+                                    <div>
+                                        <div class="text-2xl mb-3">📥</div>
+                                        <div class="font-semibold text-xs text-white group-hover:text-blue-400 transition">
+                                            Importér data
+                                        </div>
+                                        <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                            Overfør sager og kreditorer fra dit tidligere system.
+                                        </p>
+                                    </div>
+                                    <span class="mt-4 text-[10px] font-semibold text-slate-500 group-hover:text-blue-400 transition">Gå til import &rarr;</span>
+                                </button>
+
+                                <button 
+                                    type="button" 
+                                    @click="startUnboxing()"
+                                    class="p-5 rounded-2xl bg-gradient-to-b from-blue-600/20 to-indigo-600/20 hover:from-blue-600/30 hover:to-indigo-600/30 border border-blue-500/40 hover:border-blue-400 transition-all duration-200 group flex flex-col justify-between cursor-pointer shadow-lg relative overflow-hidden"
+                                >
+                                    <div>
+                                        <div class="text-2xl mb-3">📦</div>
+                                        <div class="font-semibold text-xs text-white group-hover:text-blue-300 transition">
+                                            Kør demo-data
+                                        </div>
+                                        <p class="text-[11px] text-slate-300/80 mt-1 leading-relaxed">
+                                            Pak en færdig arbejdsplads ud med sager og demo-brugere.
+                                        </p>
+                                    </div>
+                                    <span class="mt-4 text-[10px] font-bold text-blue-300 group-hover:text-white transition">Unbox demo &rarr;</span>
+                                </button>
+
                             </div>
-                            <span class="mt-4 text-[10px] font-bold text-emerald-600">Kør demo-data &rarr;</span>
-                        </button>
+
+                        </div>
+
+                        {{-- UNBOXING SCREEN --}}
+                        <div x-show="unboxing" x-cloak class="space-y-8 py-8 animate-in fade-in zoom-in-95 duration-500">
+                            
+                            <div class="mx-auto w-24 h-24 bg-gradient-to-tr from-slate-800 to-slate-700 rounded-3xl flex items-center justify-center text-4xl shadow-2xl border border-slate-600/40 relative">
+                                <span>🎁</span>
+                                <div class="absolute -inset-1 rounded-3xl bg-blue-500/20 blur-xl -z-10 animate-pulse"></div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <h3 class="text-xl sm:text-2xl font-semibold text-white tracking-tight" x-text="statusText"></h3>
+                                <p class="text-xs text-slate-400">Gør alting klar...</p>
+                            </div>
+
+                            <div class="space-y-3 max-w-xs mx-auto pt-2">
+                                <div class="w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden p-0.5 border border-slate-700/50 shadow-inner">
+                                    <div 
+                                        class="bg-gradient-to-r from-blue-500 via-indigo-400 to-white h-full rounded-full transition-all duration-300 ease-out shadow-sm"
+                                        :style="'width: ' + progress + '%'"
+                                    ></div>
+                                </div>
+                                <div class="text-[11px] font-mono text-slate-500 tracking-widest" x-text="progress + '%'"></div>
+                            </div>
+
+                        </div>
 
                     </div>
 

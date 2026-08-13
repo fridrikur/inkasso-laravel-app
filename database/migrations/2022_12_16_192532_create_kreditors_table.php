@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('kreditors', function (Blueprint $table) {
             $table->id();
             $table->string('navn')->unique();
-            $table->integer('lotusID')->unique();
+            $table->string('lotusID')->unique(); // I stedet for integer
             $table->softDeletes(); // 🟢 Opretter 'deleted_at' kolonnen
             $table->timestamps();
         });
