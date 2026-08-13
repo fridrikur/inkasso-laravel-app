@@ -73,10 +73,12 @@
         ]
     },
     "extra": {
-        "laravel": {
-            "dont-discover": []
-        }
-    },
+    "laravel": {
+        "dont-discover": [
+            "livewire/livewire"
+        ]
+    }
+},
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
