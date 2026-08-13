@@ -160,6 +160,6 @@ class ImportKonsulenter extends Component
 
     public function render()
     {
-        return view('liveWire.konsulenter.import-konsulenter');
+        return view('livewire.konsulenter.import-konsulenter');
     }
 }

@@ -21,6 +21,6 @@ class CreateStatus extends Component
 
     public function render()
     {
-        return view('liveWire.status.create-status');
+        return view('livewire.status.create-status');
     }
 }

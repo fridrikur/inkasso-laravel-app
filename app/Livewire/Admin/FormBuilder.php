@@ -623,7 +623,7 @@ class FormBuilder extends Component
         
         $code .= "    public function render()\n";
         $code .= "    {\n";
-        $code .= "        return view('liveWire.generated.dynamic-form-renderer');\n";
+        $code .= "        return view('livewire.generated.dynamic-form-renderer');\n";
         $code .= "    }\n";
         $code .= "}\n";
         
@@ -735,6 +735,6 @@ class FormBuilder extends Component
     
     public function render()
     {
-        return view('liveWire.admin.form-builder');
+        return view('livewire.admin.form-builder');
     }
 }

@@ -19,7 +19,7 @@ class ShowAutotekster extends Component
     }
     public function render()
     {
-        return view('liveWire.autotekster.show-autotekster',[
+        return view('livewire.autotekster.show-autotekster',[
             'autotekster' => Autotekster::all(),
         ]);
     }

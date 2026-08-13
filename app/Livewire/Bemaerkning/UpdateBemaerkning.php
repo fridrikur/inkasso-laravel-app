@@ -24,6 +24,6 @@ class Updatebemaerkning extends Component
 
     public function render()
     {
-        return view('liveWire.bemaerkning.update-bemaerkning');
+        return view('livewire.bemaerkning.update-bemaerkning');
     }
 }

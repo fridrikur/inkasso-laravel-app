@@ -22,6 +22,6 @@ class UpdateStatus extends Component
     }
     public function render()
     {
-        return view('liveWire.status.update-status');
+        return view('livewire.status.update-status');
     }
 }

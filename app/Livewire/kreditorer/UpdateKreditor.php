@@ -33,6 +33,6 @@ class UpdateKreditor extends Component
         $sager = Sager::all();
         $hovedsagsbehandler = Sagsbehandler::all();
         
-        return view('liveWire.kreditorer.create-kreditor',['kreditorer' => $kreditorer, 'users' => $users, 'sagsbehandlere' => $sagsbehandlere, 'sager' => $sager, 'debitorer' => $debitorer, 'hovedsagsbehandler' => $hovedsagsbehandler]);
+        return view('livewire.kreditorer.create-kreditor',['kreditorer' => $kreditorer, 'users' => $users, 'sagsbehandlere' => $sagsbehandlere, 'sager' => $sager, 'debitorer' => $debitorer, 'hovedsagsbehandler' => $hovedsagsbehandler]);
     }
 }

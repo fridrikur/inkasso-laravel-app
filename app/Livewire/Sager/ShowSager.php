@@ -38,7 +38,7 @@ class ShowSager extends Component
 
     public function render()
     {
-        return view('liveWire.sager.show-sager', [
+        return view('livewire.sager.show-sager', [
             'sager' => Sager::withCount('sagertokens')->get(),
         ]);
     }

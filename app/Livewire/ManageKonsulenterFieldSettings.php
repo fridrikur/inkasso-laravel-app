@@ -74,7 +74,7 @@ class ManagekonsulenterFieldsettings extends Component
 
     public function render()
     {
-        return view('liveWire.manage-konsulenter-fieldsettings', [
+        return view('livewire.manage-konsulenter-fieldsettings', [
             'settings' => $this->settings
         ]);
     }

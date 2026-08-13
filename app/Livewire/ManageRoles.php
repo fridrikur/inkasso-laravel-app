@@ -128,7 +128,7 @@ class ManageRoles extends Component
     public function render()
     {
         $allUsers = User::all();
-        return view('liveWire.roles.index', [
+        return view('livewire.roles.index', [
             'usersList' => $allUsers,
         ]);
     }

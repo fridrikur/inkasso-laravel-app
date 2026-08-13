@@ -18,6 +18,6 @@ class Createudlaeg extends Component
 
     public function render()
     {
-        return view('liveWire.udlaeg.create-udlaeg');
+        return view('livewire.udlaeg.create-udlaeg');
     }
 }

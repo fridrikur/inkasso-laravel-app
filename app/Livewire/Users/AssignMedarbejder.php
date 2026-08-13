@@ -58,6 +58,6 @@ class AssignMedarbejder extends Component
 
     public function render()
     {
-        return view('liveWire.users.assign-medarbejder');
+        return view('livewire.users.assign-medarbejder');
     }
 }

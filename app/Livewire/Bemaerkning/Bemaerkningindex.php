@@ -12,7 +12,7 @@ class BemaerkningIndex extends Component
     public function render()
     {
         $this->bemaerknings = bemaerkning::all();
-        return view('liveWire.bemaerkning.index');
+        return view('livewire.bemaerkning.index');
     }
     
 

@@ -24,6 +24,6 @@ class CreateDebitor extends Component
     {
         $debitorer = Debitorer::all();
 
-        return view('liveWire.debitorer.create-debitor',['debitorer' => $debitorer]);
+        return view('livewire.debitorer.create-debitor',['debitorer' => $debitorer]);
     }
 }

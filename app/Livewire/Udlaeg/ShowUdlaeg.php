@@ -16,6 +16,6 @@ class Showudlaeg extends Component
 
     public function render()
     {
-        return view('liveWire.udlaeg.show');
+        return view('livewire.udlaeg.show');
     }
 }

@@ -29,7 +29,7 @@ class ShowDebitorer extends Component
     }
     public function render()
     {
-        return view('liveWire.debitorer.show-debitorer', [
+        return view('livewire.debitorer.show-debitorer', [
             'debitorer' => Debitorer::with('sager')
                 ->withCount('sager')
                 ->having('sager_count', '>', 0)

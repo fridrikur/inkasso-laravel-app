@@ -74,6 +74,6 @@ class CreateKreditor extends Component
         $kreditorer = Kreditorer::withCount('sagsbehandlere')->first();
         $kreditor = null;
 
-        return view('liveWire.kreditorer.create-kreditor');
+        return view('livewire.kreditorer.create-kreditor');
     }
 }

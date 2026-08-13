@@ -12,7 +12,7 @@ class UdlaegIndex extends Component
     public function render()
     {
         $this->udlaegs = udlaeg::all();
-        return view('liveWire.udlaeg.index');
+        return view('livewire.udlaeg.index');
     }
     
 

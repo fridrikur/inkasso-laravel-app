@@ -74,7 +74,7 @@ class ManageKreditorFieldsettings extends Component
 
     public function render()
     {
-        return view('liveWire.manage-kreditor-fieldsettings', [
+        return view('livewire.manage-kreditor-fieldsettings', [
             'settings' => $this->settings
         ]);
     }

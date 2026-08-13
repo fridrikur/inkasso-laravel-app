@@ -8,6 +8,6 @@ class Edit extends Component
 {
     public function render()
     {
-        return view('liveWire.datatable.edit');
+        return view('livewire.datatable.edit');
     }
 }

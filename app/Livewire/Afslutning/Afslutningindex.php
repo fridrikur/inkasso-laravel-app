@@ -12,7 +12,7 @@ class afslutningIndex extends Component
     public function render()
     {
         $this->afslutnings = afslutning::all();
-        return view('liveWire.afslutning.index');
+        return view('livewire.afslutning.index');
     }
 
     public function delete($id)

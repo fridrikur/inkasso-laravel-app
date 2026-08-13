@@ -22,6 +22,6 @@ class UpdateDebitor extends Component
     }
     public function render()
     {
-        return view('liveWire.debitorer.create-debitor');
+        return view('livewire.debitorer.create-debitor');
     }
 }

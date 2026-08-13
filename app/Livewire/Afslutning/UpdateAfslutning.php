@@ -24,6 +24,6 @@ class Updateafslutning extends Component
 
     public function render()
     {
-        return view('liveWire.afslutning.update-afslutning');
+        return view('livewire.afslutning.update-afslutning');
     }
 }

@@ -18,6 +18,6 @@ class Createafslutning extends Component
 
     public function render()
     {
-        return view('liveWire.afslutning.create-afslutning');
+        return view('livewire.afslutning.create-afslutning');
     }
 }
