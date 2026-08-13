@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('navn')->unique();
             $table->integer('lotusID')->unique();
+            $table->softDeletes(); // 🟢 Opretter 'deleted_at' kolonnen
             $table->timestamps();
         });
     }

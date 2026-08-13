@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\SystemSettings;
 use Livewire\Component;
 use App\Services\SettingsService;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Artisan;
 
 class ManageSettings extends Component
 {
@@ -22,10 +23,13 @@ class ManageSettings extends Component
     public const LEGACY_SAG_EDITOR_WRAPPER = '#e2e8f0';
     public const LEGACY_SAG_EDITOR_HEADER  = '#3b82f6';
 
-    // System & Slogan
+    // System, Slogan & URL / Miljø
     public string $app_name = '';
     public string $app_slogan = '';
-    
+    public string $app_url = '';
+    public string $environment = 'sandbox'; // 'live' eller 'sandbox'
+    public bool $is_live_locked = false;     // Låses permanent hvis det gemmes som live
+
     // Tema valgt ('default', 'legacy', 'custom')
     public string $theme_preset = 'default';
 
@@ -50,28 +54,70 @@ class ManageSettings extends Component
     public function mount(): void
     {
         $settings = app(SettingsService::class);
+        $currentRequestUrl = request()->getSchemeAndHttpHost();
 
-        $this->app_name                     = $settings->get('app_name', 'DKGs Journalsystem');
-        $this->app_slogan                   = $settings->get('app_slogan', 'Sagsadministration');
-        $this->theme_preset                 = $settings->get('theme_preset', 'default');
-        
-        $this->theme_primary                = $settings->get('theme_primary', self::DEFAULT_PRIMARY);
-        $this->theme_sidebar_bg             = $settings->get('theme_sidebar_bg', self::DEFAULT_SIDEBAR_BG);
-        $this->theme_sag_editor_bg          = $settings->get('theme_sag_editor_bg', self::DEFAULT_SAG_EDITOR_BG);
-        $this->theme_sag_editor_wrapper_bg  = $settings->get('theme_sag_editor_wrapper_bg', self::DEFAULT_SAG_EDITOR_WRAPPER);
-        $this->theme_sag_editor_header      = $settings->get('theme_sag_editor_header', self::DEFAULT_SAG_EDITOR_HEADER);
+        // Systemets basisidentitet
+        $this->app_name   = $settings->get('app_name', 'Sagsbehandling');
+        $this->app_slogan = $settings->get('app_slogan', 'Sagsadministration');
+        $this->app_url    = $settings->get('app_url', $currentRequestUrl);
 
-        $this->twilio_sid                    = $settings->get('twilio_sid', '');
-        $this->twilio_token                  = $settings->get('twilio_token', '');
-        $this->twilio_verify_sid             = $settings->get('twilio_verify_sid', '');
-        $this->twilio_enabled                = (bool) $settings->get('twilio_enabled', false);
+        // Miljø og låse-logik
+        $savedEnv = $settings->get('environment', null);
 
-        $this->enable_2fa                    = (bool) $settings->get('enable_2fa', true);
-        $this->two_factor_provider           = $settings->get('two_factor_provider', 'totp');
+        if ($savedEnv === 'live') {
+            $this->environment = 'live';
+            $this->is_live_locked = true; // Låst permanent i UI når først gemt som live
+        } else {
+            $isLiveDomain = str_contains($currentRequestUrl, 'd1k2g3db.com');
+            $this->environment = $isLiveDomain ? 'live' : ($savedEnv ?? 'sandbox');
+            $this->is_live_locked = false;
+        }
+
+        // Farver & Temaer
+        $this->theme_preset                = $settings->get('theme_preset', 'default');
+        $this->theme_primary               = $settings->get('theme_primary', self::DEFAULT_PRIMARY);
+        $this->theme_sidebar_bg            = $settings->get('theme_sidebar_bg', self::DEFAULT_SIDEBAR_BG);
+        $this->theme_sag_editor_bg         = $settings->get('theme_sag_editor_bg', self::DEFAULT_SAG_EDITOR_BG);
+        $this->theme_sag_editor_wrapper_bg = $settings->get('theme_sag_editor_wrapper_bg', self::DEFAULT_SAG_EDITOR_WRAPPER);
+        $this->theme_sag_editor_header     = $settings->get('theme_sag_editor_header', self::DEFAULT_SAG_EDITOR_HEADER);
+
+        // 2FA & Twilio
+        $this->twilio_sid           = $settings->get('twilio_sid', '');
+        $this->twilio_token         = $settings->get('twilio_token', '');
+        $this->twilio_verify_sid    = $settings->get('twilio_verify_sid', '');
+        $this->twilio_enabled       = (bool) $settings->get('twilio_enabled', false);
+
+        $this->enable_2fa           = (bool) $settings->get('enable_2fa', true);
+        $this->two_factor_provider  = $settings->get('two_factor_provider', 'totp');
 
         $roles = Role::all();
         foreach ($roles as $role) {
             $this->role_2fa[$role->id] = (bool) ($role->requires_two_factor ?? false);
+        }
+    }
+
+    public function updatedEnvironment($value): void
+    {
+        // Hvis sitet allerede ER markeret som LIVE i DB, tillades ændring overhovedet ikke
+        if ($this->is_live_locked) {
+            $this->environment = 'live';
+            $this->dispatch('toast', [
+                'message' => 'LÅST: Et LIVE-site kan ikke fravælges eller sættes tilbage i Sandkasse!',
+                'type'    => 'error'
+            ]);
+            return;
+        }
+
+        // Tjek om man prøver at vælge Live på en ikke-live URL
+        $currentRequestUrl = request()->getSchemeAndHttpHost();
+        $isLiveDomain = str_contains($currentRequestUrl, 'd1k2g3db.com');
+
+        if ($value === 'live' && ! $isLiveDomain) {
+            $this->environment = 'sandbox';
+            $this->dispatch('toast', [
+                'message' => 'Kan ikke sætte til Live! Browserens URL skal være https://d1k2g3db.com/',
+                'type'    => 'error'
+            ]);
         }
     }
 
@@ -100,8 +146,15 @@ class ManageSettings extends Component
 
         $settings->set('app_name', $this->app_name);
         $settings->set('app_slogan', $this->app_slogan);
+        $settings->set('app_url', $this->app_url);
+        $settings->set('environment', $this->environment);
+
+        // Hvis det blev gemt som live, låser vi det også med det samme i denne session
+        if ($this->environment === 'live') {
+            $this->is_live_locked = true;
+        }
+
         $settings->set('theme_preset', $this->theme_preset);
-        
         $settings->set('theme_primary', $this->theme_primary);
         $settings->set('theme_sidebar_bg', $this->theme_sidebar_bg);
         $settings->set('theme_sag_editor_bg', $this->theme_sag_editor_bg);
@@ -124,6 +177,24 @@ class ManageSettings extends Component
 
         $this->dispatch('toast', [
             'message' => 'Systemindstillingerne blev gemt!',
+            'type'    => 'success'
+        ]);
+    }
+
+    // Nulstil DB og kør demo fra SystemSettings (Kun i Sandkasse)
+    public function runDemoFromSettings(): void
+    {
+        if ($this->environment === 'live') {
+            return; // Dobbelt-sikkerhed for ikke at kunne køre demo i production
+        }
+
+        Artisan::call('db:seed', [
+            '--class' => 'Database\\Seeders\\DemoDataSeeder',
+            '--force' => true,
+        ]);
+
+        $this->dispatch('toast', [
+            'message' => 'Demo-data blev genindlæst i sandkassen!',
             'type'    => 'success'
         ]);
     }

@@ -133,10 +133,9 @@
                                 </div>
                             </td>
 
-                            {{-- TILKNYTNINGER (SAGER, BRUGERE, SAGSBEHANDLERE) --}}
+                            {{-- TILKNYTNINGER --}}
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-2">
-                                    {{-- Aktive sager badge --}}
                                     <a 
                                         href="{{ route('admin.sager.status.show', ['status' => 1, 'kreditor_id' => $kreditor->id]) }}"
                                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition
@@ -146,12 +145,10 @@
                                         <span>📂 {{ $kreditor->sager_count }} sager</span>
                                     </a>
 
-                                    {{-- Brugere badge --}}
                                     <span class="inline-flex items-center px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-semibold border border-slate-200/60" title="Tilknyttede portalbrugere">
                                         👤 {{ $kreditor->users_count }} brugere
                                     </span>
 
-                                    {{-- Sagsbehandlere badge --}}
                                     <span class="inline-flex items-center px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-semibold border border-slate-200/60" title="Tilknyttede sagsbehandlere">
                                         📞 {{ $kreditor->sagsbehandlere_count }} sagsbehandlere
                                     </span>
@@ -166,7 +163,6 @@
                             {{-- HANDLINGER --}}
                             <td class="px-6 py-4 text-right whitespace-nowrap">
                                 <div class="inline-flex items-center justify-end gap-2">
-                                    {{-- Åbn administration --}}
                                     <a 
                                         href="{{ route('kreditor.manage', $kreditor) }}"
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 text-xs font-bold rounded-xl transition cursor-pointer"
@@ -188,9 +184,10 @@
                                         </button>
                                     @endif
 
+                                    <!-- NY (Åbner KreditorFormModal til redigering) -->
                                     <x-table-actions 
                                         :id="$kreditor->id" 
-                                        :editUrl="route('kreditor.manage', ['kreditor' => $kreditor])" 
+                                        editAction="$dispatch('edit-kreditor-modal', { id: {{ $kreditor->id }} })"
                                         deleteAction="requestDelete"
                                     />
                                 </div>
@@ -213,7 +210,7 @@
         </div>
     </div>
 
-    {{-- MODAL 1: SLETTEMODAL --}}
+    {{-- SLETTEMODAL --}}
     @if($showDeleteModal && $kreditorToDelete)
         <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
@@ -262,7 +259,7 @@
         </div>
     @endif
 
-    {{-- MODAL 2: STANDALONE OVERFØR --}}
+    {{-- STANDALONE OVERFØR MODAL --}}
     @if($showStandaloneTransferModal && $kreditorToTransferFrom)
         <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
@@ -294,5 +291,6 @@
         </div>
     @endif
 
+    {{-- KREDITOR OPRET/REDIGER FORM MODAL --}}
     @livewire('kreditor.kreditor-form-modal')
 </div>

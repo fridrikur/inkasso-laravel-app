@@ -39,6 +39,7 @@ return new class extends Migration
             $table->string('kode')->nullable()->default(null);
             $table->date('dato')->nullable()->default(null);
             $table->string('restgaeld_kreditor', 50)->nullable();
+            $table->softDeletes(); // 🟢 TILFØJ DENNE LINJE (Opretter deleted_at)
             $table->timestamps();
           });
     }

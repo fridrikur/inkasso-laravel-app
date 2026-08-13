@@ -35,9 +35,10 @@ class ManageKreditor extends Component
     public string $modalTlf = '';
     public string $modalMobil = '';
 
-    public function mount(Kreditorer $kreditor)
+    public function mount($kreditor)
     {
-        $this->kreditor = $kreditor;
+        $kreditorId = $kreditor instanceof Kreditorer ? $kreditor->id : $kreditor;
+        $this->kreditor = Kreditorer::withTrashed()->findOrFail($kreditorId);
         $this->loadRelations();
     }
 
@@ -240,18 +241,25 @@ class ManageKreditor extends Component
                 'transferToKreditorId.required' => 'Vælg venligst en modtager-kreditor til sagerne.',
             ]);
 
-            // Overfør alle sager i pivot/relation til den nye kreditor
             $targetKreditor = Kreditorer::findOrFail($this->transferToKreditorId);
 
             foreach ($this->kreditor->sager as $sag) {
-                $sag->sagerkreditor()->sync([$targetKreditor->id]);
+                if (method_exists($sag, 'kreditorer')) {
+                    $sag->kreditorer()->detach($this->kreditor->id);
+                    $sag->kreditorer()->syncWithoutDetaching([$targetKreditor->id]);
+                } elseif (method_exists($sag, 'sagerkreditor')) {
+                    $sag->sagerkreditor()->sync([$targetKreditor->id]);
+                }
             }
         }
 
-        // Slet kreditoren
+        // SoftDelete kreditoren
         $this->kreditor->delete();
 
-        $this->dispatch('toast', ['message' => 'Kreditoren er blevet slettet.', 'type' => 'success']);
+        $this->dispatch('toast', [
+            'message' => 'Kreditoren blev slettet succesfuldt.',
+            'type'    => 'success'
+        ]);
 
         return redirect()->route('kreditorer.index');
     }

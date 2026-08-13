@@ -14,7 +14,7 @@ use App\Livewire\Sager\KreditorSagerIndex;
 use App\Livewire\Sager\Klientinformation;
 use App\Livewire\Sager\KreditorSagView;
 use App\Livewire\Counter;
-use App\Livewire\ManageUsers;
+use App\Livewire\Users\ManageUsers;
 use App\Livewire\ManageRoles;
 use App\Livewire\Admin\SagFieldManager;
 use App\Livewire\Users\AssignMedarbejder;
@@ -24,6 +24,7 @@ use App\Livewire\sager\ShowKreditorSager;
 use App\Livewire\kreditorer\CreateKreditor;
 use App\Livewire\Kreditorer\ManageKreditor;
 use App\Livewire\kreditorer\ManageKreditorer;
+use App\Livewire\Users\ManageUser;
 use App\Livewire\Sager\StatusPage;
 use App\Livewire\kreditorer\UpdateKreditor;
 use App\Livewire\debitorer\CreateDebitor;
@@ -247,7 +248,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             Route::get('/', ManageKreditorer::class)->name('kreditorer.index');
             Route::get('/create', CreateKreditor::class)->name('kreditorer.create');
             Route::get('/{kreditor}/edit', UpdateKreditor::class)->name('kreditorer.edit');
-            Route::get('/{kreditor}', ManageKreditor::class)->name('kreditor.manage');
+            Route::get('/{kreditor}', ManageKreditor::class)->name('kreditor.manage')->withTrashed(); // 🟢 Tillader Laravel at bind'e soft-slettede kreditorer uden at kaste 404
             Route::get('/{kreditor}/sager', ShowKreditorSager::class)->name('kreditorer.sager');
         });
 
@@ -287,11 +288,15 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         Route::get('/afslutning/create', Createafslutning::class)->name('afslutning.create');
         Route::get('/afslutning/{afslutning}/edit', Updateafslutning::class)->name('afslutning.edit');
 
-        /* BRUGERE (Styres via ManageUsers + Modal) */
+        /* BRUGERE (Styres via ManageUsers, CreateUser og ManageUser) */
         Route::prefix('users')->as('users.')->group(function () {
+            // 1. Specifikke sider (SKAL stå først)
             Route::get('/', ManageUsers::class)->name('index');
             Route::get('/manage-users', ManageUsers::class)->name('manage-users');
             Route::get('/create', CreateUser::class)->name('create');
+
+            // 2. Wildcard sider (SKAL stå sidst)
+            Route::get('/{user}', ManageUser::class)->name('user.manage')->withTrashed();
         });
 
         /* KONSULENTER (Styres på samme måde) */

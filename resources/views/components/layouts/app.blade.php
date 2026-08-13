@@ -7,7 +7,7 @@
 
     {{-- DYNAMISK FARVETEMA FRA SYSTEMSETTINGS --}}
     <style>    
-    :root {
+        :root {
             --theme-primary: {{ setting('theme_primary', '#4f46e5') }};
             --theme-sidebar-bg: {{ setting('theme_sidebar_bg', '#0f172a') }};
             --theme-sag-editor-bg: {{ setting('theme_sag_editor_bg', '#ffffff') }};
@@ -17,16 +17,29 @@
         [x-cloak] { display: none !important; }
     </style>
 
+    {{-- CHART.JS GLOBAL IMPORT --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
 <body 
     x-data="{ 
-        sidebarOpen: {{ request()->routeIs('dashboard*') ? '(window.innerWidth >= 1024)' : 'false' }},
+        sidebarOpen: window.innerWidth >= 1024,
         toggleSidebar() { this.sidebarOpen = !this.sidebarOpen; }
     }"
     class="bg-slate-100 font-sans antialiased text-slate-900 min-h-screen flex flex-col"
 >
+
+    {{-- ⚠️ GLOBAL SANDKASSE BANNER (VISES PÅ ALLE SIDER) --}}
+    @if(setting('environment', 'sandbox') === 'sandbox')
+        <div class="bg-amber-400 text-amber-950 font-bold text-xs sm:text-sm py-2 px-4 text-center shadow-sm z-50 flex items-center justify-center gap-2 w-full">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5 animate-pulse shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span class="tracking-wide uppercase">⚠️ Kører i Sandkasse tilstand</span>
+        </div>
+    @endif
 
     {{-- 2-TRINS INAKTIVITETS & RE-AUTH MODAL --}}
     <div id="session-warning"
@@ -109,21 +122,17 @@
         {{-- VENSTRE SIDEBAR MENU --}}
         <aside 
             x-cloak
-            :class="sidebarOpen ? 'w-64 translate-x-0 opacity-100' : 'w-0 -translate-x-full opacity-0 pointer-events-none lg:w-0'"
+            :class="sidebarOpen ? 'w-64 translate-x-0 opacity-100' : 'w-0 -translate-x-full opacity-0 pointer-events-none'"
             class="fixed inset-y-0 left-0 z-40 bg-[var(--theme-sidebar-bg)] text-white transition-all duration-300 ease-in-out lg:static shrink-0 overflow-y-auto flex flex-col justify-between shadow-2xl border-r border-slate-800"
         >
             <div class="p-5 space-y-6 w-64">
+                {{-- LOGO OG OVERSKRIFT --}}
                 <div class="flex items-center justify-between border-b border-slate-800 pb-4">
                     <div class="flex items-center gap-2.5">
                         <span class="p-2 rounded-xl bg-[var(--theme-primary)] text-white font-bold text-base shadow-sm">⚖️</span>
                         <div>
-                            <div class="flex items-center gap-2.5">
-                                <span class="p-2 rounded-xl bg-[var(--theme-primary)] text-white font-bold text-base shadow-sm">⚖️</span>
-                                <div>
-                                    <span class="font-bold text-base tracking-wide text-white block">{{ setting('app_name', 'InkassoApp') }}</span>
-                                    <span class="text-[10px] text-slate-400 uppercase tracking-wider block">{{ setting('app_slogan', 'Sagsadministration') }}</span>
-                                </div>
-                            </div>
+                            <span class="font-bold text-base tracking-wide text-white block">{{ setting('app_name', 'InkassoApp') }}</span>
+                            <span class="text-[10px] text-slate-400 uppercase tracking-wider block">{{ setting('app_slogan', 'Sagsadministration') }}</span>
                         </div>
                     </div>
                     <button @click="toggleSidebar" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer" title="Skjul menu">
@@ -133,126 +142,127 @@
 
                 <nav class="space-y-6 text-sm font-medium">
 
-    {{-- ============================================================ --}}
-    {{-- 👑 ADMIN & 💼 MEDARBEJDER MENU --}}
-    {{-- ============================================================ --}}
-    @hasanyrole('Admin|Medarbejder')
-        <div class="space-y-1">
-            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Oversigt</div>
-            <a href="{{ route('dashboard') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dashboard*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>📊</span> Dashboard
-            </a>
-        </div>
+                    {{-- ============================================================ --}}
+                    {{-- 👑 ADMIN & 💼 MEDARBEJDER MENU --}}
+                    {{-- ============================================================ --}}
+                    @hasanyrole('Admin|Medarbejder')
+                        <div class="space-y-1">
+                            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Oversigt</div>
+                            <a href="{{ route('dashboard') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dashboard*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>📊</span> Dashboard
+                            </a>
+                        </div>
 
-        <div class="space-y-1">
-            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sagsbehandling</div>
-            <a href="{{ route('showsager') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('showsager') || request()->routeIs('sager.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>📂</span> Sager
-            </a>
-            <a href="{{ route('admin.sager.status.index') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('admin.sager.status.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>🏷️</span> Sagsstatus
-            </a>
-            <a href="{{ route('sager.search') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.search') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>🔍</span> Søg Sager
-            </a>
-            <a href="{{ route('sager.breve.opret') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.breve.opret') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>✉️</span> Opret Brev
-            </a>
-            <a href="{{ route('sager.trash') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.trash') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>🗑️</span> Papirkurv
-            </a>
-            <a href="{{ route('sager.import.log') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.import.log') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} text-xs font-semibold">
-                <span>📊</span> Import Log
-            </a>
-        </div>
+                        <div class="space-y-1">
+                            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sagsbehandling</div>
+                            <a href="{{ route('showsager') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('showsager') || request()->routeIs('sager.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>📂</span> Sager
+                            </a>
+                            <a href="{{ route('admin.sager.status.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('admin.sager.status.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>🏷️</span> Sagsstatus
+                            </a>
+                            <a href="{{ route('sager.search') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.search') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>🔍</span> Søg Sager
+                            </a>
+                            <a href="{{ route('sager.breve.opret') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.breve.opret') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>✉️</span> Opret Brev
+                            </a>
+                            <a href="{{ route('sager.trash') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.trash') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>🗑️</span> Papirkurv
+                            </a>
+                            <a href="{{ route('sager.import.log') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.import.log') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} text-xs font-semibold">
+                                <span>📊</span> Import Log
+                            </a>
+                        </div>
 
-        <div class="space-y-1">
-            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Parter</div>
-            <a href="{{ route('kreditorer.index') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditorer*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>🏢</span> Kreditorer
-            </a>
-            <a href="{{ route('konsulenter.manage-konsulenter') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('manage-konsulenter') || request()->routeIs('konsulenter*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>💼</span> Konsulenter
-            </a>
-        </div>
+                        <div class="space-y-1">
+                            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Parter</div>
+                            <a href="{{ route('kreditorer.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditorer*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>🏢</span> Kreditorer
+                            </a>
+                            <a href="{{ route('konsulenter.manage-konsulenter') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('manage-konsulenter') || request()->routeIs('konsulenter*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>💼</span> Konsulenter
+                            </a>
+                        </div>
 
-        {{-- KUN ADMIN VÆRKTØJER --}}
-        @role('Admin')
-            <div class="space-y-1">
-                <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Værktøjer & Admin</div>
-                <a href="{{ route('sager.doctor') }}" 
-                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.doctor') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                    <span>🩺</span> Doctor Norton 3.0
-                </a>
-                <a href="{{ route('gdpr.sager.retention') }}" 
-                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('gdpr*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                    <span>🛡️</span> GDPR Retention
-                </a>
-                <a href="{{ route('autotekster.index') }}" 
-                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('autotekster*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                    <span>💬</span> Autotekster
-                </a>
-                <a href="{{ route('dropdowns.index') }}" 
-                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dropdowns*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                    <span>📋</span> Dropdown felter
-                </a>
-                <a href="{{ route('users.manage-users') }}" 
-                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('users*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                    <span>👤</span> Brugere & Roles
-                </a>
-                <a href="{{ route('admin.system-settings.index') }}" 
-                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('admin.system-settings.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                    <span>⚙️</span> Systemindstillinger
-                </a>
-                <a href="{{ route('backups.index') }}" 
-                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('backups*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                    <span>💾</span> Backups
-                </a>
+                        {{-- KUN ADMIN VÆRKTØJER --}}
+                        @role('Admin')
+                            <div class="space-y-1">
+                                <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Værktøjer & Admin</div>
+                                <a href="{{ route('sager.doctor') }}" 
+                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.doctor') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                    <span>🩺</span> Doctor Norton 3.0
+                                </a>
+                                <a href="{{ route('gdpr.sager.retention') }}" 
+                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('gdpr*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                    <span>🛡️</span> GDPR Retention
+                                </a>
+                                <a href="{{ route('autotekster.index') }}" 
+                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('autotekster*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                    <span>💬</span> Autotekster
+                                </a>
+                                <a href="{{ route('dropdowns.index') }}" 
+                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dropdowns*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                    <span>📋</span> Dropdown felter
+                                </a>
+                                <a href="{{ route('users.manage-users') }}" 
+                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('users*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                    <span>👤</span> Brugere & Roles
+                                </a>
+                                <a href="{{ route('admin.system-settings.index') }}" 
+                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('admin.system-settings.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                    <span>⚙️</span> Systemindstillinger
+                                </a>
+                                <a href="{{ route('backups.index') }}" 
+                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('backups*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                    <span>💾</span> Backups
+                                </a>
+                            </div>
+                        @endrole
+                    @endhasanyrole
+
+                    {{-- ============================================================ --}}
+                    {{-- 🏢 KREDITOR SPECIFIK MENU --}}
+                    {{-- ============================================================ --}}
+                    @role('Kreditor')
+                        <div class="space-y-1">
+                            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kreditor Portal</div>
+                            
+                            <a href="{{ route('kreditor.dashboard') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.dashboard') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>📊</span> Dashboard
+                            </a>
+
+                            <a href="{{ route('kreditor.sag.create') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sag.create') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>➕</span> Opret Ny Sag
+                            </a>
+
+                            <a href="{{ route('kreditor.sager.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sager.index') || request()->routeIs('kreditor.sag.view') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>📂</span> Mine Sager
+                            </a>
+
+                            <a href="{{ route('kreditor.search') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.search') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>🔍</span> Søg Sager
+                            </a>
+                        </div>
+                    @endrole
+
+                </nav>
             </div>
-        @endrole
-    @endhasanyrole
 
-    {{-- ============================================================ --}}
-    {{-- 🏢 KREDITOR SPECIFIK MENU --}}
-    {{-- ============================================================ --}}
-    @role('Kreditor')
-        <div class="space-y-1">
-            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kreditor Portal</div>
-            
-            <a href="{{ route('kreditor.dashboard') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.dashboard') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>📊</span> Dashboard
-            </a>
-
-            <a href="{{ route('kreditor.sag.create') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sag.create') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>➕</span> Opret Ny Sag
-            </a>
-
-            <a href="{{ route('kreditor.sager.index') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sager.index') || request()->routeIs('kreditor.sag.view') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>📂</span> Mine Sager
-            </a>
-
-            <a href="{{ route('kreditor.search') }}" 
-               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.search') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <span>🔍</span> Søg Sager
-            </a>
-        </div>
-    @endrole
-
-</nav>
-            </div>
-
+            {{-- BUND BRUGER-PROFIL --}}
             <div class="p-4 border-t border-slate-800/80 bg-slate-950/40 w-64">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] font-bold flex items-center justify-center border border-[var(--theme-primary)]/30 shrink-0">
@@ -450,7 +460,6 @@
             }, warningTime * 1000);
         }
 
-        // Nulstil kun timeren ved aktivitet hvis modalen IKKE er synlig
         ['mousemove', 'keydown', 'click', 'scroll'].forEach(evt => {
             window.addEventListener(evt, () => {
                 let modal = document.getElementById('session-warning');
@@ -462,7 +471,6 @@
 
         startInactivityTimer();
 
-        // FORHINDR LIVEWIRE I AT GENINDLÆSE SIDEN VED SESSION TIMEOUT
         document.addEventListener('livewire:init', () => {
             Livewire.hook('request', ({ fail }) => {
                 fail(({ status, preventDefault }) => {
@@ -606,5 +614,6 @@
             </div>
         </template>
     </div>
+<livewire:admin.onboarding-wizard />
 </body>
 </html>

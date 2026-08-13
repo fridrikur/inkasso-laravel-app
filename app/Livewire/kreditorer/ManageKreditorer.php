@@ -3,9 +3,9 @@
 namespace App\Livewire\Kreditorer;
 
 use App\Models\Kreditorer;
-use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 
 class ManageKreditorer extends Component
 {
@@ -27,6 +27,12 @@ class ManageKreditorer extends Component
         'search' => ['except' => ''],
         'filter' => ['except' => 'all'],
     ];
+
+    #[On('kreditor-saved')]
+    public function refreshTable(): void
+    {
+        // Genberegner automatisk render()
+    }
 
     public function setFilter(string $filter): void
     {
@@ -83,13 +89,15 @@ class ManageKreditorer extends Component
 
     public function opretnykreditor(): void
     {
-        $this->dispatch('edit-kreditor-modal');
+        $this->dispatch('open-kreditor-modal');
     }
 
-    // Modal & slette-logik
+    // -------------------------------------------------
+    // Slette- & Overførselslogik
+    // -------------------------------------------------
     public function requestDelete(int $id): void
     {
-        $this->kreditorToDelete = Kreditorer::withCount('sager')->findOrFail($id);
+        $this->kreditorToDelete = Kreditorer::with(['sager'])->withCount('sager')->findOrFail($id);
         $this->transferToKreditorId = null;
         $this->securityCode = '';
         $this->showDeleteModal = true;
@@ -99,11 +107,53 @@ class ManageKreditorer extends Component
     {
         $this->showDeleteModal = false;
         $this->kreditorToDelete = null;
+        $this->transferToKreditorId = null;
     }
 
+    // 🟢 BEKRÆFT SLETTELSE MED EVENTUEL SAGSOVERFØRSEL
+    public function confirmDelete(): void
+    {
+        if (! $this->kreditorToDelete) {
+            return;
+        }
+
+        // Tjek om sager skal overføres før sletning
+        if ($this->kreditorToDelete->sager_count > 0) {
+            if (! $this->transferToKreditorId) {
+                $this->dispatch('toast', [
+                    'message' => 'Vælg venligst en modtager-kreditor, som sagerne skal overføres til.',
+                    'type'    => 'error'
+                ]);
+                return;
+            }
+
+            $targetKreditor = Kreditorer::findOrFail($this->transferToKreditorId);
+
+            // Overfør alle sager til modtager-kreditoren
+            foreach ($this->kreditorToDelete->sager as $sag) {
+                $sag->kreditorer()->detach($this->kreditorToDelete->id);
+                $sag->kreditorer()->syncWithoutDetaching([$targetKreditor->id]);
+            }
+        }
+
+        // SoftDelete kreditor
+        $this->kreditorToDelete->delete();
+
+        $this->dispatch('toast', [
+            'message' => 'Kreditor blev slettet.',
+            'type'    => 'success'
+        ]);
+
+        $this->cancelDelete();
+        $this->resetPage();
+    }
+
+    // -------------------------------------------------
+    // Standalone overførsel af sager
+    // -------------------------------------------------
     public function openTransferModal(int $id): void
     {
-        $this->kreditorToTransferFrom = Kreditorer::withCount('sager')->findOrFail($id);
+        $this->kreditorToTransferFrom = Kreditorer::with(['sager'])->withCount('sager')->findOrFail($id);
         $this->transferToKreditorId = null;
         $this->showStandaloneTransferModal = true;
     }
@@ -112,5 +162,33 @@ class ManageKreditorer extends Component
     {
         $this->showStandaloneTransferModal = false;
         $this->kreditorToTransferFrom = null;
+        $this->transferToKreditorId = null;
+    }
+
+    // 🟢 UDFØR KUN OVERFØRSEL AF SAGER
+    public function executeStandaloneTransfer(): void
+    {
+        if (! $this->kreditorToTransferFrom || ! $this->transferToKreditorId) {
+            $this->dispatch('toast', [
+                'message' => 'Vælg venligst en modtager-kreditor.',
+                'type'    => 'error'
+            ]);
+            return;
+        }
+
+        $targetKreditor = Kreditorer::findOrFail($this->transferToKreditorId);
+
+        foreach ($this->kreditorToTransferFrom->sager as $sag) {
+            $sag->kreditorer()->detach($this->kreditorToTransferFrom->id);
+            $sag->kreditorer()->syncWithoutDetaching([$targetKreditor->id]);
+        }
+
+        $this->dispatch('toast', [
+            'message' => 'Sagerne blev overført til ' . $targetKreditor->navn,
+            'type'    => 'success'
+        ]);
+
+        $this->closeTransferModal();
+        $this->resetPage();
     }
 }

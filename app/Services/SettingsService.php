@@ -8,30 +8,34 @@ use Illuminate\Support\Facades\Cache;
 class SettingsService
 {
     /**
-     * Hent en indstilling (med cache)
+     * Hent en indstilling (med cache & fejlhåndtering hvis DB mangler)
      */
     public function get(string $key, mixed $default = null): mixed
     {
-        return Cache::rememberForever("setting.{$key}", function () use ($key, $default) {
-            // 🟢 Brug explicit where('key', $key) i stedet for find($key)
-            $setting = SystemSetting::where('key', $key)->first();
+        try {
+            return Cache::rememberForever("setting.{$key}", function () use ($key, $default) {
+                $setting = SystemSetting::where('key', $key)->first();
 
-            if (! $setting) {
-                return $default;
-            }
+                if (! $setting) {
+                    return $default;
+                }
 
-            $val = $setting->value;
+                $val = $setting->value;
 
-            // Konverter boolske streng-værdier
-            if ($val === 'true' || $val === '1') {
-                return true;
-            }
-            if ($val === 'false' || $val === '0') {
-                return false;
-            }
+                // Konverter boolske streng-værdier
+                if ($val === 'true' || $val === '1') {
+                    return true;
+                }
+                if ($val === 'false' || $val === '0') {
+                    return false;
+                }
 
-            return $val;
-        });
+                return $val;
+            });
+        } catch (\Throwable $e) {
+            // Returner defaultværdi hvis DB/tabel endnu ikke eksisterer
+            return $default;
+        }
     }
 
     /**
@@ -39,17 +43,21 @@ class SettingsService
      */
     public function set(string $key, mixed $value): void
     {
-        if (is_bool($value)) {
-            $value = $value ? 'true' : 'false';
+        try {
+            if (is_bool($value)) {
+                $value = $value ? 'true' : 'false';
+            }
+
+            SystemSetting::updateOrCreate(
+                ['key' => $key],
+                ['value' => (string) $value]
+            );
+
+            // Nulstil cachen for denne nøgle
+            Cache::forget("setting.{$key}");
+        } catch (\Throwable $e) {
+            // Ignorer hvis DB endnu ikke er oprettet
         }
-
-        SystemSetting::updateOrCreate(
-            ['key' => $key],
-            ['value' => (string) $value]
-        );
-
-        // Nulstil cachen for denne nøgle
-        Cache::forget("setting.{$key}");
     }
 
     /**
@@ -57,7 +65,11 @@ class SettingsService
      */
     public function forget(string $key): void
     {
-        SystemSetting::where('key', $key)->delete();
-        Cache::forget("setting.{$key}");
+        try {
+            SystemSetting::where('key', $key)->delete();
+            Cache::forget("setting.{$key}");
+        } catch (\Throwable $e) {
+            // Ignorer hvis DB endnu ikke er oprettet
+        }
     }
 }

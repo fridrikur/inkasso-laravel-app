@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Users;
 
 use App\Models\Kreditorer;
 use App\Models\User;
@@ -14,7 +14,6 @@ use Livewire\Attributes\Url;
 use Livewire\Attributes\Lazy;
 
 #[Lazy]
-
 class ManageUsers extends Component
 {
     use WithPagination;
@@ -42,12 +41,14 @@ class ManageUsers extends Component
     // 🟢 Slettemodal tilstand
     public bool $showDeleteModal = false;
     public ?int $deleteUserId = null;
-    public int $userHasSagerCount = 0; // 🟢 Tæller tilknyttede sager
+    public int $userHasSagerCount = 0;
+
+    // 🟢 Tjek om der findes kreditorer i systemet
+    public bool $hasKreditorer = true;
 
     // -------------------------------------------------
     // Cached counts / roles
     // -------------------------------------------------
-    /** @var Collection<int, Role> */
     public int $totalUsers = 0;
     public int $adminCount = 0;
     public int $medarbejderCount = 0;
@@ -75,11 +76,19 @@ class ManageUsers extends Component
 
     public function openModal(?int $userId = null): void
     {
+        // 🟢 ADVARSLE / BLOKERING NÅR BRUGEREN VIL OPRETTE EN KREDITOR-BRUGER UDEN EKSISTERENDE KREDITORER
+        if (! $userId && $this->roleFilter === 'Kreditor' && ! $this->hasKreditorer) {
+            $this->dispatch('toast', [
+                'message' => 'Der findes ingen kreditorer i databasen! Opret venligst en kreditor først under Kreditoradministration.',
+                'type'    => 'error'
+            ]);
+            return;
+        }
+
         $this->activeUserId = $userId;
         $this->showUserModal = true;
     }
 
-    // 🟢 Alias så <x-table-actions> virker automatisk med samme metodenavn
     public function openEditModal(int $id): void
     {
         $this->openModal($id);
@@ -88,47 +97,78 @@ class ManageUsers extends Component
     // -------------------------------------------------
     // SoftDelete Handlinger
     // -------------------------------------------------
+    // 🟢 Tjekker rettigheder før modalen åbnes
+    // 🟢 1. ÅBNER SLETTEMODALEN (Med alle dine sikkerhedsregler)
     public function confirmDelete(int $id): void
+{
+    // 🛡️ REGEL 1: Bruger ID #1 må ALDRIG slettes eller udløse modal
+    if ($id === 1) {
+        $this->dispatch('toast', [
+            'message' => 'Systemets primære administrator (Bruger #1) kan ikke deaktiveres.',
+            'type'    => 'error'
+        ]);
+        return;
+    }
+
+    // 🛡️ REGEL 2: Beskyttelse mod at deaktivere sin egen aktuelt indloggede konto
+    if ($id === auth()->id()) {
+        $this->dispatch('toast', [
+            'message' => 'Du kan ikke deaktivere din egen konto.',
+            'type'    => 'error'
+        ]);
+        return;
+    }
+
+    $user = User::find($id);
+    if (! $user) return;
+
+    // 🛡️ REGEL 3: Brugere med Admin-rolle skal nedgraderes til Medarbejder før de kan deaktiveres
+    if ($user->hasRole('Admin')) {
+        $this->dispatch('toast', [
+            'message' => 'Brugere med Admin-rollen kan ikke deaktiveres direkte. Skift først brugerens rolle til Medarbejder.',
+            'type'    => 'error'
+        ]);
+        return;
+    }
+
+    $this->deleteUserId = $id;
+
+    // Tæl historiske sager via konsulent-relationen
+    $konsulent = \App\Models\Konsulenter::where('email', $user->email)->first();
+    if ($konsulent) {
+        $this->userHasSagerCount = \App\Models\Sager::whereHas('sagerkonsulent', function ($q) use ($konsulent) {
+            $q->where('konsulenter.id', $konsulent->id);
+        })->count();
+    } else {
+        $this->userHasSagerCount = 0;
+    }
+
+    $this->showDeleteModal = true;
+}
+
+    // 🟢 2. UDFØRER BEKRÆFTET DEAKTIVERING (Når der trykkes "Deaktiver" i modalen)
+    public function confirmDeleteModal(): void
     {
-        if ($id === auth()->id()) {
-            $this->dispatch('toast', message: 'Du kan ikke slette din egen konto.', type: 'error');
+        if (! $this->deleteUserId) return;
+
+        // Ekstra dobbelt-tjek af sikkerhedsregler
+        if ($this->deleteUserId === 1 || $this->deleteUserId === auth()->id()) {
+            $this->cancelDelete();
             return;
         }
 
-        $user = User::find($id);
+        $user = User::findOrFail($this->deleteUserId);
 
-        if (!$user) return;
-
-        $this->deleteUserId = $id;
-
-        // 🟢 1. Find den tilsvarende Konsulent via brugerens e-mail
-        $konsulent = \App\Models\Konsulenter::where('email', $user->email)->first();
-
-        // 🟢 2. Tæl hvor mange sager konsulenten er knyttet til via pivot-relationen sagerkonsulent
-        if ($konsulent) {
-            // Vi tæller sager via pivot-tabellen (sager_konsulent)
-            $this->userHasSagerCount = \App\Models\Sager::whereHas('sagerkonsulent', function ($q) use ($konsulent) {
-                $q->where('konsulenter.id', $konsulent->id);
-            })->count();
-        } else {
-            $this->userHasSagerCount = 0;
+        if ($user->hasRole('Admin')) {
+            $this->dispatch('toast', [
+                'message' => 'En administrator kan ikke deaktiveres. Skift rollen først.',
+                'type'    => 'error'
+            ]);
+            $this->cancelDelete();
+            return;
         }
 
-        $this->showDeleteModal = true;
-    }
-
-    public function cancelDelete(): void
-    {
-        $this->showDeleteModal = false;
-        $this->deleteUserId = null;
-    }
-
-    public function confirmDeleteModal(): void
-    {
-        if (!$this->deleteUserId) return;
-
-        $user = User::findOrFail($this->deleteUserId);
-        $user->delete(); // SoftDelete (kræver 'use SoftDeletes' i User-modellen)
+        $user->delete(); // SoftDelete
 
         $this->showDeleteModal = false;
         $this->deleteUserId = null;
@@ -136,7 +176,16 @@ class ManageUsers extends Component
         $this->refreshStats();
         $this->resetPage();
 
-        $this->dispatch('notify', message: 'Brugeren er blevet deaktiveret.', type: 'success');
+        $this->dispatch('toast', [
+            'message' => 'Brugeren er blevet deaktiveret.',
+            'type'    => 'success'
+        ]);
+    }
+
+    public function cancelDelete(): void
+    {
+        $this->showDeleteModal = false;
+        $this->deleteUserId = null;
     }
 
     // -------------------------------------------------
@@ -147,6 +196,8 @@ class ManageUsers extends Component
         $this->roles = Role::query()
             ->orderBy('name')
             ->get(['id', 'name']);
+
+        $this->hasKreditorer = Kreditorer::exists();
 
         $this->refreshStats();
 
@@ -198,6 +249,8 @@ class ManageUsers extends Component
 
     protected function refreshStats(): void
     {
+        $this->hasKreditorer = Kreditorer::exists();
+
         $counts = User::query()
             ->leftJoin('model_has_roles', function ($join) {
                 $join->on('users.id', '=', 'model_has_roles.model_id')
@@ -269,7 +322,7 @@ class ManageUsers extends Component
 
         $kreditors = collect();
 
-        if ($this->roleFilter === 'Kreditor') {
+        if ($this->roleFilter === 'Kreditor' && $this->hasKreditorer) {
             $kreditors = Kreditorer::query()
                 ->select('id', 'navn')
                 ->when(

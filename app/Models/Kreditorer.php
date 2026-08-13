@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Kreditorer extends Model
 {
     use HasFactory;
+    use SoftDeletes;
+    
     public $table = 'kreditors';
     
     protected $fillable = [
@@ -52,5 +55,15 @@ class Kreditorer extends Model
     public function importSessions(): HasMany
     {
         return $this->hasMany(ImportSession::class, 'kreditor_id');
+    }
+
+    /**
+     * Fortæller Laravel Route Model Binding at inkludere soft-slettede poster
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->where($field ?? $this->getRouteKeyName(), $value)
+                    ->withTrashed()
+                    ->firstOrFail();
     }
 }

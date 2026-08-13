@@ -11,17 +11,52 @@
             </p>
         </div>
 
-        {{-- OPRET BRUGER KNAP (Peger på den nye Opret Bruger side) --}}
-        <a 
-            href="{{ route('users.create') }}" 
-            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition shrink-0 cursor-pointer"
-        >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Opret {{ $roleFilter ? strtolower($roleFilter) : 'bruger' }}</span>
-        </a>
+        {{-- OPRET BRUGER KNAP --}}
+        @if($roleFilter === 'Kreditor' && ! $hasKreditorer)
+            <button 
+                type="button" 
+                wire:click="openModal"
+                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-300 text-slate-500 text-xs font-bold shadow-xs cursor-not-allowed shrink-0"
+                title="Opret venligst en kreditor i systemet først"
+            >
+                <span>⚠️ Opret kreditor først</span>
+            </button>
+        @else
+            <a 
+                href="{{ route('users.create') }}" 
+                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition shrink-0 cursor-pointer"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Opret {{ $roleFilter ? strtolower($roleFilter) : 'bruger' }}</span>
+            </a>
+        @endif
     </div>
+
+    {{-- ⚠️ ADVARSEL OM MANGLENDE KREDITORER --}}
+    @if($roleFilter === 'Kreditor' && ! $hasKreditorer)
+        <div class="bg-amber-50 rounded-2xl border border-amber-200/80 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+            <div class="flex items-start gap-3">
+                <span class="text-2xl shrink-0">🏢</span>
+                <div>
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-amber-900">
+                        Ingen kreditorer registreret i databasen
+                    </h3>
+                    <p class="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                        For at oprette en portalbruger med rullen <strong>Kreditor</strong>, skal der først oprettes mindst én kreditorvirksomhed i systemet.
+                    </p>
+                </div>
+            </div>
+
+            <a 
+                href="{{ route('kreditorer.index') }}" 
+                class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition shrink-0 cursor-pointer text-center"
+            >
+                + Opret første kreditor
+            </a>
+        </div>
+    @endif
                 
     {{-- STATS KORT --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -66,8 +101,8 @@
         </div>
     </div>
 
-    {{-- KREDITOR VIRKSOMHEDSFILTER (VISES KUN NÅR FANEN KREDITOR ER VALGT) --}}
-    @if($roleFilter === 'Kreditor')
+    {{-- KREDITOR VIRKSOMHEDSFILTER --}}
+    @if($roleFilter === 'Kreditor' && $hasKreditorer)
         <div class="bg-amber-50/50 rounded-2xl border border-amber-200/60 p-4 space-y-3">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
@@ -203,7 +238,7 @@
                             <th scope="col" class="px-6 py-3.5">Tilknyttet Virksomhed</th>
                         @endif
 
-                        <th scope="col" class="px-6 py-3.5 text-right w-32">Handling</th>
+                        <th scope="col" class="px-6 py-3.5 text-right whitespace-nowrap">Handling</th>
                     </tr>
                 </thead>
 
@@ -218,7 +253,10 @@
                                         {{ strtoupper(substr($user->name, 0, 1)) }}
                                     </div>
                                     <div>
-                                        <span class="block font-bold text-slate-900 text-xs">{{ $user->name }}</span>
+                                        <a href="{{ route('users.user.manage', $user) }}" class="font-bold text-slate-900 text-xs hover:text-indigo-600 transition">
+                                            {{ $user->name }}
+                                        </a>
+                                        <span class="block text-[10px] font-mono text-slate-400">#{{ $user->id }}</span>
                                     </div>
                                 </div>
                             </td>
@@ -245,7 +283,7 @@
                                 @endif
                             </td>
 
-                            {{-- VIRKSOMHED (NÅR KREDITOR FANEN ER AKTIV) --}}
+                            {{-- VIRKSOMHED --}}
                             @if($roleFilter === 'Kreditor')
                                 <td class="px-6 py-3.5 text-xs text-slate-600">
                                     @if($user->kreditorer->isNotEmpty())
@@ -256,17 +294,52 @@
                                 </td>
                             @endif
 
-                            {{-- 🛠️ RETTELSE: Pak knapperne ind i et <td> tag --}}
+                            {{-- 🟢 HANDLINGER: BÅDE BEHANDL (FULDE DEDIKEREDE SIDE) OG MODAL HÅNDTERING --}}
                             <td class="px-6 py-3.5 text-right whitespace-nowrap">
-                                <x-table-actions 
-                                    :id="$user->id" 
-                                    :canDelete="true" 
-                                />
+                                <div class="inline-flex items-center justify-end gap-1.5">
+                                    
+                                    {{-- 1. FULD BEHANDLING (DEDIKERET MANAGE-USER SIDE) --}}
+                                    <a 
+                                        href="{{ route('users.user.manage', $user) }}"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 text-xs font-bold rounded-xl transition cursor-pointer"
+                                        title="Fuld behandling af brugerprofil"
+                                    >
+                                        <span>Administrer</span>
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                    </a>
+
+                                    {{-- 2. HURTIG-REDIGER I MODAL --}}
+                                    <button 
+                                        type="button" 
+                                        wire:click="openModal({{ $user->id }})"
+                                        class="p-1.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                                        title="Hurtig redigering i modal"
+                                    >
+                                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </button>
+
+                                    {{-- 3. DEAKTIVER BRUGER (KUN SYNLIG HVIS BRUGER IKKE ER ID #1) --}}
+                                    @if($user->id !== 1)
+                                        <button 
+                                            type="button" 
+                                            wire:click="confirmDelete({{ $user->id }})"
+                                            class="p-1.5 rounded-xl border border-rose-100 bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer"
+                                            title="Deaktiver bruger"
+                                        >
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    @endif
+
+                                </div>
                             </td>
 
                         </tr>
                     @empty
-                        ...
+                        <tr>
+                            <td colspan="{{ $roleFilter === 'Kreditor' ? '5' : '4' }}" class="px-6 py-12 text-center text-slate-400 text-xs">
+                                Ingen brugere fundet.
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
@@ -278,12 +351,12 @@
         </div>
     </div>
 
-    {{-- EDIT MODAL (REDIERINGI MODAL) --}}
+    {{-- EDIT MODAL (REDIERING I MODAL) --}}
     @if($showUserModal)
         @include('livewire.users.partials.edit-user-modal')
     @endif
 
-    {{-- SLETTEMODAL --}}
+    {{-- SLETTEMODAL (DEAKTIVATION BEKRÆFTELSE) --}}
     <x-confirm-delete-modal 
         :show="$showDeleteModal" 
         title="Deaktiver bruger / konsulent?" 

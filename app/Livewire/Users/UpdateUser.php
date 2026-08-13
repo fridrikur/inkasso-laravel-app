@@ -62,6 +62,18 @@ class UpdateUser extends Component
 
     public function save(): void
     {
+        // 🟢 REGEL 1: Bruger #1 skal altid forblive Admin
+        if ($this->userId === 1 && $this->showRoleEditor && $this->form['role'] !== 'Admin') {
+            $this->dispatch('toast', [
+                'message' => 'Rollen for systemets primære administrator (Bruger #1) kan ikke ændres.',
+                'type'    => 'error'
+            ]);
+            
+            // Tving rollen tilbage til Admin i formularen
+            $this->form['role'] = 'Admin';
+            return;
+        }
+
         $rules = [
             'form.name' => ['required', 'string', 'max:255'],
             'form.email' => [
@@ -93,7 +105,7 @@ class UpdateUser extends Component
             ...(!empty($this->form['password']) ? ['password' => bcrypt($this->form['password'])] : []),
         ]);
 
-        // Only sync role if admin explicitly opened role editing
+        // Synchronize role only if explicitly opened and not prohibited
         if ($this->showRoleEditor && !empty($this->form['role'])) {
             $this->user->syncRoles([$this->form['role']]);
             $this->user->load('roles');
@@ -111,6 +123,11 @@ class UpdateUser extends Component
             // If not Kreditor anymore, detach kreditor relation
             $this->user->kreditorer()->sync([]);
         }
+
+        $this->dispatch('toast', [
+            'message' => 'Brugeroplysninger blev opdateret.',
+            'type'    => 'success'
+        ]);
 
         $this->dispatch('user-updated');
     }
