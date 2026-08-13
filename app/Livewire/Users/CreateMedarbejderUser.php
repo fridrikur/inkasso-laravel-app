@@ -40,7 +40,7 @@ class CreateMedarbejderUser extends Component
 
     public function render()
     {
-        return view('liveWire.users.create-user', [
+        return view('livewire.users.create-user', [
             'medarbejdere' => Medarbejdere::all(),
         ]);
     }

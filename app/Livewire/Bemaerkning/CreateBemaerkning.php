@@ -18,6 +18,6 @@ class Createbemaerkning extends Component
 
     public function render()
     {
-        return view('liveWire.bemaerkning.create-bemaerkning');
+        return view('livewire.bemaerkning.create-bemaerkning');
     }
 }

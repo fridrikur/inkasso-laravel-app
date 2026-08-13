@@ -74,7 +74,7 @@ class ManageSagerFieldsettings extends Component
 
     public function render()
     {
-        return view('liveWire.manage-sager-fieldsettings', [
+        return view('livewire.manage-sager-fieldsettings', [
             'settings' => $this->settings
         ]);
     }

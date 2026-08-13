@@ -27,7 +27,8 @@ class SagTabs extends Component
     public function selectTab(string $tab): void
     {
         $this->activeTab = $tab;
-        $this->dispatch('tab-changed', tab: $tab);
+        // 🟢 Sender event til forældre-komponenten, så den opdaterer sin $activeTab
+        $this->dispatch('change-tab', tab: $tab);
     }
 
     public function refreshBadges(): void
@@ -47,6 +48,11 @@ class SagTabs extends Component
         $this->unreadKlientinfo = $dialogs->firstWhere('type', 'klientinformation')?->unreadForUser($user) ?? 0;
         $this->unreadHistorik   = $dialogs->firstWhere('type', 'historik')?->unreadForUser($user) ?? 0;
         $this->unreadBogholderi = $dialogs->firstWhere('type', 'bogholderi')?->unreadForUser($user) ?? 0;
+    }
+
+    public function changeTab(string $tab): void
+    {
+        $this->activeTab = $tab;
     }
 
     public function render()

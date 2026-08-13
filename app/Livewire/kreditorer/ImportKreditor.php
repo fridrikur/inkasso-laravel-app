@@ -144,6 +144,6 @@ class ImportKreditor extends Component
 
     public function render()
     {
-        return view('liveWire.kreditorer.import-kreditor');
+        return view('livewire.kreditorer.import-kreditor');
     }
 }

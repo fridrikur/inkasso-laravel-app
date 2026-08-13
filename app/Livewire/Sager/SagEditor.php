@@ -600,7 +600,7 @@ class SagEditor extends Component
     
     public function placeholder(array $params = [])
     {
-        return view('liveWire.sager.loading_sag');
+        return view('livewire.sager.loading_sag');
     }
 
     public function databaseValuePostnr(){

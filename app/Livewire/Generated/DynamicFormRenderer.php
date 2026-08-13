@@ -599,6 +599,6 @@ class DynamicFormRenderer extends Component
 
     public function render()
     {
-        return view('liveWire.generated.dynamic-form-renderer');
+        return view('livewire.generated.dynamic-form-renderer');
     }
 }

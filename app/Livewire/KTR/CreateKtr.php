@@ -18,6 +18,6 @@ class CreateKTR extends Component
 
     public function render()
     {
-        return view('liveWire.ktr.create-ktr');
+        return view('livewire.ktr.create-ktr');
     }
 }

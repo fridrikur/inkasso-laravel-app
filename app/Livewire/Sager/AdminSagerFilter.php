@@ -61,6 +61,6 @@ class AdminSagerFilter extends Component
 
     public function render()
     {
-        return view('liveWire.sager.admin-sager-filter');
+        return view('livewire.sager.admin-sager-filter');
     }
 }

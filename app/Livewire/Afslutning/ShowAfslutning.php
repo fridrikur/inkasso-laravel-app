@@ -16,6 +16,6 @@ class Showafslutning extends Component
 
     public function render()
     {
-        return view('liveWire.afslutning.show');
+        return view('livewire.afslutning.show');
     }
 }

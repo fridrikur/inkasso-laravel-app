@@ -16,6 +16,6 @@ class Showbemaerkning extends Component
 
     public function render()
     {
-        return view('liveWire.bemaerkning.show');
+        return view('livewire.bemaerkning.show');
     }
 }

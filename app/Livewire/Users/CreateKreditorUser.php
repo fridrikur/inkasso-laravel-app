@@ -51,7 +51,7 @@ class Createkreditoruser extends Component
 
     public function render()
     {
-        return view('liveWire.users.create-kreditor-user', [
+        return view('livewire.users.create-kreditor-user', [
             'kreditornavn' => $this->kreditornavn
         ]);
     }

@@ -12,7 +12,7 @@ class KTRIndex extends Component
     public function render()
     {
         $this->ktrs = KTR::all();
-        return view('liveWire.ktr.index');
+        return view('livewire.ktr.index');
     }
 
     public function delete($id)

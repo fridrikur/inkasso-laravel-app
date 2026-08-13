@@ -74,7 +74,7 @@ class ManageSagsbehandlerFieldsettings extends Component
 
     public function render()
     {
-        return view('liveWire.manage-sagsbehandler-fieldsettings', [
+        return view('livewire.manage-sagsbehandler-fieldsettings', [
             'settings' => $this->settings
         ]);
     }

@@ -22,6 +22,6 @@ class UpdateAutotekst extends Component
     }
     public function render()
     {
-        return view('liveWire.autotekster.update-autotekst');
+        return view('livewire.autotekster.update-autotekst');
     }
 }

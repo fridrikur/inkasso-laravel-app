@@ -74,7 +74,7 @@ class ManagedebitorFieldsettings extends Component
 
     public function render()
     {
-        return view('liveWire.manage-debitor-fieldsettings', [
+        return view('livewire.manage-debitor-fieldsettings', [
             'settings' => $this->settings
         ]);
     }

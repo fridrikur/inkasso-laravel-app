@@ -25,6 +25,6 @@ class CreateAutotekst extends Component
     public function render()
     { 
         // $dialoger = Dialoger::with('dialogtype')->get();
-        return view('liveWire.autotekster.create-autotekst');
+        return view('livewire.autotekster.create-autotekst');
     }
 }    

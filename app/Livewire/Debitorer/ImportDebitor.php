@@ -139,6 +139,6 @@ return response()->streamDownload(fn () => print Debitorer::all()->toJson(JSON_P
 
 public function render()
 {
-return view('liveWire.debitorer.import-debitor');
+return view('livewire.debitorer.import-debitor');
 }
 }

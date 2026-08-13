@@ -51,7 +51,7 @@ class UpdateMedarbejder extends Component
 
     public function render()
     {
-        return view('liveWire.medarbejdere.update-medarbejder', [ // ✅ FIX FILE NAME
+        return view('livewire.medarbejdere.update-medarbejder', [ // ✅ FIX FILE NAME
             'medarbejder' => $this->medarbejder, // ✅ PASS SINGLE
             'users' => User::role('Medarbejder')->get(),
         ]);
