@@ -77,7 +77,7 @@ use App\Livewire\Udlaeg\Udlaegindex;
 use App\Livewire\Udlaeg\CreateUdlaeg;
 use App\Livewire\Udlaeg\UpdateUdlaeg;
 use App\Livewire\Udlaeg\ShowUdlaeg;
-use App\Livewire\Afslutning\afslutningindex;
+use App\Livewire\Afslutning\Afslutningindex;
 use App\Livewire\Afslutning\Createafslutning;
 use App\Livewire\Afslutning\Updateafslutning;
 use App\Livewire\Afslutning\Showafslutning;
@@ -268,7 +268,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         Route::get('/udlaeg/create', CreateUdlaeg::class)->name('udlaeg.create');
         Route::get('/udlaeg/{udlaeg}/edit', UpdateUdlaeg::class)->name('udlaeg.edit');
 
-        Route::get('/afslutning', afslutningIndex::class)->name('afslutning.index');
+        Route::get('/afslutning', AfslutningIndex::class)->name('afslutning.index');
         Route::get('/afslutning/create', Createafslutning::class)->name('afslutning.create');
         Route::get('/afslutning/{afslutning}/edit', Updateafslutning::class)->name('afslutning.edit');
 
