@@ -252,7 +252,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             Route::get('/{status}/edit', UpdateStatus::class)->name('edit'); 
         });
 
-        Route::prefix('/ktr')->name('ktr.')->group(function () {
+        Route::prefix('/ktr')->name('KTR.')->group(function () {
             // Route::get('/', KTRindex::class)->name('index');
             Route::get('/create', CreateKTR::class)->name('create');
             Route::get('/{ktr}', ShowKTR::class)->name('show');
