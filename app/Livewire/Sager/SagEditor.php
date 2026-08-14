@@ -26,7 +26,7 @@ use ReflectionClass;
 use ReflectionProperty;
 use Illuminate\Support\Collection;
 use App\Models\Postnr;
-use App\Models\Dialog;
+use App\Models\dialog;
 use App\Models\SagActivity;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Hash;
