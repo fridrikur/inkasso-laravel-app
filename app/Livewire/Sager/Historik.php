@@ -4,7 +4,7 @@ namespace App\Livewire\Sager;
 
 use Livewire\Component;
 use App\Models\Sager;
-use App\Models\dialog;
+use App\Models\Dialog;
 use App\Traits\HasSagDialog;
 
 class Historik extends Component
