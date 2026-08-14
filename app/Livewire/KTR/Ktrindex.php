@@ -5,7 +5,7 @@ namespace App\Livewire\KTR;
 use Livewire\Component;
 use App\Models\KTR;
 
-class KTRIndex extends Component
+class KTRindex extends Component
 {
     public $ktrs;
 
