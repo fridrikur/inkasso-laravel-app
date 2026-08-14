@@ -121,7 +121,7 @@ class Sager extends Model
 
     public function dialogs()
     {
-        return $this->hasMany(Dialog::class, 'sag_id');
+        return $this->hasMany(dialog::class, 'sag_id');
     }
 
     public function dokumenter()
