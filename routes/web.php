@@ -63,7 +63,7 @@ use App\Livewire\Autotekster\ShowAutotekster;
 use App\Livewire\Autotekster\UpdateAutotekst;
 use App\Livewire\Autotekster\CreateAutotekst;
 use App\Livewire\Status\Index; 
-use App\Livewire\Status\Updatestatus;
+use App\Livewire\Status\UpdateStatus;
 use App\Livewire\Status\CreateStatus;
 use App\Livewire\KTR\KTRindex;
 use App\Livewire\KTR\CreateKTR;
@@ -249,7 +249,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             Route::get('/', Index::class)->name('index');             
             Route::get('/create', CreateStatus::class)->name('create');      
             Route::get('/{status}', StatusPage::class)->name('show');        
-            Route::get('/{status}/edit', Updatestatus::class)->name('edit'); 
+            Route::get('/{status}/edit', UpdateStatus::class)->name('edit'); 
         });
 
         Route::get('/ktr', KtrIndex::class)->name('ktr.index');
