@@ -4,7 +4,7 @@ namespace App\Livewire\Sager;
 
 use Livewire\Component;
 use App\Models\Sager;
-use App\Models\Dialog;
+use App\Models\dialog;
 use Livewire\Attributes\On;
 
 class SagTabs extends Component

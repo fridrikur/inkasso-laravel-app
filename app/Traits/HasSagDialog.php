@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Models\Dialog;
+use App\Models\dialog;
 use App\Models\DialogParticipant;
 use Illuminate\Support\Collection;
 

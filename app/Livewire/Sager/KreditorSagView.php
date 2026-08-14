@@ -5,7 +5,7 @@ namespace App\Livewire\Sager;
 use Livewire\Component;
 use App\Models\Sager;
 use App\Livewire\Forms\SagForm;
-use App\Models\Dialog;
+use App\Models\dialog;
 
 class KreditorSagView extends Component
 {
