@@ -66,7 +66,7 @@ use App\Livewire\Status\Index;
 use App\Livewire\Status\UpdateStatus;
 use App\Livewire\Status\CreateStatus;
 // use App\Livewire\KTR\KTRindex;
-use App\Livewire\ktr\CreateKTR;
+use App\Livewire\KTR\CreateKTR;
 use App\Livewire\KTR\UpdateKTR;
 use App\Livewire\KTR\ShowKTR;
 use App\Livewire\Bemaerkning\Bemaerkningindex;
