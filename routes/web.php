@@ -78,7 +78,7 @@ use App\Livewire\Udlaeg\CreateUdlaeg;
 use App\Livewire\Udlaeg\UpdateUdlaeg;
 use App\Livewire\Udlaeg\ShowUdlaeg;
 use App\Livewire\Afslutning\Afslutningindex;
-use App\Livewire\Afslutning\Createafslutning;
+use App\Livewire\Afslutning\CreateAfslutning;
 use App\Livewire\Afslutning\Updateafslutning;
 use App\Livewire\Afslutning\Showafslutning;
 use App\Http\Controllers\SagerSortController;
