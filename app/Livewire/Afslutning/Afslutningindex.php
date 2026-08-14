@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Livewire\afslutning;
+namespace App\Livewire\Afslutning;
 
 use Livewire\Component;
 use App\Models\afslutning;
 
-class afslutningIndex extends Component
+class AfslutningIndex extends Component
 {
     public $afslutnings;
 
