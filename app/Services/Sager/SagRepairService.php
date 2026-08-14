@@ -6,7 +6,7 @@ use App\Models\Sager;
 use App\Models\Status;
 use App\Models\Konsulenter;
 use App\Models\Sagsbehandler;
-use App\Models\afslutning;
+use App\Models\Afslutning;
 use Illuminate\Support\Facades\DB;
 
 class SagRepairService

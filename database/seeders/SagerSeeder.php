@@ -14,7 +14,7 @@ use App\Models\Konsulenter;
 use App\Models\Status;
 use App\Models\ktr;
 use App\Models\bemaerkning;
-use App\Models\afslutning;
+use App\Models\Afslutning;
 use App\Models\udlaeg;
 
 class SagerSeeder extends Seeder
