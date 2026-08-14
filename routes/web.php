@@ -65,7 +65,7 @@ use App\Livewire\Autotekster\CreateAutotekst;
 use App\Livewire\Status\Index; 
 use App\Livewire\Status\UpdateStatus;
 use App\Livewire\Status\CreateStatus;
-// use App\Livewire\KTR\KTRindex;
+use App\Livewire\KTR\KTRindex;
 use App\Livewire\KTR\CreateKTR;
 use App\Livewire\KTR\UpdateKTR;
 use App\Livewire\KTR\ShowKTR;
@@ -252,8 +252,8 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             Route::get('/{status}/edit', UpdateStatus::class)->name('edit'); 
         });
 
-        Route::prefix('/ktr')->name('KTR.')->group(function () {
-            // Route::get('/', KTRindex::class)->name('index');
+        Route::prefix('/ktr')->name('ktr.')->group(function () {
+            Route::get('/', KTRindex::class)->name('index');
             Route::get('/create', CreateKTR::class)->name('create');
             Route::get('/{ktr}', ShowKTR::class)->name('show');
             Route::get('/{ktr}/edit', UpdateKTR::class)->name('edit');
