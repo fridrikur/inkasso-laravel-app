@@ -19,10 +19,10 @@ use App\Livewire\ManageRoles;
 use App\Livewire\Admin\SagFieldManager;
 use App\Livewire\Users\AssignMedarbejder;
 use App\Livewire\forms\UserForm;
-use App\Livewire\sager\ShowSager;
-use App\Livewire\sager\ShowKreditorSager;
+use App\Livewire\Sager\ShowSager;
+use App\Livewire\Sager\ShowKreditorSager;
 use App\Livewire\kreditorer\CreateKreditor;
-use App\Livewire\Kreditorer\ManageKreditor;
+use App\Livewire\kreditorer\ManageKreditor;
 use App\Livewire\kreditorer\ManageKreditorer;
 use App\Livewire\Users\ManageUser;
 use App\Livewire\Sager\StatusPage;
@@ -66,7 +66,7 @@ use App\Models\Sagsbehandler;
 use App\Livewire\Autotekster\ShowAutotekster;
 use App\Livewire\Autotekster\UpdateAutotekst;
 use App\Livewire\Autotekster\CreateAutotekst;
-use App\Livewire\Status\Index; // Din admin status-oversigt
+use App\Livewire\Status\Index; 
 use App\Livewire\Status\Updatestatus;
 use App\Livewire\Status\CreateStatus;
 use App\Livewire\KTR\KTRindex;
@@ -132,7 +132,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/admin/dropdowns', DropdownIndex::class)->name('dropdowns.index');
     
-    // Omdirigering til rolle-baseret dashboard
     Route::get('/dashboard', function () {
         $user = auth()->user();
 
@@ -144,26 +143,17 @@ Route::middleware(['auth'])->group(function () {
         };
     })->name('dashboard');
 
-    // 🟢 RETTET: Navne ændret så de matcher 'admin.dashboard' og 'medarbejder.dashboard'
     Route::get('/dashboard/admin', AdminDashboard::class)
         ->name('admin.dashboard');
 
     Route::get('/dashboard/medarbejder', MedarbejderDashboard::class)
         ->name('medarbejder.dashboard');
 
-    // Keep Alive Ping
     Route::post('/keep-alive', function () {
         session(['last_activity' => time()]);
         return response()->json(['status' => 'session extended']);
     });
 
-    // Keep Alive Ping (Session Forlængelse)
-    Route::post('/keep-alive', function () {
-        session(['last_activity' => time()]);
-        return response()->json(['status' => 'session extended']);
-    });
-
-    // Blød Re-Authenticering Modal (Ved udløbet session)
     Route::post('/re-authenticate', function (Request $request) {
         $request->validate([
             'password' => 'required|string',
@@ -209,11 +199,10 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             ->name('sager.edit');
         Route::get('/sager/search', SagSearch::class)->name('sager.search');
         Route::get('/admin/sager/import-log', ImportLogIndex::class)->name('sager.import.log');
-        // 1. Når filen er valgt -> Åbn mapping-siden
+        
         Route::post('/sager/import/{kreditor}/mapping', [ImportExecuteController::class, 'previewMapping'])
             ->name('sager.import.mapping');
 
-        // 2. Når Admin har parret og trykker "Start Import" -> Kør importen
         Route::post('/sager/import/{kreditor}/run', [ImportExecuteController::class, 'run'])
             ->name('sager.import.run');
 
@@ -230,7 +219,6 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         Route::get('/system-security', SystemSecurity::class)
             ->name('system-security');
 
-            // Systemindstillinger
         Route::get('/admin/system-settings', ManageSettings::class)
             ->name('admin.system-settings.index');
 
@@ -248,7 +236,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             Route::get('/', ManageKreditorer::class)->name('kreditorer.index');
             Route::get('/create', CreateKreditor::class)->name('kreditorer.create');
             Route::get('/{kreditor}/edit', UpdateKreditor::class)->name('kreditorer.edit');
-            Route::get('/{kreditor}', ManageKreditor::class)->name('kreditor.manage')->withTrashed(); // 🟢 Tillader Laravel at bind'e soft-slettede kreditorer uden at kaste 404
+            Route::get('/{kreditor}', ManageKreditor::class)->name('kreditor.manage')->withTrashed(); 
             Route::get('/{kreditor}/sager', ShowKreditorSager::class)->name('kreditorer.sager');
         });
 
@@ -262,12 +250,11 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         Route::get('/autotekster', AutotekstIndex::class)->name('autotekster.index');
 
         /* STATUS ROUTES */
-        // 🟢 NYT (Opretter navne som admin.sager.status.show osv.):
         Route::prefix('admin/sager/status')->name('admin.sager.status.')->group(function () {
-            Route::get('/', Index::class)->name('index');             // admin.sager.status.index
-            Route::get('/create', CreateStatus::class)->name('create');      // admin.sager.status.create
-            Route::get('/{status}', StatusPage::class)->name('show');        // admin.sager.status.show
-            Route::get('/{status}/edit', Updatestatus::class)->name('edit'); // admin.sager.status.edit
+            Route::get('/', Index::class)->name('index');             
+            Route::get('/create', CreateStatus::class)->name('create');      
+            Route::get('/{status}', StatusPage::class)->name('show');        
+            Route::get('/{status}/edit', Updatestatus::class)->name('edit'); 
         });
 
         Route::get('/ktr', KtrIndex::class)->name('ktr.index');
@@ -288,18 +275,13 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         Route::get('/afslutning/create', Createafslutning::class)->name('afslutning.create');
         Route::get('/afslutning/{afslutning}/edit', Updateafslutning::class)->name('afslutning.edit');
 
-        /* BRUGERE (Styres via ManageUsers, CreateUser og ManageUser) */
         Route::prefix('users')->as('users.')->group(function () {
-            // 1. Specifikke sider (SKAL stå først)
             Route::get('/', ManageUsers::class)->name('index');
             Route::get('/manage-users', ManageUsers::class)->name('manage-users');
             Route::get('/create', CreateUser::class)->name('create');
-
-            // 2. Wildcard sider (SKAL stå sidst)
             Route::get('/{user}', ManageUser::class)->name('user.manage')->withTrashed();
         });
 
-        /* KONSULENTER (Styres på samme måde) */
         Route::prefix('konsulenter')->as('konsulenter.')->group(function () {
             Route::get('/', ManageKonsulenter::class)->name('index');
             Route::get('/manage-konsulenter', ManageKonsulenter::class)->name('manage-konsulenter');
@@ -308,7 +290,6 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
 
         Route::get('/manage-roles', ManageRoles::class)->name('roles.index');
 
-        /* BACKUPS & SYSTEM TOOLS */
         Route::get('/backups', BackupManager::class)->name('backups.index');
         Route::get('/admin/backups', BackupManager::class)->name('admin.backups');
         Route::get('/tekster', ShowTekster::class)->name('tekster.index');
@@ -321,7 +302,6 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
 
         Route::get('/saved-search/{saved}/results', SavedSearchResults::class)->name('saved-search.results');
 
-        /* IMPORT FLOW */
         Route::prefix('sager/import')
             ->name('sager.import.')
             ->middleware(['auth', 'verified'])
