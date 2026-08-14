@@ -3,7 +3,7 @@
 namespace App\Livewire\Afslutning;
 
 use Livewire\Component;
-use App\Models\afslutning;
+use App\Models\Afslutning;
 
 class ShowAfslutning extends Component
 {

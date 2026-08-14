@@ -4,7 +4,7 @@ namespace App\Livewire\Afslutning;
 
 use Livewire\Component;
 use App\Livewire\forms\afslutningForm;
-use App\Models\afslutning;
+use App\Models\Afslutning;
 
 class CreateAfslutning extends Component
 {
