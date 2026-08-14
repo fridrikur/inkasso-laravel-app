@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\dialog;
+use App\Models\Dialog;
 use App\Models\LegacyDialogImport;
 use App\Models\Sager;
 use App\Models\Sagsbehandler;
