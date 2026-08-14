@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\ktr;
+namespace App\Livewire\KTR;
 
 use Livewire\Component;
 use App\Livewire\Forms\KTRForm;
