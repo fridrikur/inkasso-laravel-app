@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Livewire\afslutning;
+namespace App\Livewire\Afslutning;
 
 use Livewire\Component;
 use App\Models\afslutning;
 use App\Livewire\forms\afslutningForm;
 
-class Updateafslutning extends Component
+class UpdateAfslutning extends Component
 {
     public ?afslutning $afslutning;
     public afslutningForm $form;
