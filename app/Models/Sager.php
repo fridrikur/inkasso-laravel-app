@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use App\Models\Kreditorer;
 use App\Models\Debitorer;
 use App\Models\Tokens;
+use App\Models\Dialog;
 
 class Sager extends Model
 {
@@ -121,7 +122,7 @@ class Sager extends Model
 
     public function dialogs()
     {
-        return $this->hasMany(dialog::class, 'sag_id');
+        return $this->hasMany(Dialog::class, 'sag_id');
     }
 
     public function dokumenter()
