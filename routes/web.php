@@ -253,10 +253,10 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         });
 
         Route::prefix('/ktr')->name('ktr.')->group(function () {
-            Route::get('/',Index::class)->name('index');
+            Route::get('/', KTRindex::class)->name('index');
             Route::get('/create', CreateKTR::class)->name('create');
-            Route::get('/{ktr}', ShowKTR::class)->name('ktr.show');
-            Route::get('/{ktr}/edit', UpdateKTR::class)->name('ktr.edit');
+            Route::get('/{ktr}', ShowKTR::class)->name('show');
+            Route::get('/{ktr}/edit', UpdateKTR::class)->name('edit');
         });
 
         Route::get('/bemaerkning', BemaerkningIndex::class)->name('bemaerkning.index');

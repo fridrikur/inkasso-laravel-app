@@ -116,10 +116,11 @@
     </div>
 
     {{-- DATA TABLE --}}
+    {{-- DATA TABLE --}}
     <x-data-table 
         :title="$currentIcon . ' Administrer ' . $currentTitle" 
         description="Disse muligheder fremgår i dropdown-vælgerne på sagsredigeringen."
-        :headers="['Tekst / Navn', 'Forkortelse / Kode']"
+        :headers="['Tekst / Navn', 'Forkortelse / Kode', '']"
         :items="$items"
     >
         <x-slot:action>
@@ -166,8 +167,12 @@
                     @endif
                 </td>
                 
-                {{-- 🟢 ERSTATTER DE MANUELLE KNAPPER --}}
-                <x-table-actions :id="$item->id" />
+                {{-- 🟢 RETTELSE: Handlinger skal ligge inde i en <td> for at matche kolonnen --}}
+                <td class="px-6 py-4 text-right">
+                    <div class="flex items-center justify-end gap-1.5">
+                        <x-table-actions :id="$item->id" />
+                    </div>
+                </td>
             </tr>
         @empty
             <tr>
@@ -217,10 +222,14 @@
     @endif
 
     {{-- 🟢 SLETTEMODAL TIL TABELELEMENTER --}}
+    {{-- MODAL TIL SLETNING --}}
     <x-confirm-delete-modal 
         :show="$showDeleteModal" 
         title="Slet element?" 
         message="Er du sikker på, at du vil slette dette element? Handlingen kan ikke fortrydes." 
+        wire:click="confirmDelete" 
+        @confirm="$wire.confirmDelete()"
+        @cancel="$wire.cancelDelete()"
     />
 
     {{-- 🟢 MODAL TIL PURGE CACHE --}}

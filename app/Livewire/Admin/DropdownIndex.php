@@ -31,6 +31,11 @@ class DropdownIndex extends Component
         'udlaeg'      => ['model' => Udlaeg::class, 'title' => 'Udlægstype', 'icon' => '💰'],
     ];
 
+    public function mount($id = null)
+    {
+        // Gør $id valgfri, så komponenten kan loades på index-siden uden fejl
+    }
+
     // 🟢 Påkrævet af HasCrudModal Trait
     public function resetForm(): void
     {
@@ -86,20 +91,41 @@ class DropdownIndex extends Component
     }
 
     // 🟢 Sletning udføres via Traitens $deletingId
-    public function confirmDelete()
+    // 1. Denne kaldes, når der klikkes på "Slet" på rækken (åbner modalen og gemmer ID)
+    // 🟢 Håndterer både åbning af modal (med $id) og selve sletningen (uden $id)
+    public function confirmDelete($id = null): void
     {
-        if ($this->deletingId) {
-            $model = $this->types[$this->activeTab]['model'];
-            $model::find($this->deletingId)?->delete();
-
-            Cache::forget('select.' . $this->activeTab);
-
-            $this->cancelDelete();
-            $this->dispatch('toast', message: 'Element slettet!', type: 'success');
+        // 1. Åbn modal ved tryk på slet i tabellen
+        if ($id) {
+            $this->deletingId = $id;
+            $this->showDeleteModal = true;
+            return;
         }
+
+        // 2. Udfør sletning ved bekræftelse i modal
+        if (!$this->deletingId) {
+            $this->cancelDelete();
+            return;
+        }
+
+        $model = $this->types[$this->activeTab]['model'];
+        $item = $model::find($this->deletingId);
+
+        if ($item) {
+            $item->delete();
+            Cache::forget('select.' . $this->activeTab);
+        }
+
+        $this->cancelDelete();
+
+        $this->dispatch('toast', message: 'Element slettet!', type: 'success');
     }
 
-    public function confirmPurgeCache()
+    public function cancelDelete(): void
+    {
+        $this->showDeleteModal = false;
+        $this->deletingId = null;
+    }    public function confirmPurgeCache()
     {
         $this->showPurgeModal = true;
     }
