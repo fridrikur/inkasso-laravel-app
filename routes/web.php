@@ -27,8 +27,7 @@ use App\Livewire\kreditorer\ManageKreditorer;
 use App\Livewire\Users\ManageUser;
 use App\Livewire\Sager\StatusPage;
 use App\Livewire\kreditorer\UpdateKreditor;
-use App\Livewire\Debitorer\CreateDebitor;
-use App\Livewire\Debitorer\ShowDebitorer;
+use App\Livewire\Debitorer\ManageDebitorer;
 use App\Livewire\Debitorer\UpdateDebitor;
 use App\Livewire\Users\CreateUser;
 use App\Livewire\Users\Showkreditorusers;
@@ -239,8 +238,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
 
         /* DEBITORER */
         Route::prefix('debitorer')->group(function () {
-            Route::get('/', ShowDebitorer::class)->name('debitorer.index');
-            Route::get('/create', CreateDebitor::class)->name('debitorer.create');
+            Route::get('/', ManageDebitorer::class)->name('debitorer.index');
             Route::get('/{debitor}/edit', UpdateDebitor::class)->name('debitorer.edit');
         });
 
