@@ -160,6 +160,30 @@
                                class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('showsager') || request()->routeIs('sager.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                 <span>📂</span> Sager
                             </a>
+                            <!-- NYT: Debitorer med Badge -->
+                            @php
+                                // Hent hurtigt antallet af dubletter direkte til menuen (eller send det via view composer / komponent)
+                                $duplicateNamesCount = \App\Models\Debitorer::select('navn')
+                                    ->whereNotNull('navn')->where('navn', '!=', '')
+                                    ->groupBy('navn')->having(\Illuminate\Support\Facades\DB::raw('count(*)'), '>', 1)->count();
+                                    
+                                $cprCol = \Schema::hasColumn('debitors', 'cpr') ? 'cpr' : 'pnr';
+                                $duplicateCprCount = \App\Models\Debitorer::select($cprCol)
+                                    ->whereNotNull($cprCol)->where($cprCol, '!=', '')
+                                    ->groupBy($cprCol)->having(\Illuminate\Support\Facades\DB::raw('count(*)'), '>', 1)->count();
+                                    
+                                $totalDuplicates = $duplicateNamesCount + $duplicateCprCount;
+                            @endphp
+
+                            <a href="{{ route('debitorer.index') }}" class="inline-flex items-center space-x-1 {{ request()->routeIs('debitorer.*') ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:text-gray-900' }}">
+                                <span>Debitorer</span>
+                                
+                                @if($totalDuplicates > 0)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 animate-pulse" title="Der er debitorer der kræver opmærksomhed (dubletter)">
+                                        {{ $totalDuplicates }}
+                                    </span>
+                                @endif
+                            </a>
                             <a href="{{ route('admin.sager.status.index') }}" 
                                class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('admin.sager.status.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                 <span>🏷️</span> Sagsstatus
