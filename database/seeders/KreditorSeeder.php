@@ -13,19 +13,19 @@ class KreditorSeeder extends Seeder
         $kreditorerData = [
             [
                 'navn'    => 'Nordic Wholesale A/S',
-                'lotusID' => 'LOT-1001',
+                'lotusID' => 1001, // 🟢 Ændret fra string til int
             ],
             [
                 'navn'    => 'Sønderborg Byg & Anlæg ApS',
-                'lotusID' => 'LOT-1002',
+                'lotusID' => 1002, // 🟢 Ændret fra string til int
             ],
             [
                 'navn'    => 'Danmark IT Services A/S',
-                'lotusID' => 'LOT-1003',
+                'lotusID' => 1003, // 🟢 Ændret fra string til int
             ],
             [
                 'navn'    => 'Als Energi & Varme A.m.b.a.',
-                'lotusID' => 'LOT-1004',
+                'lotusID' => 1004, // 🟢 Ændret fra string til int
             ],
         ];
 
