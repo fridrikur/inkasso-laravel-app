@@ -8,9 +8,13 @@
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.1",
         "blade-ui-kit/blade-heroicons": "^2.6",
+        "filament/actions": "^3.3",
+        "filament/filament": "^3.3",
+        "filament/forms": "^3.3",
         "lab404/laravel-impersonate": "^1.7",
         "laravel/fortify": "^1.31",
         "laravel/framework": "^11.9",
+        "laravel/jetstream": "^5.3",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "livewire/flux": "^2.1",
@@ -53,6 +57,7 @@
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
