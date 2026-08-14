@@ -15,8 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('navn')->unique();
             $table->string('email')->unique();
-            $table->string('tlf')->unique(); // 🟢 Ændret fra integer til string
-            $table->string('mobil')->unique(); // 🟢 Ændret fra integer til string
+            $table->string('tlf')->unique(); // Telefonnumre kan godt være string (pga. landekoder/formatering)
+            $table->string('mobil')->unique(); 
+            
+            // Hvis du har lotusID eller andre numre, der skal tjekkes for ledige værdier:
+            $table->unsignedInteger('lotusID')->unique()->nullable(); 
+
             $table->timestamps();
         });
     }

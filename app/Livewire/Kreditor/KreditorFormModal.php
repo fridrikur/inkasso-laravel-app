@@ -11,7 +11,7 @@ class KreditorFormModal extends Component
     use HasCrudModal;
 
     public string $navn = '';
-    public ?int $lotusID = null;
+    public $lotusID = null; // 🟢 Ændret fra public ?int $lotusID = null;
     public array $usedLotusIds = [];
 
     protected $listeners = [
@@ -46,7 +46,7 @@ class KreditorFormModal extends Component
     public function getSuggestedLotusIdProperty()
     {
         // Tæller også soft-deleted med for at undgå LotusID-sammenstød
-        return (Kreditorer::withTrashed()->max('lotusID') ?? 0) + 1;
+        return (int) (Kreditorer::withTrashed()->max('lotusID') ?? 0) + 1;
     }
 
     public function save()
