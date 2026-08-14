@@ -3169,13 +3169,6 @@
             "time": "2025-04-25T12:40:47+00:00"
         },
         {
-            "name": "laravel/jetstream",
-            "version": "v5.3.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/laravel/jetstream.git",
-                "reference": "d8d4d83a64d1035b05030e2e97230524b1fa8177"
-            },
             "dist": {
                 "type": "zip",
                 "url": "https://api.github.com/repos/laravel/jetstream/zipball/d8d4d83a64d1035b05030e2e97230524b1fa8177",
