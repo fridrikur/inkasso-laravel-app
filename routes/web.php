@@ -252,10 +252,12 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             Route::get('/{status}/edit', UpdateStatus::class)->name('edit'); 
         });
 
-        Route::get('/ktr', KTRindex::class)->name('ktr.index');
-        Route::get('/ktr/create', CreateKTR::class)->name('ktr.create');
-        Route::get('/ktr/{ktr}', ShowKTR::class)->name('ktr.show');
-        Route::get('/ktr/{ktr}/edit', UpdateKTR::class)->name('ktr.edit');
+        Route::prefix('/ktr')->name('ktr.')->group(function () {
+            Route::get('/',Index::class)->name('index');
+            Route::get('/create', CreateKTR::class)->name('ktr.create');
+            Route::get('/{ktr}', ShowKTR::class)->name('ktr.show');
+            Route::get('/{ktr}/edit', UpdateKTR::class)->name('ktr.edit');
+        });
 
         Route::get('/bemaerkning', BemaerkningIndex::class)->name('bemaerkning.index');
         Route::get('/bemaerkning/create', CreateBemaerkning::class)->name('bemaerkning.create');
