@@ -254,7 +254,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
 
         Route::prefix('/ktr')->name('ktr.')->group(function () {
             Route::get('/',Index::class)->name('index');
-            Route::get('/create', CreateKTR::class)->name('ktr.create');
+            Route::get('/create', CreateKTR::class)->name('create');
             Route::get('/{ktr}', ShowKTR::class)->name('ktr.show');
             Route::get('/{ktr}/edit', UpdateKTR::class)->name('ktr.edit');
         });
