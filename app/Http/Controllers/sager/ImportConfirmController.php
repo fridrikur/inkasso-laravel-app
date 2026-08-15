@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Sager;
+namespace App\Http\Controllers\sager;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
