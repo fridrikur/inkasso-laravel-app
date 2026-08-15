@@ -17,7 +17,7 @@ use App\Models\Bemaerkning;
 use App\Models\Afslutning;
 use App\Models\Ktr;
 use App\Models\Udlaeg;
-use App\Livewire\forms\SagForm;
+use App\Livewire\Forms\SagForm;
 use Illuminate\Support\Facades\Auth;
 use App\Models\SagerFieldSetting;
 use App\Models\DebitorFieldSetting;
