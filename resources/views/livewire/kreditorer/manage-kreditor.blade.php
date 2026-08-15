@@ -52,7 +52,7 @@
                 <div class="space-y-2.5 text-xs border-t border-b border-slate-100 py-4">
                     <div class="flex justify-between items-center text-slate-600">
                         <span>Aktive sager</span>
-                        <span class="font-bold text-slate-900 font-mono">{{ $this->kreditor->sager_count }}</span>
+                        <span class="font-bold text-slate-900 font-mono">{{ $sagerCount }}</span>
                     </div>
 
                     <div class="flex justify-between items-center text-slate-600">
@@ -264,7 +264,7 @@
                             href="{{ route('kreditorer.sager', $this->kreditor) }}"
                             class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition"
                         >
-                            Se alle {{ $this->kreditor->sager_count }} sager &rarr;
+                            Se alle {{ $sagerCount }} sager &rarr;
                         </a>
                     </div>
                 </div>
@@ -331,13 +331,13 @@
                     </div>
                 </div>
 
-                @if($this->kreditor->sager_count > 0)
+                @if($sagerCount > 0)
                     <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
                         <div class="flex items-center gap-2 text-xs font-bold text-amber-900 uppercase tracking-wider">
                             <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                             </svg>
-                            <span>Advarsel: {{ $this->kreditor->sager_count }} aktive sager</span>
+                            <span>Advarsel: {{ $sagerCount }} aktive sager</span>
                         </div>
                         <p class="text-xs text-amber-800 leading-relaxed">
                             Kreditoren har sager tilknyttet. Vælg venligst en modtager-kreditor og indtast sikkerhedskoden for at gennemføre overførslen og sletningen:
@@ -395,7 +395,7 @@
                         wire:click="confirmDelete"
                         class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition cursor-pointer"
                     >
-                        @if($this->kreditor->sager_count > 0)
+                        @if($sagerCount > 0)
                             Bekræft overførsel & slet
                         @else
                             Slet permanent
