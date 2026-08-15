@@ -14,8 +14,7 @@ class afslutning extends Model
         'forkortelse',
     ];
 
-    public function sagerafslutning(): BelongsToM
-    any
+    public function sagerafslutning(): BelongsToMany
     {
         return $this->belongsToMany(Sager::class, 'sager_afslutning', 'afslutning_id', 'sag_id');
     }
