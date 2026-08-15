@@ -92,7 +92,7 @@ class Sager extends Model
 
     public function sagerKtr()  
     {
-        return $this->belongsToMany(ktr::class, 'sager_ktr', 'sag_id', 'ktr_id');
+        return $this->belongsToMany(KTR::class, 'sager_ktr', 'sag_id', 'ktr_id');
     }
 
     public function sagerBemaerkning()
