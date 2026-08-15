@@ -12,7 +12,7 @@ use App\Models\Debitorer;
 use App\Models\Sagsbehandler;
 use App\Models\Konsulenter;
 use App\Models\Status;
-use App\Models\ktr;
+use App\Models\KTR;
 use App\Models\bemaerkning;
 use App\Models\Afslutning;
 use App\Models\udlaeg;
