@@ -6,9 +6,9 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Status;
 use App\Models\KTR;
-use App\Models\Afslutning;
-use App\Models\Bemaerkning;
-use App\Models\Udlaeg;
+use App\Models\afslutning;
+use App\Models\bemaerkning;
+use App\Models\udlaeg;
 use App\Traits\HasCrudModal;
 
 class DropdownIndex extends Component
