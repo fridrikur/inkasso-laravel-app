@@ -5,7 +5,6 @@ namespace App\Livewire\Kreditorer;
 use App\Models\Kreditorer;
 use App\Models\User;
 use App\Models\Sagsbehandler;
-use App\Models\Sager;
 use Livewire\Component;
 use Illuminate\Support\Facades\Hash;
 
@@ -21,6 +20,11 @@ class ManageKreditor extends Component
     // Slette/overførsel egenskaber
     public ?int $transferToKreditorId = null;
     public string $securityCode = '';
+
+    // Cachede tællere for at undgå Livewire-loops og frysning
+    public int $sagerCount = 0;
+    public int $usersCount = 0;
+    public int $sagsbehandlereCount = 0;
 
     // Bruger modal felter
     public ?User $activeUser = null;
@@ -43,16 +47,19 @@ class ManageKreditor extends Component
     }
 
     /**
-     * Genindlæser relationer og tællere
+     * Genindlæser relationer og sikre tællere
      */
-    protected function loadRelations()
+    protected function loadRelations(): void
     {
-        $this->kreditor->loadCount(['sager', 'users', 'sagsbehandlere']);
         $this->kreditor->load([
             'users',
             'sagsbehandlere',
             'sager' => fn($q) => $q->latest()->take(10)
         ]);
+
+        $this->sagerCount = $this->kreditor->sager()->count();
+        $this->usersCount = $this->kreditor->users()->count();
+        $this->sagsbehandlereCount = $this->kreditor->sagsbehandlere()->count();
     }
 
     public function render()
@@ -118,7 +125,6 @@ class ManageKreditor extends Component
         $this->validate($rules);
 
         if ($this->activeUser) {
-            // Opdater eksisterende bruger
             $this->activeUser->update([
                 'name'  => $this->userName,
                 'email' => $this->userEmail,
@@ -132,7 +138,6 @@ class ManageKreditor extends Component
 
             $toastMsg = 'Brugeren er blevet opdateret.';
         } else {
-            // Opret ny bruger og tilknyt kreditoren
             $user = User::create([
                 'name'     => $this->userName,
                 'email'    => $this->userEmail,
@@ -228,18 +233,26 @@ class ManageKreditor extends Component
     // =========================================================================
     public function requestDelete(): void
     {
+        $this->transferToKreditorId = null;
+        $this->securityCode = '';
         $this->showDeleteModal = true;
     }
 
-    public function confirmDelete()
+    public function confirmDelete(): void
     {
-        // Hvis der er sager tilknyttet, skal modtager-kreditor vælges
-        if ($this->kreditor->sager_count > 0) {
-            $this->validate([
-                'transferToKreditorId' => 'required|exists:kreditors,id',
-            ], [
-                'transferToKreditorId.required' => 'Vælg venligst en modtager-kreditor til sagerne.',
-            ]);
+        if (! $this->kreditor) {
+            return;
+        }
+
+        // Tjek om der er sager tilknyttet ved hjælp af vores sikre tæller
+        if ($this->sagerCount > 0) {
+            if (! $this->transferToKreditorId) {
+                $this->dispatch('toast', [
+                    'message' => 'Vælg venligst en modtager-kreditor, som sagerne skal overføres til.',
+                    'type'    => 'error'
+                ]);
+                return;
+            }
 
             $targetKreditor = Kreditorer::findOrFail($this->transferToKreditorId);
 
@@ -253,7 +266,6 @@ class ManageKreditor extends Component
             }
         }
 
-        // SoftDelete kreditoren
         $this->kreditor->delete();
 
         $this->dispatch('toast', [
@@ -261,6 +273,6 @@ class ManageKreditor extends Component
             'type'    => 'success'
         ]);
 
-        return redirect()->route('kreditorer.index');
+        $this->redirect(route('kreditorer.index'), navigate: true);
     }
 }
