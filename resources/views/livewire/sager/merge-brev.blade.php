@@ -95,11 +95,18 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Skabelon Tekst</label>
                         <textarea
-                            id="skabelon-textarea"
                             wire:model="tekst"
+                            @drop.prevent="
+                                const token = $event.dataTransfer.getData('text/plain');
+                                const start = $el.selectionStart;
+                                const end = $el.selectionEnd;
+                                const newValue = $el.value.substring(0, start) + token + $el.value.substring(end);
+                                $el.value = newValue;
+                                $el.selectionStart = $el.selectionEnd = start + token.length;
+                                $el.dispatchEvent(new Event('input', { bubbles: true }));
+                            "
+                            @dragover.prevent="$event.dataTransfer.dropEffect = 'copy'"
                             class="w-full border border-slate-200 rounded-2xl p-4 min-h-[420px] font-mono text-sm leading-relaxed shadow-sm focus:border-indigo-500 focus:outline-none"
-                            ondrop="insertToken(event)"
-                            ondragover="event.preventDefault()"
                         ></textarea>
                     </div>
 
@@ -123,16 +130,6 @@
                             Gem skabelon
                         </button>
 
-                        @if($brevId)
-                            <a 
-                                href="{{ route('sager.breve.pdf', ['sag' => $sag->id, 'brev' => $brevId]) }}"
-                                target="_blank"
-                                class="px-4 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-50 transition"
-                            >
-                                📄 Generer PDF
-                            </a>
-                        @endif
-
                         @if($dirty)
                             <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100">
                                 Unsaved changes
@@ -143,7 +140,7 @@
             @endif
         </div>
 
-        {{-- 🟢 FLYDENDE / TRÆKBAR BOKS MED FELTER (Alpine.js Drag) --}}
+        {{-- FLYDENDE / TRÆKBAR BOKS MED FELTER (Alpine.js Drag) --}}
         @if($mode === 'edit')
             <div 
                 x-data="{ 
@@ -197,7 +194,7 @@
                         @foreach($availableTokens as $token)
                             <div
                                 draggable="true"
-                                ondragstart="event.dataTransfer.setData('text/plain', '{{ '{'.$token.'}' }}')"
+                                @dragstart="$event.dataTransfer.setData('text/plain', '{{ '{'.$token.'}' }}')"
                                 class="bg-indigo-50 border border-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg cursor-grab active:cursor-grabbing text-xs font-mono font-bold select-none hover:bg-indigo-600 hover:text-white transition shadow-2xs"
                             >
                                 {{ '{'.$token.'}' }}
@@ -210,24 +207,3 @@
 
     </div>
 </div>
-
-<script>
-function insertToken(event) {
-    event.preventDefault();
-    const token = event.dataTransfer.getData("text/plain");
-    const textarea = document.getElementById('skabelon-textarea');
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-
-    textarea.value =
-        textarea.value.substring(0, start) +
-        token +
-        textarea.value.substring(end);
-
-    textarea.dispatchEvent(new Event('input'));
-    textarea.focus();
-    textarea.selectionStart = textarea.selectionEnd = start + token.length;
-}
-</script>
