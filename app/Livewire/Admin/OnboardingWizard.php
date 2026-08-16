@@ -105,56 +105,52 @@ class OnboardingWizard extends Component
     public function installDemoData(): bool
     {
         try {
-            @set_time_limit(180);
+            // Skru tidsgrænsen op til max
+            @set_time_limit(300);
+            @ini_set('max_execution_time', '300');
 
-            try {
-                Schema::disableForeignKeyConstraints();
+            Schema::disableForeignKeyConstraints();
 
-                $seeders = [
-                    \Database\Seeders\UserSeeder::class,
-                    \Database\Seeders\KreditorSeeder::class,
-                    \Database\Seeders\SagerSeeder::class,
-                    \Database\Seeders\DemoDataSeeder::class,
-                    \Database\Seeders\DatabaseSeeder::class,
-                ];
+            // Kør seederne direkte som klasser i stedet for Artisan-kald (forhindrer timeout og CLI-fejl)
+            $seeders = [
+                \Database\Seeders\UserSeeder::class,
+                \Database\Seeders\KreditorSeeder::class,
+                \Database\Seeders\SagerSeeder::class,
+                \Database\Seeders\DemoDataSeeder::class,
+                \Database\Seeders\DatabaseSeeder::class,
+            ];
 
-                foreach ($seeders as $seederClass) {
-                    if (class_exists($seederClass)) {
-                        try {
-                            Artisan::call('db:seed', [
-                                '--class' => $seederClass,
-                                '--force' => true,
-                            ]);
-                        } catch (\Throwable $seederEx) {
-                            // Log eller ignorer hvis en enkelt specifik seeder fejler, så unboxingen ikke dør
-                            logger()->warning("Seeder {$seederClass} kunne ikke køre: " . $seederEx->getMessage());
-                        }
+            foreach ($seeders as $seederClass) {
+                if (class_exists($seederClass)) {
+                    try {
+                        (new $seederClass())->run();
+                    } catch (\Throwable $seederEx) {
+                        // Log specifik fejl for denne seeder, men lad processen fortsætte
+                        logger()->warning("Seeder {$seederClass} advarsel: " . $seederEx->getMessage());
                     }
                 }
-
-            } finally {
-                Schema::enableForeignKeyConstraints();
             }
 
-            app(SettingsService::class)->set('setup_completed', true);
-            $this->showWizard = false;
-            
-            return true;
-
         } catch (\Throwable $e) {
-            Schema::enableForeignKeyConstraints();
-
-            logger()->error('Fejl under seeding af demo-data: ' . $e->getMessage(), [
-                'exception' => $e
+            logger()->error('Kritisk fejl under demo-data installation: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
             ]);
 
             $this->dispatch('toast', [
-                'message' => 'Fejl ved indlæsning af demo-data: ' . $e->getMessage(),
+                'message' => 'Fejl: ' . $e->getMessage(),
                 'type'    => 'error'
             ]);
 
             return false;
+        } finally {
+            Schema::enableForeignKeyConstraints();
         }
+
+        // Marker opsætning som fuldført
+        app(SettingsService::class)->set('setup_completed', true);
+        $this->showWizard = false;
+        
+        return true;
     }
 
     public function render()
