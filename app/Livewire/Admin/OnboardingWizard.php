@@ -8,6 +8,7 @@ use App\Models\Kreditorer;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Process;
 
 class OnboardingWizard extends Component
 {
@@ -103,56 +104,18 @@ class OnboardingWizard extends Component
     }
 
     public function installDemoData(): bool
-    {
-        try {
-            // Skru tidsgrænsen op til max
-            @set_time_limit(300);
-            @ini_set('max_execution_time', '300');
+{
+    // Kør artisan som en uafhængig proces i baggrunden (eller med udvidet timeout)
+    $result = Process::timeout(300)->run('php artisan db:seed --force');
 
-            Schema::disableForeignKeyConstraints();
-
-            // Kør seederne direkte som klasser i stedet for Artisan-kald (forhindrer timeout og CLI-fejl)
-            $seeders = [
-                \Database\Seeders\UserSeeder::class,
-                \Database\Seeders\KreditorSeeder::class,
-                \Database\Seeders\SagerSeeder::class,
-                \Database\Seeders\DemoDataSeeder::class,
-                \Database\Seeders\DatabaseSeeder::class,
-            ];
-
-            foreach ($seeders as $seederClass) {
-                if (class_exists($seederClass)) {
-                    try {
-                        (new $seederClass())->run();
-                    } catch (\Throwable $seederEx) {
-                        // Log specifik fejl for denne seeder, men lad processen fortsætte
-                        logger()->warning("Seeder {$seederClass} advarsel: " . $seederEx->getMessage());
-                    }
-                }
-            }
-
-        } catch (\Throwable $e) {
-            logger()->error('Kritisk fejl under demo-data installation: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            $this->dispatch('toast', [
-                'message' => 'Fejl: ' . $e->getMessage(),
-                'type'    => 'error'
-            ]);
-
-            return false;
-        } finally {
-            Schema::enableForeignKeyConstraints();
-        }
-
-        // Marker opsætning som fuldført
+    if ($result->successful()) {
         app(SettingsService::class)->set('setup_completed', true);
         $this->showWizard = false;
-        
         return true;
     }
 
+    return false;
+}
     public function render()
     {
         return view('livewire.admin.onboarding-wizard');
