@@ -1,7 +1,5 @@
 <div class="space-y-6 relative">
 
-    <h2>Jeg er ikke overbevist</h2>
-
     {{-- TOP BAR --}}
     <div class="border-b flex flex-wrap gap-2 pb-3">
 
