@@ -265,7 +265,7 @@
 
                                 <button 
                                     type="button" 
-                                    @click="startUnboxing()"
+                                    @click.prevent="startUnboxing()"
                                     class="p-5 rounded-2xl bg-gradient-to-b from-blue-600/20 to-indigo-600/20 hover:from-blue-600/30 hover:to-indigo-600/30 border border-blue-500/40 hover:border-blue-400 transition-all duration-200 group flex flex-col justify-between cursor-pointer shadow-lg relative overflow-hidden"
                                 >
                                     <div>

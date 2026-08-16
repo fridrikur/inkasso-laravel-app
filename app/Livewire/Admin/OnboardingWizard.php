@@ -110,41 +110,26 @@ class OnboardingWizard extends Component
             try {
                 Schema::disableForeignKeyConstraints();
 
-                // 1. Seed Brugere & Roller
-                if (class_exists(\Database\Seeders\UserSeeder::class)) {
-                    Artisan::call('db:seed', [
-                        '--class' => \Database\Seeders\UserSeeder::class,
-                        '--force' => true,
-                    ]);
-                }
+                $seeders = [
+                    \Database\Seeders\UserSeeder::class,
+                    \Database\Seeders\KreditorSeeder::class,
+                    \Database\Seeders\SagerSeeder::class,
+                    \Database\Seeders\DemoDataSeeder::class,
+                    \Database\Seeders\DatabaseSeeder::class,
+                ];
 
-                // 2. Seed Kreditorer
-                if (class_exists(\Database\Seeders\KreditorSeeder::class)) {
-                    Artisan::call('db:seed', [
-                        '--class' => \Database\Seeders\KreditorSeeder::class,
-                        '--force' => true,
-                    ]);
-                }
-
-                // 3. Seed Sager
-                if (class_exists(\Database\Seeders\SagerSeeder::class)) {
-                    Artisan::call('db:seed', [
-                        '--class' => \Database\Seeders\SagerSeeder::class,
-                        '--force' => true,
-                    ]);
-                }
-
-                // 4. Seed samlet DemoDataSeeder eller DatabaseSeeder
-                if (class_exists(\Database\Seeders\DemoDataSeeder::class)) {
-                    Artisan::call('db:seed', [
-                        '--class' => \Database\Seeders\DemoDataSeeder::class,
-                        '--force' => true,
-                    ]);
-                } elseif (class_exists(\Database\Seeders\DatabaseSeeder::class)) {
-                    Artisan::call('db:seed', [
-                        '--class' => \Database\Seeders\DatabaseSeeder::class,
-                        '--force' => true,
-                    ]);
+                foreach ($seeders as $seederClass) {
+                    if (class_exists($seederClass)) {
+                        try {
+                            Artisan::call('db:seed', [
+                                '--class' => $seederClass,
+                                '--force' => true,
+                            ]);
+                        } catch (\Throwable $seederEx) {
+                            // Log eller ignorer hvis en enkelt specifik seeder fejler, så unboxingen ikke dør
+                            logger()->warning("Seeder {$seederClass} kunne ikke køre: " . $seederEx->getMessage());
+                        }
+                    }
                 }
 
             } finally {
@@ -152,7 +137,7 @@ class OnboardingWizard extends Component
             }
 
             app(SettingsService::class)->set('setup_completed', true);
-            $this->showWizard = false; // 🟢 Lukker guiden i Livewire state
+            $this->showWizard = false;
             
             return true;
 
