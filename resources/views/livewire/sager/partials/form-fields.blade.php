@@ -143,7 +143,11 @@
             {{-- Skift fra wire:model.lazy til wire:model.live --}}
             <div>
                 <label class="block text-sm font-medium">Afsluttet</label>
-                <input type="date" wire:model.live="form.afsluttet" class="mt-1 w-full rounded-md border-gray-300" />
+                <input 
+                    type="date" 
+                    wire:model="form.afsluttet" 
+                    class="mt-1 w-full rounded-md border-gray-300" 
+                />
             </div>
 
             {{-- Row 3 --}}

@@ -8,7 +8,8 @@ use App\Models\Kreditorer;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 
 class OnboardingWizard extends Component
 {
@@ -103,19 +104,56 @@ class OnboardingWizard extends Component
         $this->redirect(route('sager.import.log'));
     }
 
-    public function installDemoData(): bool
-{
-    // Kør artisan som en uafhængig proces i baggrunden (eller med udvidet timeout)
-    $result = Process::timeout(300)->run('php artisan db:seed --force');
+    public function installDemoData() // Fjern ': bool' så den ikke brokker sig over returtyper
+    {
+        try {
+            // Skru tidsgrænsen op til 5 minutter for at undgå timeouts på remote servere
+            @set_time_limit(300);
+            @ini_set('max_execution_time', '300');
 
-    if ($result->successful()) {
+            Schema::disableForeignKeyConstraints();
+
+            // Kør dine ægte seedere i den korrekte rækkefølge
+            $seedersToRun = [
+                \Database\Seeders\UserSeeder::class,
+                \Database\Seeders\KreditorSeeder::class,
+                \Database\Seeders\SagerSeeder::class,
+            ];
+
+            foreach ($seedersToRun as $seederClass) {
+                if (class_exists($seederClass)) {
+                    logger()->info("Starter seeder: {$seederClass}");
+                    (new $seederClass())->run();
+                }
+            }
+
+        } catch (\Throwable $e) {
+            Schema::disableForeignKeyConstraints();
+
+            logger()->error('Fejl under kørsel af demo-seedere: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $this->dispatch('toast', [
+                'message' => 'Fejl ved demo-data: ' . $e->getMessage(),
+                'type'    => 'error'
+            ]);
+
+            return; // Returner ingenting ved fejl
+        } finally {
+            Schema::disableForeignKeyConstraints();
+        }
+
+        // Marker opsætning som fuldført
         app(SettingsService::class)->set('setup_completed', true);
         $this->showWizard = false;
-        return true;
+        
+        // Kør redirect som en kommando UDEN 'return' foran
+        $this->redirect(route('dashboard'), navigate: true);
     }
 
-    return false;
-}
     public function render()
     {
         return view('livewire.admin.onboarding-wizard');

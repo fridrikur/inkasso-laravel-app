@@ -10,6 +10,7 @@ use App\Models\Kreditorer;
 use App\Models\Debitorer;
 use App\Models\Tokens;
 use App\Models\Dialog;
+use Illuminate\Database\Eloquent\Builder;
 
 class Sager extends Model
 {
@@ -377,5 +378,34 @@ class Sager extends Model
     public function scopeExpiringSoon($query)
     {
         return $this->scopeGdprExpiringSoon($query);
+    }
+
+    public function scopeFilter(Builder $query, array $filters): Builder
+    {
+        // 1. Filtrer på søgeord (f.eks. sagsnummer eller bemærkning)
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('sagsnr', 'like', "%{$search}%")
+                  ->orWhere('stelnr', 'like', "%{$search}%")
+                  ->orWhere('kort_bemaerkning', 'like', "%{$search}%");
+            });
+        }
+
+        // 2. Filtrer på status (hvis valgt i filtrene)
+        if (!empty($filters['status_id'])) {
+            $query->whereHas('sagerStatus', function ($q) use ($filters) {
+                $q->where('statuses.id', $filters['status_id']);
+            });
+        }
+
+        // 3. Filtrer på kreditor (hvis valgt i filtrene)
+        if (!empty($filters['kreditor_id'])) {
+            $query->whereHas('sagerkreditor', function ($q) use ($filters) {
+                $q->where('kreditors.id', $filters['kreditor_id']);
+            });
+        }
+
+        return $query;
     }
 }

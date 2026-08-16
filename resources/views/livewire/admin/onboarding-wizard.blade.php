@@ -6,6 +6,10 @@
                 isPlaying: false,
                 oscillators: [],
                 gainNode: null,
+                unboxing: false,
+                progress: 0,
+                statusText: 'Udpakker arbejdsplads...',
+                
                 initAudio() {
                     if (this.audioCtx) return;
                     try {
@@ -63,6 +67,45 @@
                         this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + 1.5);
                         setTimeout(() => this.audioCtx.close(), 1500);
                     }
+                },
+
+                startUnboxing() {
+                    this.stopAudio();
+                    this.unboxing = true;
+                    this.progress = 5;
+                    this.statusText = 'Åbner den digitale æske...';
+
+                    // Jævn tæller der stiger op mod 99%
+                    let timer = setInterval(() => {
+                        if (this.progress < 99) {
+                            this.progress += 1;
+                            if (this.progress > 25 && this.progress < 50) {
+                                this.statusText = 'Opretter test-kreditorer & brugere...';
+                            } else if (this.progress >= 50 && this.progress < 80) {
+                                this.statusText = 'Genererer demo-sager og relationer...';
+                            } else if (this.progress >= 80) {
+                                this.statusText = 'Færdiggør opsætning...';
+                            }
+                        }
+                    }, 150);
+
+                    // Kald Livewire-metoden
+                    $wire.installDemoData()
+                        .then(() => {
+                            clearInterval(timer);
+                            this.progress = 100;
+                            this.statusText = 'Velkommen. Alt er klar.';
+                            
+                            // Ekstra sikkerhed for omdirigering hvis PHP-redirect tøver
+                            setTimeout(() => {
+                                window.location.href = '{{ route('dashboard') }}';
+                            }, 500);
+                        })
+                        .catch((err) => {
+                            clearInterval(timer);
+                            this.unboxing = false;
+                            console.error('Fejl:', err);
+                        });
                 }
             }"
             x-init="
@@ -89,19 +132,19 @@
                     <div 
                         x-data="{ 
                             migrating: false,
-                            progress: 0,
-                            statusText: 'Klargør din nye arbejdsplads...',
+                            progressMigrate: 0,
+                            statusMigrateText: 'Klargør din nye arbejdsplads...',
                             startInstallation() {
                                 this.migrating = true;
-                                this.progress = 10;
+                                this.progressMigrate = 10;
                                 
                                 let timer = setInterval(() => {
-                                    if (this.progress < 85) {
-                                        this.progress += Math.floor(Math.random() * 8) + 3;
-                                        if (this.progress > 30 && this.progress < 60) {
-                                            this.statusText = 'Opbygger struktur og databasetabeller...';
-                                        } else if (this.progress >= 60) {
-                                            this.statusText = 'Konfigurerer sikkerhed og admin-bruger...';
+                                    if (this.progressMigrate < 85) {
+                                        this.progressMigrate += Math.floor(Math.random() * 8) + 3;
+                                        if (this.progressMigrate > 30 && this.progressMigrate < 60) {
+                                            this.statusMigrateText = 'Opbygger struktur og databasetabeller...';
+                                        } else if (this.progressMigrate >= 60) {
+                                            this.statusMigrateText = 'Konfigurerer sikkerhed og admin-bruger...';
                                         }
                                     }
                                 }, 300);
@@ -110,8 +153,8 @@
                                     .then((success) => {
                                         clearInterval(timer);
                                         if (success) {
-                                            this.progress = 100;
-                                            this.statusText = 'Alt er klar!';
+                                            this.progressMigrate = 100;
+                                            this.statusMigrateText = 'Alt er klar!';
                                             setTimeout(() => {
                                                 window.location.reload();
                                             }, 800);
@@ -154,10 +197,10 @@
                             <div class="w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden p-0.5 border border-slate-700/40 shadow-inner">
                                 <div 
                                     class="bg-gradient-to-r from-blue-500 via-indigo-400 to-white h-full rounded-full transition-all duration-300 ease-out shadow-sm"
-                                    :style="'width: ' + progress + '%'"
+                                    :style="'width: ' + progressMigrate + '%'"
                                 ></div>
                             </div>
-                            <p class="text-[11px] text-slate-400 font-medium animate-pulse" x-text="statusText"></p>
+                            <p class="text-[11px] text-slate-400 font-medium animate-pulse" x-text="statusMigrateText"></p>
                         </div>
 
                     </div>
@@ -165,51 +208,7 @@
                 {{-- TRIN 1: VALG AF OPSTART --}}
                 @else
 
-                    <div 
-                        x-data="{
-                            unboxing: false,
-                            progress: 0,
-                            statusText: 'Udpakker arbejdsplads...',
-                            startUnboxing() {
-                                this.unboxing = true;
-                                this.progress = 5;
-                                this.statusText = 'Åbner den digitale æske...';
-
-                                let timer = setInterval(() => {
-                                    if (this.progress < 90) {
-                                        this.progress += Math.floor(Math.random() * 5) + 2;
-                                        if (this.progress > 25 && this.progress < 50) {
-                                            this.statusText = 'Opretter test-kreditorer & brugere...';
-                                        } else if (this.progress >= 50 && this.progress < 75) {
-                                            this.statusText = 'Genererer demo-sager og journaler...';
-                                        } else if (this.progress >= 75) {
-                                            this.statusText = 'Sliber grænsefladen og finpudser detaljer...';
-                                        }
-                                    }
-                                }, 250);
-
-                                $wire.installDemoData()
-                                    .then((success) => {
-                                        clearInterval(timer);
-                                        if (success) {
-                                            this.progress = 100;
-                                            this.statusText = 'Velkommen. Alt er klar.';
-                                            stopAudio();
-                                            setTimeout(() => {
-                                                window.location.href = '{{ route('dashboard') }}';
-                                            }, 1000);
-                                        } else {
-                                            this.unboxing = false;
-                                        }
-                                    })
-                                    .catch((err) => {
-                                        clearInterval(timer);
-                                        this.unboxing = false;
-                                        console.error('Demo-data install error:', err);
-                                    });
-                            }
-                        }"
-                    >
+                    <div>
                         <div x-show="!unboxing" class="space-y-8">
                             
                             <div class="mx-auto w-20 h-20 bg-gradient-to-tr from-slate-800 to-slate-700 rounded-3xl flex items-center justify-center text-3xl shadow-2xl border border-slate-600/30">

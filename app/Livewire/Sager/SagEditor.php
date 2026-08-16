@@ -434,7 +434,10 @@ class SagEditor extends Component
     public function save()
     {
         try {
-            $validated = $this->form->validate();
+            // I stedet for kun $validated, henter vi alt data fra formen
+            // Vi beholder valideringen, men bruger hele form-data til fill()
+            $this->form->validate(); 
+            $allData = $this->form->all(); 
 
             if (!($this->sag instanceof Sager)) {
                 $this->sag = new Sager();
@@ -443,7 +446,8 @@ class SagEditor extends Component
                 $isNew = !$this->sag->exists;
             }
 
-            $this->sag->fill($validated);
+            // Brug $allData i stedet for $validated
+            $this->sag->fill($allData);
             $this->sag->save();
 
             if ($isNew) {

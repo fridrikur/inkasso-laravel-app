@@ -143,25 +143,25 @@ class SagForm extends Form
     public function setSag(?Sager $sag): void
     {
         if (!$sag) {
-            $this->form = [];
             return;
         }
 
-        // Get field settings
-        $settings = SagerFieldSetting::where('visible', true)
-                    ->get()->keyBy('field_name');
-        
         $data = [];
 
         foreach ($sag->getFillable() as $field) {
             $value = $sag->$field;
 
-            // Only format if field type is 'date' AND value is a Carbon instance
-            if (isset($settings[$field]) 
-                && $settings[$field]->field_type === 'date' 
-                && $value instanceof \Illuminate\Support\Carbon
-            ) {
-                $value = $value->format('Y-m-d'); // adjust format to match your input
+            // 🟢 Hvis værdien er en Carbon-instans eller en dato, så formater den altid til Y-m-d
+            if ($value instanceof \Illuminate\Support\Carbon || $value instanceof \DateTime) {
+                $value = $value->format('Y-m-d');
+            } 
+            // Hvis det er en streng der ligner en dato, så rens den
+            elseif (in_array($field, ['afsluttet', 'modtaget', 'betalt', 'faktureret', 'senesterapport', 'fakturadato', 'opgivet', 'dato', 'adropl']) && !empty($value)) {
+                try {
+                    $value = \Carbon\Carbon::parse($value)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    // Behold original hvis parsing fejler
+                }
             }
 
             $data[$field] = $value;
