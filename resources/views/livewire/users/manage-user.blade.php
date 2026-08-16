@@ -157,7 +157,7 @@
                                 </div>
 
                                 <a 
-                                    href="{{ route('kreditorer.kreditor.manage', $kreditor) }}" 
+                                    href="{{ route('kreditor.manage', $kreditor) }}" 
                                     class="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-bold rounded-xl transition"
                                 >
                                     Åbn Kreditor &rarr;

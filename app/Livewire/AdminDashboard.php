@@ -56,6 +56,8 @@ class AdminDashboard extends Component
     public int $loadedSections = 0;
     public int $totalSections = 4;
 
+    public bool $showWelcomeModal = true;
+
     /**
      * 🔥 Livewire 3 Event Listeners
      */
@@ -342,5 +344,10 @@ class AdminDashboard extends Component
                 'labels' => [],
                 'datasets' => []
             ];
+    }
+
+    public function dismissWelcomeModal(): void
+    {
+        $this->showWelcomeModal = false;
     }
 }

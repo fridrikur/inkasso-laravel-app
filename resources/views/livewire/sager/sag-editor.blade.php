@@ -4,13 +4,14 @@
     class="relative rounded-3xl p-6 sm:p-8 space-y-6 transition-colors duration-200 border border-slate-200/60 shadow-xs"
 >
     {{-- SPINNER OVERLAY --}}
+    {{-- SPINNER OVERLAY (Vises KUN ved indlæsning og fane-skift, helt uden blur) --}}
     <div 
         wire:loading.flex
-        wire:target="save, setTab, formatOnBlur, form"
-        class="absolute inset-0 bg-white/75 backdrop-blur-sm z-50 items-center justify-center rounded-3xl transition-all"
+        wire:target="setTab"
+        class="absolute inset-0 bg-white/40 z-50 items-center justify-center rounded-3xl transition-all"
         style="display: none;"
     >
-        <div class="bg-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 text-slate-800 text-xs font-bold">
+        <div class="bg-white px-5 py-3 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-3 text-slate-800 text-xs font-bold">
             <svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -57,11 +58,19 @@
 
                 <div class="flex justify-end mt-6 pt-4 border-t border-slate-100">
                     <button 
-                        type="submit"
+                        type="submit" 
+                        wire:loading.attr="disabled"
+                        wire:target="save"
                         style="background-color: var(--theme-primary);"
-                        class="px-6 py-2.5 text-white font-bold text-xs rounded-xl transition shadow-sm cursor-pointer hover:opacity-90"
+                        class="inline-flex items-center gap-2 px-6 py-2.5 text-white font-bold text-xs rounded-xl transition shadow-sm cursor-pointer hover:opacity-90 disabled:opacity-75"
                     >
-                        Gem Sag
+                        {{-- Spinner vises KUN når save() kører --}}
+                        <svg wire:loading wire:target="save" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        
+                        <span>Gem Sag</span>
                     </button>
                 </div>
             </form>
