@@ -195,7 +195,7 @@ class SagerSeeder extends Seeder
         // 3. OPRET SAGER MED FULLDSTÆNDIG DATADÆKNING
         // -------------------------------------------------------------------------
         $shuffledDebitorer = $debitorer->shuffle();
-        $totalSager = 250;
+        $totalSager = 50;
 
         for ($i = 1; $i <= $totalSager; $i++) {
             
