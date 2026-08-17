@@ -364,7 +364,6 @@ Route::middleware(['auth', 'verified', 'role:Kreditor'])
 | DIVERSE HJÆLPE- OG AUTH-ROUTES
 |--------------------------------------------------------------------------
 */
-Route::get('/counter', Counter::class);
 
 Route::get('/login', function () {
     return view('auth.login');
