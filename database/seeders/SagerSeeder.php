@@ -16,13 +16,14 @@ use App\Models\KTR;
 use App\Models\bemaerkning;
 use App\Models\Afslutning;
 use App\Models\udlaeg;
-use Faker\Factory as Faker;
 
 class SagerSeeder extends Seeder
 {
     public function run(): void
     {
-        $faker = Faker::create('da_DK');
+        // Hjælpefunktioner til tilfældige data uden Faker
+        $tilfaeldigeNavne = ['Lars Jensen', 'Anna Hansen', 'Peter Nielsen', 'Mette Jensen', 'Henrik Poulsen', 'Kirsten Møller', 'Thomas Madsen', 'Hanne Thomsen'];
+Gader = ['Nørregade', 'Søndergade', 'Hovedgaden', 'Kirkegade', 'Bredgade', 'Stationsvej', 'Parkvej'];
 
         // -------------------------------------------------------------------------
         // 1. TJEK OG AUTO-SEED STAMDATA OG DROPDOWNS HVIS DE ER TOMME
@@ -33,9 +34,9 @@ class SagerSeeder extends Seeder
                 Kreditorer::create([
                     'navn' => $navn,
                     'cvr' => rand(10000000, 99999999),
-                    'adresse' => $faker->streetAddress(),
+                    'adresse' => rand(1, 150) . ' ' . $Gader[array_rand($Gader)],
                     'postnr' => rand(1000, 9999),
-                    'email' => $faker->companyEmail(),
+                    'email' => strtolower(Str::slug($navn)) . '@inkasso.dk',
                     'tlf' => '70' . rand(100000, 999999),
                 ]);
             }
@@ -61,15 +62,16 @@ class SagerSeeder extends Seeder
             ];
 
             for ($d = 1; $d <= 100; $d++) {
-                $tilfaeldigLokation = $faker->randomElement($danskeByer);
+                $tilfaeldigLokation = $danskeByer[array_rand($danskeByer)];
+                $navn = $tilfaeldigeNavne[array_rand($tilfaeldigeNavne)] . ' ' . rand(1, 99);
 
                 Debitorer::create([
-                    'navn' => $faker->name(),
+                    'navn' => $navn,
                     'pnr' => rand(100000, 999999) . '-' . rand(1000, 9999),
-                    'adresse' => $faker->streetAddress(),
+                    'adresse' => rand(1, 150) . ' ' . $Gader[array_rand($Gader)],
                     'postnr' => $tilfaeldigLokation['postnr'],
                     'tlf' => '20' . rand(100000, 999999),
-                    'email' => $faker->safeEmail(),
+                    'email' => strtolower(Str::slug($navn)) . '@gmail.com',
                 ]);
             }
         }
@@ -199,37 +201,46 @@ class SagerSeeder extends Seeder
         $shuffledDebitorer = $debitorer->shuffle();
         $totalSager = 50;
 
+        $bemaerkningTekster = [
+            'Debitor har kontaktet kontoret vedr. afdrag.',
+            'Varselsskrivelse afsendt pr. anbefalet post.',
+            'Sag overdraget til fogedretten i Sønderborg.',
+            'Forligsforhandling i gang.',
+            null
+        ];
+
         for ($i = 1; $i <= $totalSager; $i++) {
             
             $uniqueSagsnr = 100000 + $i;
 
-            $gdprCategory = $faker->randomElement(['expired', 'expiring_soon', 'normal', 'normal', 'normal']);
+            $gdprKategoriValg = ['expired', 'expiring_soon', 'normal', 'normal', 'normal'];
+            $gdprCategory = $gdprKategoriValg[array_rand($gdprKategoriValg)];
 
             if ($gdprCategory === 'expired') {
                 $modtagetDato = Carbon::now()->subMonths(rand(66, 84));
                 $isAfsluttet = true;
             } elseif ($gdprCategory === 'expiring_soon') {
                 $modtagetDato = Carbon::now()->subMonths(rand(58, 59));
-                $isAfsluttet = $faker->boolean(70);
+                $isAfsluttet = (rand(1, 100) <= 70);
             } else {
                 $modtagetDato = Carbon::now()->subDays(rand(30, 1000));
-                $isAfsluttet = $faker->boolean(30);
+                $isAfsluttet = (rand(1, 100) <= 30);
             }
 
-            $fakturadato = $faker->boolean(85) ? (clone $modtagetDato)->addDays(rand(1, 14)) : null;
-            $faktureret = $fakturadato && $faker->boolean(80) ? (clone $fakturadato)->addDays(rand(1, 5)) : null;
-            $betalt = $faktureret && $faker->boolean(65) ? (clone $faktureret)->addDays(rand(5, 30)) : null;
+            $fakturadato = (rand(1, 100) <= 85) ? (clone $modtagetDato)->addDays(rand(1, 14)) : null;
+            $faktureret = $fakturadato && (rand(1, 100) <= 80) ? (clone $fakturadato)->addDays(rand(1, 5)) : null;
+            $betalt = $faktureret && (rand(1, 100) <= 65) ? (clone $faktureret)->addDays(rand(5, 30)) : null;
             $afsluttetDato = $isAfsluttet ? (clone $modtagetDato)->addDays(rand(30, 180)) : null;
-            $opgivetDato = !$isAfsluttet && $faker->boolean(10) ? (clone $modtagetDato)->addDays(rand(60, 200)) : null;
+            $opgivetDato = !$isAfsluttet && (rand(1, 100) <= 10) ? (clone $modtagetDato)->addDays(rand(60, 200)) : null;
             $senesteRapport = (clone $modtagetDato)->addDays(rand(5, 40));
 
-            $hovedstol = $faker->randomFloat(2, 2000, 50000);
-            $renter = $faker->randomFloat(2, 150, 4500);
-            $gebyr = $faker->randomFloat(2, 100, 1800);
-            $startgebyr = $faker->randomFloat(2, 100, 950);
+            $hovedstol = round(rand(200000, 5000000) / 100, 2);
+            $renter = round(rand(15000, 450000) / 100, 2);
+            $gebyr = round(rand(10000, 180000) / 100, 2);
+            $startgebyr = round(rand(10000, 95000) / 100, 2);
             $ialt = $hovedstol + $renter + $gebyr + $startgebyr;
 
-            $indbetalt = $betalt ? $ialt : ($isAfsluttet ? $faker->randomFloat(2, 0, $ialt) : $faker->randomFloat(2, 0, $ialt / 2));
+            $indbetalt = $betalt ? $ialt : ($isAfsluttet ? round(rand(0, (int)($ialt * 100)) / 100, 2) : round(rand(0, (int)(($ialt / 2) * 100)) / 100, 2));
             $restgaeldDkg = max(0, $ialt - $indbetalt);
 
             $sag = Sager::create([
@@ -249,17 +260,11 @@ class SagerSeeder extends Seeder
                 'restgaeld_dkg' => $restgaeldDkg,
                 'restgaeld_kreditor' => $restgaeldDkg,
                 'indbetalt' => $indbetalt,
-                'n_mdlydelse' => $faker->randomFloat(2, 250, 3000),
+                'n_mdlydelse' => round(rand(25000, 300000) / 100, 2),
                 'stelnr' => 'VIN-' . strtoupper(Str::random(10)),
                 'aktiv' => !$isAfsluttet,
                 'fakturanr' => 'FAK-' . (2026000 + $i),
-                'kort_bemaerkning' => $faker->randomElement([
-                    'Debitor har kontaktet kontoret vedr. afdrag.',
-                    'Varselsskrivelse afsendt pr. anbefalet post.',
-                    'Sag overdraget til fogedretten i Sønderborg.',
-                    'Forligsforhandling i gang.',
-                    null
-                ]),
+                'kort_bemaerkning' => $bemaerkningTekster[array_rand($bemaerkningTekster)],
                 'kode' => 'KODE-' . rand(100, 999),
                 'dato' => $modtagetDato,
                 'created_at' => $modtagetDato,
@@ -282,10 +287,10 @@ class SagerSeeder extends Seeder
             $sag->sagerKtr()->attach($ktrListe->random()->id);
             $sag->sagerBemaerkning()->attach($bemaerkninger->random()->id);
             
-            if ($faker->boolean(80)) {
+            if (rand(1, 100) <= 80) {
                 $sag->sagerAfslutning()->attach($afslutninger->random()->id);
             }
-            if ($faker->boolean(70)) {
+            if (rand(1, 100) <= 70) {
                 $sag->sagerUdlaeg()->attach($udlaegListe->random()->id);
             }
         }
