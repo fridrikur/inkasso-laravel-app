@@ -1,48 +1,49 @@
 <div class="space-y-6" wire:init="loadDashboard" x-data="{ modalOpen: @entangle('showWelcomeModal'), isLoading: false }">
 
+    <div class="space-y-6" wire:init="loadDashboard">
     {{-- WELCOME / SUCCESS MODAL --}}
-    <div x-show="modalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
-        <div class="w-full max-w-lg bg-gradient-to-b from-slate-900 to-slate-950 rounded-[38px] shadow-2xl border border-slate-800 p-8 sm:p-10 text-center relative overflow-hidden transform transition-all">
-            
-            {{-- Dekorativ baggrunds-glød --}}
-            <div class="absolute -right-20 -top-20 w-60 h-60 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+<div class="space-y-6" wire:init="loadDashboard">
 
-            <div class="relative z-10 space-y-6">
-                <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 flex items-center justify-center text-4xl shadow-2xl shadow-indigo-500/30 border border-indigo-400/40">
-                    🚀
-                </div>
+    {{-- WELCOME / SUCCESS MODAL (Læser direkte fra session) --}}
+    @if(session()->has('show_welcome_modal'))
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-300" x-data="{ isLoading: false }">
+            <div class="w-full max-w-lg bg-gradient-to-b from-slate-900 to-slate-950 rounded-[38px] shadow-2xl border border-slate-800 p-8 sm:p-10 text-center relative overflow-hidden transform transition-all">
+                
+                {{-- Dekorativ baggrunds-glød --}}
+                <div class="absolute -right-20 -top-20 w-60 h-60 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-                <div class="space-y-2">
-                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        Opsætning fuldført
-                    </span>
-                    <h2 class="text-2xl font-bold text-white tracking-tight">
-                        Systemet er fuldt installeret og klar!
-                    </h2>
-                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-sm mx-auto">
-                        Alle demodata, sager, kreditorer og brugere er oprettet succesfuldt. Du kan nu begynde at arbejde med systemet.
-                    </p>
-                </div>
+                <div class="relative z-10 space-y-6">
+                    <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 flex items-center justify-center text-4xl shadow-2xl shadow-indigo-500/30 border border-indigo-400/40">
+                        🚀
+                    </div>
 
-                <div class="pt-2">
-                    <button
-                        type="button"
-                        @click="
-                            modalOpen = false; 
-                            isLoading = true; 
-                            $wire.dismissWelcomeModal(); 
-                            setTimeout(() => isLoading = false, 1000);
-                        "
-                        class="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs tracking-wide uppercase transition-all shadow-xl shadow-indigo-600/30 transform hover:scale-[1.02] cursor-pointer border border-indigo-400/30"
-                    >
-                        Start med at bruge systemet &rarr;
-                    </button>
+                    <div class="space-y-2">
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Opsætning fuldført
+                        </span>
+                        <h2 class="text-2xl font-bold text-white tracking-tight">
+                            Systemet er fuldt installeret og klar!
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-sm mx-auto">
+                            Alle demodata, sager, kreditorer og brugere er oprettet succesfuldt. Du kan nu begynde at arbejde med systemet.
+                        </p>
+                    </div>
+
+                    <div class="pt-2">
+                        {{-- Når der klikkes, fjernes sessionen vha. en Livewire metode eller et simpelt genlad --}}
+                        <button
+                            type="button"
+                            wire:click="dismissWelcomeModal"
+                            class="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs tracking-wide uppercase transition-all shadow-xl shadow-indigo-600/30 transform hover:scale-[1.02] cursor-pointer border border-indigo-400/30"
+                        >
+                            Start med at bruge systemet &rarr;
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
+    @endif
     {{-- LOADING OVERLAY NÅR MODAL LUKKES --}}
     <div x-show="isLoading" x-cloak class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-300">
         <div class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-indigo-500/20 border-t-indigo-500"></div>

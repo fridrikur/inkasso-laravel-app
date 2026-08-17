@@ -104,20 +104,16 @@ class OnboardingWizard extends Component
         $this->redirect(route('sager.import.log'));
     }
 
-    public function installDemoData() // Fjern ': bool' så den ikke brokker sig over returtyper
+    public function installDemoData()
     {
         try {
-            // Skru tidsgrænsen op til 5 minutter for at undgå timeouts på remote servere
             @set_time_limit(300);
             @ini_set('max_execution_time', '300');
 
             Schema::disableForeignKeyConstraints();
 
-            // Kør dine ægte seedere i den korrekte rækkefølge
             $seedersToRun = [
-                \Database\Seeders\UserSeeder::class,
-                \Database\Seeders\KreditorSeeder::class,
-                \Database\Seeders\SagerSeeder::class,
+                \Database\Seeders\DemoSeeder::class,
             ];
 
             foreach ($seedersToRun as $seederClass) {
@@ -128,30 +124,19 @@ class OnboardingWizard extends Component
             }
 
         } catch (\Throwable $e) {
-            Schema::disableForeignKeyConstraints();
-
-            logger()->error('Fejl under kørsel af demo-seedere: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            $this->dispatch('toast', [
-                'message' => 'Fejl ved demo-data: ' . $e->getMessage(),
-                'type'    => 'error'
-            ]);
-
-            return; // Returner ingenting ved fejl
+            Schema::enableForeignKeyConstraints();
+            throw new \Exception('Seeder fejl: ' . $e->getMessage() . ' (Linje: ' . $e->getLine() . ' i ' . basename($e->getFile()) . ')');
         } finally {
-            Schema::disableForeignKeyConstraints();
+            Schema::enableForeignKeyConstraints();
         }
 
-        // Marker opsætning som fuldført
+        // Marker opsætning som fuldført og sæt session flag
         app(SettingsService::class)->set('setup_completed', true);
+        session(['show_welcome_modal' => true]);
         $this->showWizard = false;
         
-        // Kør redirect som en kommando UDEN 'return' foran
-        $this->redirect(route('dashboard'), navigate: true);
+        // Returner et rent HTTP-redirect (IKKE navigate: true)
+        return redirect()->route('dashboard');
     }
 
     public function render()
