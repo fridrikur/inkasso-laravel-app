@@ -16,6 +16,7 @@ use App\Models\KTR;
 use App\Models\bemaerkning;
 use App\Models\Afslutning;
 use App\Models\udlaeg;
+use function Pest\Laravel\fake; // eller brug nedenstående standard Laravel helper
 
 class SagerSeeder extends Seeder
 {
