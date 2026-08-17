@@ -23,7 +23,7 @@ class SagerSeeder extends Seeder
     {
         // Hjælpefunktioner til tilfældige data uden Faker
         $tilfaeldigeNavne = ['Lars Jensen', 'Anna Hansen', 'Peter Nielsen', 'Mette Jensen', 'Henrik Poulsen', 'Kirsten Møller', 'Thomas Madsen', 'Hanne Thomsen'];
-Gader = ['Nørregade', 'Søndergade', 'Hovedgaden', 'Kirkegade', 'Bredgade', 'Stationsvej', 'Parkvej'];
+        $gader = ['Nørregade', 'Søndergade', 'Hovedgaden', 'Kirkegade', 'Bredgade', 'Stationsvej', 'Parkvej'];
 
         // -------------------------------------------------------------------------
         // 1. TJEK OG AUTO-SEED STAMDATA OG DROPDOWNS HVIS DE ER TOMME
@@ -34,7 +34,7 @@ Gader = ['Nørregade', 'Søndergade', 'Hovedgaden', 'Kirkegade', 'Bredgade', 'St
                 Kreditorer::create([
                     'navn' => $navn,
                     'cvr' => rand(10000000, 99999999),
-                    'adresse' => rand(1, 150) . ' ' . $Gader[array_rand($Gader)],
+                    'adresse' => rand(1, 150) . ' ' . $gader[array_rand($gader)],
                     'postnr' => rand(1000, 9999),
                     'email' => strtolower(Str::slug($navn)) . '@inkasso.dk',
                     'tlf' => '70' . rand(100000, 999999),
@@ -68,7 +68,7 @@ Gader = ['Nørregade', 'Søndergade', 'Hovedgaden', 'Kirkegade', 'Bredgade', 'St
                 Debitorer::create([
                     'navn' => $navn,
                     'pnr' => rand(100000, 999999) . '-' . rand(1000, 9999),
-                    'adresse' => rand(1, 150) . ' ' . $Gader[array_rand($Gader)],
+                    'adresse' => rand(1, 150) . ' ' . $gader[array_rand($gader)],
                     'postnr' => $tilfaeldigLokation['postnr'],
                     'tlf' => '20' . rand(100000, 999999),
                     'email' => strtolower(Str::slug($navn)) . '@gmail.com',
