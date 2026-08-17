@@ -16,7 +16,6 @@ use App\Models\KTR;
 use App\Models\bemaerkning;
 use App\Models\Afslutning;
 use App\Models\udlaeg;
-use function Pest\Laravel\fake; // eller brug nedenstående standard Laravel helper
 
 class SagerSeeder extends Seeder
 {
@@ -84,17 +83,17 @@ class SagerSeeder extends Seeder
         }
 
         if (Konsulenter::count() === 0) {
-                    $konsulenterData = ['Anders Fogh', 'Helle Thorning', 'Poul Nyrup', 'Sven Auken'];
-                    
-                    foreach ($konsulenterData as $index => $navn) {
-                        Konsulenter::create([
-                            'navn' => $navn,
-                            'email' => Str::slug($navn) . '.' . ($index + 1) . '@konsulent.dk',
-                            'tlf' => '40' . rand(1000000, 9999999),
-                            'mobil' => '50' . rand(1000000, 9999999),
-                        ]);
-                    }
-                }
+            $konsulenterData = ['Anders Fogh', 'Helle Thorning', 'Poul Nyrup', 'Sven Auken'];
+            
+            foreach ($konsulenterData as $index => $navn) {
+                Konsulenter::create([
+                    'navn' => $navn,
+                    'email' => Str::slug($navn) . '.' . ($index + 1) . '@konsulent.dk',
+                    'tlf' => '40' . rand(1000000, 9999999),
+                    'mobil' => '50' . rand(1000000, 9999999),
+                ]);
+            }
+        }
 
         if (Status::count() === 0) {
             $statuser = [
@@ -175,7 +174,7 @@ class SagerSeeder extends Seeder
         $udlaegListe = udlaeg::all();
         
         // -------------------------------------------------------------------------
-        // 2. NULSTIL PIPOT OG Hoved-TABELLER
+        // 2. NULSTIL PIVOT OG HOVED-TABELLER
         // -------------------------------------------------------------------------
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
@@ -193,7 +192,7 @@ class SagerSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         // -------------------------------------------------------------------------
-        // 3. OPRET SAGER MED FULLDSTÆNDIG DATADÆKNING
+        // 3. OPRET SAGER MED FULDSTÆNDIG DATADÆKNING
         // -------------------------------------------------------------------------
         $shuffledDebitorer = $debitorer->shuffle();
         $totalSager = 50;
@@ -267,10 +266,9 @@ class SagerSeeder extends Seeder
             ]);
 
             // -------------------------------------------------------------------------
-            // 4. TILKNYT SAMTLIGE RELATIONER OG DROPDOWNS (100% GARANTERET UDFYLDT)
+            // 4. TILKNYT SAMTLIGE RELATIONER OG DROPDOWNS
             // -------------------------------------------------------------------------
             
-            // Primary stakeholders
             $sag->sagerkreditor()->attach($kreditorer->random()->id);
 
             $debitor = $shuffledDebitorer->isNotEmpty() ? $shuffledDebitorer->pop() : $debitorer->random();
@@ -279,12 +277,10 @@ class SagerSeeder extends Seeder
             $sag->sagersagsbehandler()->attach($sagsbehandlere->random()->id);
             $sag->sagerkonsulent()->attach($konsulenter->random()->id);
 
-            // System & Dropdown Pivot Tables
             $sag->sagerStatus()->attach($statuser->random()->id);
             $sag->sagerKtr()->attach($ktrListe->random()->id);
             $sag->sagerBemaerkning()->attach($bemaerkninger->random()->id);
             
-            // Valgfrie dropdowns tilknyttes til 70-80% af sagerne for variation
             if (fake()->boolean(80)) {
                 $sag->sagerAfslutning()->attach($afslutninger->random()->id);
             }
@@ -293,6 +289,6 @@ class SagerSeeder extends Seeder
             }
         }
 
-        $this->command->info("✅ SagerSeeder har oprettet {$totalSager} sager med 100% udfyldte relationer, konsulenter, sagsbehandlere og dropdown-data!");
+        $this->command->info("✅ SagerSeeder har oprettet {$totalSager} sager med 100% udfyldte relationer!");
     }
 }
