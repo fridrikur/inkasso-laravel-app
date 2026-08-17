@@ -11,11 +11,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Kører som standard grundlæggende roller og Admin-bruger
+        // Kører KUN roller og Admin-bruger ved standardsysteminstallation
         $this->call([
             UserSeeder::class,
-            KreditorSeeder::class,
-            SagerSeeder::class,
         ]);
     }
 }
