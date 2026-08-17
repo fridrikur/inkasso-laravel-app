@@ -14,6 +14,8 @@ class DatabaseSeeder extends Seeder
         // Kører som standard grundlæggende roller og Admin-bruger
         $this->call([
             UserSeeder::class,
+            KreditorSeeder::class,
+            SagerSeeder::class,
         ]);
     }
 }
