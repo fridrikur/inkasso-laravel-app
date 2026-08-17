@@ -13,7 +13,7 @@ use App\Models\Kreditorer;
 use App\Models\Status;
 use App\Models\Bemaerkning;
 use App\Models\Ktr;
-use App\Models\Afslutning;
+use App\Models\afslutning;
 use App\Models\Udlaeg;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;

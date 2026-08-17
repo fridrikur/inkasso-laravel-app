@@ -7,7 +7,7 @@ use Livewire\WithPagination;
 use App\Models\Sager;
 use App\Models\Kreditorer;
 use App\Models\Status;
-use App\Models\Afslutning;
+use App\Models\afslutning;
 use App\Models\SavedSearch;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\SagerExport;
