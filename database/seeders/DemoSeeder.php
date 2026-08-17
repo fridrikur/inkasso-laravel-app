@@ -15,7 +15,7 @@ use App\Models\Konsulenter;
 use App\Models\Status;
 use App\Models\KTR;
 use App\Models\bemaerkning;
-use App\Models\Afslutning;
+use App\Models\afslutning;
 use App\Models\udlaeg;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
