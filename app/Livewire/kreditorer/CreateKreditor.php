@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Kreditorer;
 
-use App\Livewire\forms\KreditorForm;
+use App\Livewire\Forms\KreditorForm;
 use Livewire\Component;
 use App\Models\Kreditorer;
 use App\Models\User;

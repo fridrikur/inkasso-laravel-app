@@ -3,7 +3,7 @@
 namespace App\Livewire\Users;
 
 use Livewire\Component;
-use App\Livewire\forms\UserForm;
+use App\Livewire\Forms\UserForm;
 use App\Models\Kreditorer;
 
 class Createkreditoruser extends Component

@@ -18,7 +18,7 @@ use App\Livewire\Users\ManageUsers;
 use App\Livewire\ManageRoles;
 use App\Livewire\Admin\SagFieldManager;
 use App\Livewire\Users\AssignMedarbejder;
-use App\Livewire\forms\UserForm;
+use App\Livewire\Forms\UserForm;
 use App\Livewire\Sager\ShowSager;
 use App\Livewire\Sager\ShowKreditorSager;
 use App\Livewire\kreditorer\CreateKreditor;

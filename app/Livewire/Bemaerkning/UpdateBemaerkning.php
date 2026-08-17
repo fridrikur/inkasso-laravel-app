@@ -4,7 +4,7 @@ namespace App\Livewire\bemaerkning;
 
 use Livewire\Component;
 use App\Models\bemaerkning;
-use App\Livewire\forms\bemaerkningForm;
+use App\Livewire\Forms\bemaerkningForm;
 
 class Updatebemaerkning extends Component
 {

@@ -3,7 +3,7 @@
 namespace App\Livewire\Autotekster;
 
 use Livewire\Component;
-use App\Livewire\forms\AutotekstForm;
+use App\Livewire\Forms\AutotekstForm;
 use App\Models\Autotekster;
 use App\Models\Sager;
 use App\Models\Tokens;
