@@ -52,6 +52,7 @@ class AdminDashboard extends Component
     public bool $loadIncoming = false;
     public bool $loadUnread = false;
     public bool $loadEditing = false;
+    public bool $showWelcomeModal = false;
 
     public int $loadedSections = 0;
     public int $totalSections = 4;
