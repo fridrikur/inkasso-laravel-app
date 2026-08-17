@@ -5,7 +5,7 @@ namespace App\Livewire\Kreditor;
 use Livewire\Component;
 use App\Models\Sager;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Afslutning;
+use App\Models\afslutning;
 
 class Dashboard extends Component
 {

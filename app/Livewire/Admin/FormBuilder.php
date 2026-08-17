@@ -11,7 +11,7 @@ use App\Models\Sagsbehandler;
 use App\Models\Konsulenter;
 use App\Models\Status;
 use App\Models\Bemaerkning;
-use App\Models\Afslutning;
+use App\Models\afslutning;
 use App\Models\Ktr;
 
 class FormBuilder extends Component

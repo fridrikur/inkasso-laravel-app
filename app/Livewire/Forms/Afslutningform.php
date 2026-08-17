@@ -4,7 +4,7 @@ namespace App\Livewire\forms;
 
 use Livewire\Attributes\Validate;
 use Livewire\form;
-use App\Models\Afslutning;
+use App\Models\afslutning;
 
 class afslutningForm extends Form
 {
