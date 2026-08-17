@@ -3,7 +3,7 @@
 namespace App\Livewire\Medarbejdere;
 use Livewire\Component;
 use App\Models\Medarbejdere;
-use App\Livewire\forms\MedarbejderForm;
+use App\Livewire\Forms\MedarbejderForm;
 use App\Models\User;
 
 class UpdateMedarbejder extends Component

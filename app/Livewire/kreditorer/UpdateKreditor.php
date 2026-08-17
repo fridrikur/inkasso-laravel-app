@@ -6,7 +6,7 @@ use Livewire\Component;
 use App\Models\Kreditorer;
 use App\Models\Debitorer;
 use App\Models\Sagsbehandler;
-use App\Livewire\forms\KreditorForm;
+use App\Livewire\Forms\KreditorForm;
 use App\Models\User;
 use App\Models\Sager;
 

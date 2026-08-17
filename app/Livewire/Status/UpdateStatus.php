@@ -4,7 +4,7 @@ namespace App\Livewire\Status;
 
 use Livewire\Component;
 use App\Models\Status;
-use App\Livewire\forms\statusForm;
+use App\Livewire\Forms\statusForm;
 
 class UpdateStatus extends Component
 {

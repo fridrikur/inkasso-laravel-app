@@ -3,7 +3,7 @@
 namespace App\Livewire\bemaerkning;
 
 use Livewire\Component;
-use App\Livewire\forms\bemaerkningForm;
+use App\Livewire\Forms\bemaerkningForm;
 use App\Models\bemaerkning;
 
 class Createbemaerkning extends Component

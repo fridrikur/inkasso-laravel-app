@@ -4,7 +4,7 @@ namespace App\Livewire\Debitorer;
 
 use Livewire\Component;
 use App\Models\Debitorer;
-use App\Livewire\forms\DebitorForm;
+use App\Livewire\Forms\DebitorForm;
 
 class UpdateDebitor extends Component
 {

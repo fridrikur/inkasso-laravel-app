@@ -4,7 +4,7 @@ namespace App\Livewire\Autotekster;
 
 use Livewire\Component;
 use App\Models\Autotekster;
-use App\Livewire\forms\AutotekstForm;
+use App\Livewire\Forms\AutotekstForm;
 
 class UpdateAutotekst extends Component
 {

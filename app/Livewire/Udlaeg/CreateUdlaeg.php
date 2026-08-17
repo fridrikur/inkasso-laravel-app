@@ -3,7 +3,7 @@
 namespace App\Livewire\udlaeg;
 
 use Livewire\Component;
-use App\Livewire\forms\udlaegForm;
+use App\Livewire\Forms\udlaegForm;
 use App\Models\udlaeg;
 
 class Createudlaeg extends Component

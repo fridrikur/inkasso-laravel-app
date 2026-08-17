@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Debitorer;
 
-use App\Livewire\forms\DebitorForm;
+use App\Livewire\Forms\DebitorForm;
 use Livewire\Component;
 use App\Models\Debitorer;
 
