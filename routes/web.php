@@ -335,9 +335,6 @@ Route::middleware(['auth', 'role:Medarbejder'])
         Route::get('/sager/{sag}/bogholderi', \App\Livewire\Sager\Bogholderi::class)->name('sager.bogholderi');
         Route::get('/sager/{sag}/historik', \App\Livewire\Sager\Historik::class)->name('sager.historik');
         Route::get('/sager/{sag}/klientinformation', Klientinformation::class)->name('sager.klientinformation');
-
-        Route::get('/sager/{sag}/dokumenter', [DokumenterController::class, 'index'])->name('sager.dokumenter.index');
-        Route::post('/sager/{sag}/dokumenter', [DokumenterController::class, 'store'])->name('sager.dokumenter.store');
     });
 
 /*
@@ -354,8 +351,6 @@ Route::middleware(['auth', 'verified', 'role:Kreditor'])
         Route::get('/sager', KreditorSagerIndex::class)->name('sager.index');
         Route::get('/sager/{sag}', KreditorSagView::class)->whereNumber('sag')->name('sag.view');
         Route::get('/sager/{sag}/klientinformation', Klientinformation::class)->name('sager.klientinformation');
-        Route::get('/sager/{sag}/dokumenter', [DokumenterController::class, 'index'])->name('sager.dokumenter.index');
-        Route::post('/sager/{sag}/dokumenter', [DokumenterController::class, 'store'])->name('sager.dokumenter.store');
         Route::get('/search', Search::class)->name('search');
     });
 
@@ -383,3 +378,14 @@ Route::get('/refresh-csrf', function () {
         'token' => csrf_token()
     ]);
 });
+
+Route::middleware(['auth', 'verified', 'role:Admin|Medarbejder|Kreditor'])
+    ->prefix('sager/{sag}/dokumenter')
+    ->name('sager.dokumenter.')
+    ->group(function () {
+        Route::get('/', [DokumenterController::class, 'index'])->name('index');
+        Route::post('/', [DokumenterController::class, 'store'])->name('store');
+        Route::get('/{dokument}/download', [DokumenterController::class, 'download'])->name('download');
+        Route::delete('/{dokument}', [DokumenterController::class, 'destroy'])->name('destroy');
+    });
+

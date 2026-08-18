@@ -65,6 +65,20 @@
                 </span>
             @endif
         </button>
+        {{-- 6. DOKUMENTER --}}
+        <button
+            type="button"
+            wire:click="selectTab('dokumenter')"
+            class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer select-none
+                {{ $activeTab === 'dokumenter' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+        >
+            <span>📁 Dokumenter</span>
+            @if(isset($dokumenterCount) && $dokumenterCount > 0)
+                <span class="bg-slate-200 text-slate-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
+                    {{ $dokumenterCount }}
+                </span>
+            @endif
+        </button>
 
     </nav>
 </div>
