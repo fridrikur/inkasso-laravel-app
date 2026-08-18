@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Services\SettingsService;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Artisan;
+use App\Services\ToastService; 
 
 class ManageSettings extends Component
 {
@@ -199,15 +200,18 @@ class ManageSettings extends Component
         Artisan::call('config:clear');
         Artisan::call('view:clear');
 
-        // 3. Brug session flash, så beskeden overlever page-reloadet
-        session()->flash('toast', [
-            'message' => 'Succes! Systemet er nulstillet og cachen er ryddet.',
-            'type'    => 'success'
-        ]);
+        // 3. Generér toast data via din ToastService og flash til session
+        $toastData = app(ToastService::class)->success(
+            'Systemet er nulstillet og cachen er ryddet.',
+            'Succes!'
+        );
+
+        session()->flash('toast', $toastData);
         
-        // 4. Genindlæs siden umiddelbart efter
-        $this->js("setTimeout(() => { window.location.reload(); }, 300)");
+        // 4. Genindlæs siden (med en lille tidsforsinkelse så browseren opfanger det)
+        $this->js("setTimeout(() => { window.location.reload(); }, 300);");
     }
+    
     public function render()
     {
         return view('livewire.admin.system-settings.manage-settings', [
