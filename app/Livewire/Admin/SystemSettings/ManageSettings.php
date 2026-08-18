@@ -199,18 +199,19 @@ class ManageSettings extends Component
             '--force' => true,
         ]);
 
-        // 2. Ryd cachen så grafen henter friske tal fra databasen med det samme
+        // 2. Ryd cachen
         Artisan::call('cache:clear');
         Artisan::call('config:clear');
         Artisan::call('view:clear');
 
+        // 3. Send den færdige succes-besked
         $this->dispatch('toast', [
             'message' => 'Succes! Systemet er nulstillet og cachen er ryddet.',
             'type'    => 'success'
         ]);
         
-        // Genindlæs siden så alt er 100% opdateret
-        $this->js("setTimeout(() => { window.location.reload(); }, 1000)");
+        // Giv toasten 1,5 sekund til at blive vist, før siden genindlæses
+        $this->js("setTimeout(() => { window.location.reload(); }, 1500)");
     }
     public function render()
     {
