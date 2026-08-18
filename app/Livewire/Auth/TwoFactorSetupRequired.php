@@ -9,6 +9,7 @@ use App\Services\TwilioService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Fortify\TwoFactorAuthenticationProvider;
+use Illuminate\Contracts\Encryption\DecryptException;
 
 class TwoFactorSetupRequired extends Component
 {
@@ -33,27 +34,36 @@ class TwoFactorSetupRequired extends Component
         $this->providerType = $settings->get('two_factor_provider', 'totp');
 
         if ($this->providerType === 'totp') {
-            if (empty($this->user->two_factor_secret)) {
-                // 🟢 Fortify krypterer automatisk via sin trait – undlad encrypt() her!
+            $needsNewSecret = empty($this->user->two_factor_secret);
+
+            // Tjek om den eksisterende nøgle kan dekrypteres uden fejl
+            if (!$needsNewSecret) {
+                try {
+                    decrypt($this->user->two_factor_secret);
+                } catch (DecryptException $e) {
+                    $needsNewSecret = true; // Nøglen er ugyldig pga. backup/key-change
+                }
+            }
+
+            if ($needsNewSecret) {
                 $this->user->forceFill([
                     'two_factor_secret' => app(TwoFactorAuthenticationProvider::class)->generateSecretKey(),
+                    'two_factor_confirmed_at' => null,
                 ])->save();
+                
+                $this->user->refresh();
             }
         } else {
             $this->phone = $this->user->mobil ?? $this->user->tlf ?? '';
         }
     }
 
-    /**
-     * Send verifikations-SMS ved opsætning af Twilio 2FA
-     */
     public function sendSmsCode()
     {
         $this->validate([
             'phone' => 'required|string|min:8',
         ]);
 
-        // Gem/opdatér mobilnummer på brugeren
         if ($this->user->mobil !== $this->phone) {
             $this->user->update(['mobil' => $this->phone]);
         }
@@ -61,13 +71,12 @@ class TwoFactorSetupRequired extends Component
         $smsCode = rand(100000, 999999);
         session(['2fa_setup_sms_code' => $smsCode]);
 
-        // Send koden via Twilio
         app(TwilioService::class)->sendSms(
             $this->phone,
             "Din verifikationskode til 2FA-opsætning er: {$smsCode}"
         );
 
-        $smsSent = true;
+        $this->smsSent = true;
 
         $this->dispatch('toast', [
             'message' => 'Verifikationskode sendt på SMS!',
@@ -81,7 +90,6 @@ class TwoFactorSetupRequired extends Component
             'code' => 'required|string',
         ]);
 
-        // 🟢 Bekræftelse ved Twilio SMS
         if ($this->providerType === 'twilio') {
             $sessionCode = session('2fa_setup_sms_code');
 
@@ -91,16 +99,13 @@ class TwoFactorSetupRequired extends Component
             }
 
             session()->forget('2fa_setup_sms_code');
-        } 
-        // 🟢 Bekræftelse ved Authenticator App (TOTP)
-        else {
-            if (! $provider->verify(decrypt($this->user->two_factor_secret), $this->code)) {
+        } else {
+            if (! $provider->verify($this->user->two_factor_secret, $this->code)) {
                 $this->addError('code', 'Ugyldig godkendelseskode fra din app.');
                 return;
             }
         }
 
-        // Markér 2FA som bekræftet på brugeren
         $this->user->forceFill([
             'two_factor_confirmed_at' => Carbon::now(),
         ])->save();

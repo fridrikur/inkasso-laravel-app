@@ -18,11 +18,13 @@ class UserSeeder extends Seeder
         }
 
         // 2. Opret KUN System Admin
-        $admin = User::firstOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@d1k2g3db.com'],
             [
-                'name'     => 'System Admin',
-                'password' => Hash::make('123456'),
+                'name'                  => 'System Admin',
+                'password'              => Hash::make('123456'),
+                'two_factor_secret'     => null, // Nulstil så der ikke ligger gamle rester
+                'two_factor_confirmed_at' => null,
             ]
         );
         
