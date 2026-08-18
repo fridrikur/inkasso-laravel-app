@@ -2,10 +2,12 @@
 
 namespace App\Livewire\Sager;
 
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use App\Models\Sager;
 use App\Models\Konsulenter;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Sagsbehandler;
 use App\Models\Tokens;
 use App\Models\Sagervalglistetype;
@@ -31,7 +33,6 @@ use App\Models\SagActivity;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Hash;
 use App\Models\SagLock;
-use Illuminate\Support\Facades\Cache;
 use App\Models\SagEditRequest;
 use Illuminate\Support\Facades\Broadcast;
 use Livewire\WithFileUploads;
@@ -655,6 +656,7 @@ class SagEditor extends Component
         $this->showByDropdown = false;
 
         if (mb_strlen($term) < 1) {
+            $this->form->postnr = ''; // Nulstil postnr hvis feltet tømmes
             return;
         }
 
@@ -672,6 +674,15 @@ class SagEditor extends Component
             return;
         }
 
+        // 🟢 NYT: Hvis der kun er 1 resultat, eller hvis top-resultatet er et 100% match
+        if ($results->count() === 1 || $results->first()['by_lc'] === $term) {
+            $match = $results->first();
+            $this->form->postnr = $match['postnr'];
+            $this->form->by = $match['by']; // Sørg for pæn casing (f.eks. "Sønderborg" i stedet for "sønderborg")
+            return;
+        }
+
+        // Ellers vis dropdown med forslag som du plejer
         $this->bySuggestions = $results->toArray();
         $this->showByDropdown = true;
     }

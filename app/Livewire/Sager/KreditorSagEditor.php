@@ -2,9 +2,12 @@
 
 namespace App\Livewire\Sager;
 
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 use App\Models\Sager;
 use App\Models\Sagsbehandler;
+use App\Models\Postnr;
 use Illuminate\Support\Facades\Auth;
 use App\Livewire\Forms\SagForm;
 use App\Models\SagFieldSetting;
@@ -44,6 +47,9 @@ class KreditorSagEditor extends Component
     ];
 
     protected $listeners = ['closeModal' => 'closeModal'];
+
+    public array $bySuggestions = [];
+    public bool $showByDropdown = false;
 
     public function closeModal()
     {
@@ -347,6 +353,82 @@ class KreditorSagEditor extends Component
         );
     }
 
+    protected function fuzzyScore(string $needle, string $haystack): int
+    {
+        if (str_starts_with($haystack, $needle)) {
+            return 0;
+        }
+
+        if (str_contains($haystack, $needle)) {
+            return 5;
+        }
+
+        $distance = levenshtein($needle, $haystack);
+
+        return $distance < 10 ? 10 + $distance : 100;
+    }
+
+    public function updatedFormBy($value): void
+    {
+        $term = trim(mb_strtolower($value));
+
+        $this->bySuggestions = [];
+        $this->showByDropdown = false;
+
+        if (mb_strlen($term) < 1) {
+            $this->form->postnr = ''; // Nulstil postnr hvis feltet tømmes
+            return;
+        }
+
+        $results = $this->getPostnrIndex()
+            ->map(function ($row) use ($term) {
+                $row['score'] = $this->fuzzyScore($term, $row['by_lc']);
+                return $row;
+            })
+            ->filter(fn ($row) => $row['score'] <= 25)
+            ->sortBy('score')
+            ->take(10)
+            ->values();
+
+        if ($results->isEmpty()) {
+            return;
+        }
+
+        // 🟢 NYT: Hvis der kun er 1 resultat, eller hvis top-resultatet er et 100% match
+        if ($results->count() === 1 || $results->first()['by_lc'] === $term) {
+            $match = $results->first();
+            $this->form->postnr = $match['postnr'];
+            $this->form->by = $match['by']; // Sørg for pæn casing (f.eks. "Sønderborg" i stedet for "sønderborg")
+            return;
+        }
+
+        // Ellers vis dropdown med forslag som du plejer
+        $this->bySuggestions = $results->toArray();
+        $this->showByDropdown = true;
+    }
+
+    protected function getPostnrIndex(): Collection
+    {
+        return Cache::rememberForever('postnr.index', function () {
+            return Postnr::select('by', 'postnr')
+                ->get()
+                ->map(fn ($r) => [
+                    'by' => $r->by,
+                    'by_lc' => mb_strtolower($r->by),
+                    'postnr' => $r->postnr,
+                ]);
+        });
+    }
+    
+    public function selectBy(string $by, string $postnr): void
+    {
+        $this->form->by = $by;
+        $this->form->postnr = $postnr;
+
+        $this->bySuggestions = [];
+        $this->showByDropdown = false;
+    }
+    
     public function render()
     {
         return view('livewire.sager.kreditor-sag-editor');
