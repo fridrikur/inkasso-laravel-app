@@ -185,20 +185,29 @@ class ManageSettings extends Component
     public function runDemoFromSettings(): void
     {
         if ($this->environment === 'live') {
-            return; // Dobbelt-sikkerhed for ikke at kunne køre demo i production
+            return; 
         }
+
+        // Vi sender en besked om at vi starter processen
+        $this->dispatch('toast', [
+            'message' => 'Genindlæser demodata... vent venligst.',
+            'type'    => 'info'
+        ]);
 
         Artisan::call('db:seed', [
             '--class' => 'Database\\Seeders\\DemoSeeder',
             '--force' => true,
         ]);
 
+        // Når den er færdig, sender vi den endelige bekræftelse
         $this->dispatch('toast', [
-            'message' => 'Demo-data blev genindlæst i sandkassen!',
+            'message' => 'Succes! Systemet er nulstillet med friske demo-data.',
             'type'    => 'success'
-        ]);
+        ]); 
+        
+        // Valgfrit: Genindlæs siden automatisk efter 1,5 sek så alt står knivskarpt
+        $this->js("setTimeout(() => { window.location.reload(); }, 1500)");
     }
-
     public function render()
     {
         return view('livewire.admin.system-settings.manage-settings', [
