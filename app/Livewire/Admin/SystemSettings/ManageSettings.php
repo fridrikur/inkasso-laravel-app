@@ -3,10 +3,12 @@
 namespace App\Livewire\Admin\SystemSettings;
 
 use Livewire\Component;
+use Illuminate\Support\Facades\Schema;
 use App\Services\SettingsService;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Artisan;
 use App\Services\ToastService; 
+use Database\Seeders\DemoSeeder;
 
 class ManageSettings extends Component
 {
@@ -183,34 +185,51 @@ class ManageSettings extends Component
     }
 
     // Nulstil DB og kør demo fra SystemSettings (Kun i Sandkasse)
-    public function runDemoFromSettings(): void
+    public function runDemoFromSettings()
     {
         if ($this->environment === 'live') {
             return; 
         }
 
-        // 1. Nulstil database og seed
-        Artisan::call('db:seed', [
-            '--class' => 'Database\\Seeders\\DemoSeeder',
-            '--force' => true,
-        ]);
+        try {
+            @set_time_limit(300);
+            @ini_set('max_execution_time', '300');
 
-        // 2. Ryd cachen
+            Schema::disableForeignKeyConstraints();
+
+            $seedersToRun = [
+                DemoSeeder::class,
+            ];
+
+            foreach ($seedersToRun as $seederClass) {
+                if (class_exists($seederClass)) {
+                    (new $seederClass())->run();
+                }
+            }
+
+        } catch (\Throwable $e) {
+            Schema::enableForeignKeyConstraints();
+            throw new \Exception('Seeder fejl: ' . $e->getMessage() . ' (Linje: ' . $e->getLine() . ' i ' . basename($e->getFile()) . ')');
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
+
+        // Ryd alt cache
         Artisan::call('cache:clear');
         Artisan::call('config:clear');
         Artisan::call('view:clear');
 
-        // 3. Hent toast data via din ToastService
+        // Generér succes-toast via ToastService og flash til session
         $toastData = app(ToastService::class)->success(
-            'Systemet er nulstillet og cachen er ryddet.',
+            'Systemet er nulstillet med friske demo-data!',
             'Succes!'
         );
+        session()->flash('toast', $toastData);
 
-        // 4. Send eventen direkte til din toaster via Livewire dispatch
-        $this->dispatch('notify', $toastData);
-        
-        // 5. Genindlæs først siden EFTER brugeren har nået at se notifikationen (f.eks. efter 2 sekunder)
-        // $this->js("setTimeout(() => { window.location.reload(); }, 2000);");
+        // Sæt session flag for velkomstmodalen og redirect til dashboard via Livewire
+        session(['show_welcome_modal' => true]);
+
+        return redirect()->route('dashboard');
     }
 
     public function render()
