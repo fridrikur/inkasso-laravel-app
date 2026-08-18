@@ -46,23 +46,19 @@ class DemoSeeder extends Seeder
         }
 
         // 2. OPRET KREDITORER OG STAMDATA
+        // 2. OPRET KREDITORER
         $kreditorDataList = [
-            ['navn' => 'Danske Bank Inkasso', 'cvr' => 12345678, 'email' => 'danske@inkasso.dk', 'lotusID' => 'LOTUS-001'],
-            ['navn' => 'Jyske Finans A/S', 'cvr' => 87654321, 'email' => 'jyske@finans.dk', 'lotusID' => 'LOTUS-002'],
-            ['navn' => 'Nordea Kredit', 'cvr' => 11223344, 'email' => 'nordea@kredit.dk', 'lotusID' => 'LOTUS-003'],
-            ['navn' => 'Express Bank', 'cvr' => 44332211, 'email' => 'express@bank.dk', 'lotusID' => 'LOTUS-004'],
-            ['navn' => 'Resurs Bank', 'cvr' => 55667788, 'email' => 'resurs@bank.dk', 'lotusID' => 'LOTUS-005'],
+            ['navn' => 'Danske Bank Inkasso', 'lotusID' => 'LOTUS-001'],
+            ['navn' => 'Jyske Finans A/S', 'lotusID' => 'LOTUS-002'],
+            ['navn' => 'Nordea Kredit', 'lotusID' => 'LOTUS-003'],
+            ['navn' => 'Express Bank', 'lotusID' => 'LOTUS-004'],
+            ['navn' => 'Resurs Bank', 'lotusID' => 'LOTUS-005'],
         ];
 
         foreach ($kreditorDataList as $kData) {
             Kreditorer::firstOrCreate(
                 ['navn' => $kData['navn']],
                 [
-                    'cvr' => $kData['cvr'],
-                    'adresse' => 'Hovedgaden ' . rand(1, 50),
-                    'postnr' => 6400,
-                    'email' => $kData['email'],
-                    'tlf' => '70' . rand(100000, 999999),
                     'lotusID' => $kData['lotusID'],
                 ]
             );
