@@ -149,19 +149,16 @@
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button 
                         type="button" 
-                        @click="showDemoModal = false"
-                        class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
-                    >
-                        Annuller
-                    </button>
-
-                    <button 
-                        type="button" 
                         wire:click="runDemoFromSettings" 
-                        @click="showDemoModal = false"
-                        class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                        wire:loading.attr="disabled"
+                        class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-wait"
                     >
-                        <span>🔄</span> Ja, Genindlæs Testdata
+                        {{-- Vis ikon eller spinner når den loader --}}
+                        <span wire:loading.remove wire:target="runDemoFromSettings">🔄</span>
+                        <span wire:loading wire:target="runDemoFromSettings">⏳</span>
+                        
+                        <span wire:loading.remove wire:target="runDemoFromSettings">Ja, Genindlæs Testdata</span>
+                        <span wire:loading wire:target="runDemoFromSettings">Indlæser...</span>
                     </button>
                 </div>
             </div>
