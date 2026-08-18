@@ -21,7 +21,13 @@
 
             <div class="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
                 <div class="p-3 bg-white rounded-xl shadow-xs border border-slate-200">
-                    {!! $user->twoFactorQrCodeSvg() !!}
+                    @if($user->two_factor_secret)
+                        {!! $user->twoFactorQrCodeSvg() !!}
+                    @else
+                        <p class="text-xs text-amber-600 font-medium p-4 text-center">
+                            Genererer 2FA nøgle... Hvis dette ikke ændrer sig, mangler 2FA at blive aktøret på brugeren.
+                        </p>
+                    @endif
                 </div>
                 <p class="text-[11px] text-slate-500 mt-3 text-center">
                     Scan QR-koden med din Authenticator-app (f.eks. Google Authenticator eller Microsoft Authenticator).
