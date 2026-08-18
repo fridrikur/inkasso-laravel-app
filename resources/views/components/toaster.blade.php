@@ -15,6 +15,13 @@
     x-on:notify.window="
         addToast($event.detail.message ?? 'Ukendt besked', $event.detail.type ?? 'info', $event.detail.icon ?? 'info')
     "
+    @if(session()->has('toast'))
+        x-init="
+            setTimeout(() => {
+                addToast('{{ session('toast.message') }}', '{{ session('toast.type') }}', '{{ session('toast.icon') }}');
+            }, 200);
+        "
+    @endif
     class="fixed top-4 right-4 space-y-2 z-50"
 >
     <template x-for="toast in toasts" :key="toast.id">
