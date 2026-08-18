@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
     {
         // Kører KUN roller og Admin-bruger ved standardsysteminstallation
         $this->call([
+            PostnrSeeder::class, // Først postnumre
             UserSeeder::class,
         ]);
     }
