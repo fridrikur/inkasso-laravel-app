@@ -200,18 +200,19 @@ class ManageSettings extends Component
         Artisan::call('config:clear');
         Artisan::call('view:clear');
 
-        // 3. Generér toast data via din ToastService og flash til session
+        // 3. Generér data via ToastService
         $toastData = app(ToastService::class)->success(
             'Systemet er nulstillet og cachen er ryddet.',
             'Succes!'
         );
 
+        // 4. Gem i session så den vises efter reload
         session()->flash('toast', $toastData);
         
-        // 4. Genindlæs siden (med en lille tidsforsinkelse så browseren opfanger det)
+        // 5. Genindlæs siden
         $this->js("setTimeout(() => { window.location.reload(); }, 300);");
     }
-    
+
     public function render()
     {
         return view('livewire.admin.system-settings.manage-settings', [
