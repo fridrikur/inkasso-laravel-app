@@ -631,10 +631,6 @@ class SagEditor extends Component
     
     public function updatedFormPostnr($value)
     {
-        if ($value !== '' && $this->showByDropdown === false) {
-            return;
-        }
-
         $postnr = trim($value);
 
         if ($postnr === '') {
