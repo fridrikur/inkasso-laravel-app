@@ -210,7 +210,7 @@ class ManageSettings extends Component
         $this->dispatch('notify', $toastData);
         
         // 5. Genindlæs først siden EFTER brugeren har nået at se notifikationen (f.eks. efter 2 sekunder)
-        $this->js("setTimeout(() => { window.location.reload(); }, 2000);");
+        // $this->js("setTimeout(() => { window.location.reload(); }, 2000);");
     }
 
     public function render()
