@@ -188,11 +188,6 @@ class ManageSettings extends Component
             return; 
         }
 
-        $this->dispatch('toast', [
-            'message' => 'Genindlæser demodata og rydder cache...',
-            'type'    => 'info'
-        ]);
-
         // 1. Nulstil database og seed
         Artisan::call('db:seed', [
             '--class' => 'Database\\Seeders\\DemoSeeder',
@@ -204,14 +199,14 @@ class ManageSettings extends Component
         Artisan::call('config:clear');
         Artisan::call('view:clear');
 
-        // 3. Send den færdige succes-besked
-        $this->dispatch('toast', [
+        // 3. Brug session flash, så beskeden overlever page-reloadet
+        session()->flash('toast', [
             'message' => 'Succes! Systemet er nulstillet og cachen er ryddet.',
             'type'    => 'success'
         ]);
         
-        // Giv toasten 1,5 sekund til at blive vist, før siden genindlæses
-        $this->js("setTimeout(() => { window.location.reload(); }, 1500)");
+        // 4. Genindlæs siden umiddelbart efter
+        $this->js("setTimeout(() => { window.location.reload(); }, 300)");
     }
     public function render()
     {
