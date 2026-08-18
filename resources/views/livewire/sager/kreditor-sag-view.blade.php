@@ -12,7 +12,7 @@
             'klientinformationUnread' => $klientinformationUnread
         ])
         {{-- Dokumenter --}}
-        <a href="{{ route('kreditor.sager.dokumenter.index', $sag->id) }}"
+        <a href="{{ route('sager.dokumenter.index', $sag->id) }}"
         class="{{ request()->routeIs('sager.dokumenter.*')
             ? 'border-blue-600 text-blue-600'
             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}
@@ -102,7 +102,7 @@
         </h3>
 
         <form
-        action="{{ route('kreditor.sager.dokumenter.store', $sag) }}"
+        action="{{ route('sager.dokumenter.store', $sag) }}"
         method="POST"
         enctype="multipart/form-data"
         class="flex items-center gap-4">
