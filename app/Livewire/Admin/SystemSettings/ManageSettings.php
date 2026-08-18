@@ -189,7 +189,7 @@ class ManageSettings extends Component
         }
 
         Artisan::call('db:seed', [
-            '--class' => 'Database\\Seeders\\DemoDataSeeder',
+            '--class' => 'Database\\Seeders\\DemoSeeder',
             '--force' => true,
         ]);
 
