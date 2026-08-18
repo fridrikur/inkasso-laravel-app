@@ -327,7 +327,7 @@
                         <label class="block text-sm font-medium text-gray-700">By</label>
                         <input
                             type="text"
-                            wire:model.debounce.250ms="form.by"
+                            wire:model.live.debounce.250ms="form.by"
                             wire:click="showByDropdown = true"
                             wire:click.away="showByDropdown = false"
                             placeholder="København"

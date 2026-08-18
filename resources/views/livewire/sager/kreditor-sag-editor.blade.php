@@ -59,12 +59,30 @@ FORM MODE
                 {{-- By --}}
                 @elseif($field === 'by')
 
-                    <input
-                        type="text"
-                        wire:model="form.by"
-                        class="mt-1 w-full rounded-md border-gray-300 bg-gray-100 text-gray-700"
-                        readonly
-                    />
+                    <div class="relative">
+                        <input
+                            type="text"
+                            wire:model.live.debounce.250ms="form.by"
+                            wire:click="$set('showByDropdown', true)"
+                            wire:click.away="$set('showByDropdown', false)"
+                            autocomplete="off"
+                            class="mt-1 w-full rounded-md border-gray-300 bg-gray-100 text-gray-700"
+                        />
+
+                        @if(!empty($showByDropdown) && !empty($bySuggestions))
+                            <ul class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                                @foreach($bySuggestions as $item)
+                                    <li
+                                        wire:click="selectBy('{{ addslashes($item['by']) }}', '{{ $item['postnr'] }}')"
+                                        class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between text-xs"
+                                    >
+                                        <span>{{ $item['by'] }}</span>
+                                        <span class="text-gray-500 font-mono">{{ $item['postnr'] }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
 
                 {{-- Danish number fields --}}
                 @elseif(in_array($field, ['hovedstol', 'renter', 'gebyr', 'indbetalt']))
