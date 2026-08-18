@@ -188,25 +188,29 @@ class ManageSettings extends Component
             return; 
         }
 
-        // Vi sender en besked om at vi starter processen
         $this->dispatch('toast', [
-            'message' => 'Genindlæser demodata... vent venligst.',
+            'message' => 'Genindlæser demodata og rydder cache...',
             'type'    => 'info'
         ]);
 
+        // 1. Nulstil database og seed
         Artisan::call('db:seed', [
             '--class' => 'Database\\Seeders\\DemoSeeder',
             '--force' => true,
         ]);
 
-        // Når den er færdig, sender vi den endelige bekræftelse
+        // 2. Ryd cachen så grafen henter friske tal fra databasen med det samme
+        Artisan::call('cache:clear');
+        Artisan::call('config:clear');
+        Artisan::call('view:clear');
+
         $this->dispatch('toast', [
-            'message' => 'Succes! Systemet er nulstillet med friske demo-data.',
+            'message' => 'Succes! Systemet er nulstillet og cachen er ryddet.',
             'type'    => 'success'
-        ]); 
+        ]);
         
-        // Valgfrit: Genindlæs siden automatisk efter 1,5 sek så alt står knivskarpt
-        $this->js("setTimeout(() => { window.location.reload(); }, 1500)");
+        // Genindlæs siden så alt er 100% opdateret
+        $this->js("setTimeout(() => { window.location.reload(); }, 1000)");
     }
     public function render()
     {
