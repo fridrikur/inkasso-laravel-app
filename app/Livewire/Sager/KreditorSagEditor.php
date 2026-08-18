@@ -55,12 +55,25 @@ class KreditorSagEditor extends Component
 
     public function mount($sag = null)
     {
-
         $settings = SagFieldSetting::first();
 
-        if ($settings) {
+        if ($settings && !empty($settings->allowed_fields)) {
             $this->allowedFields = $settings->allowed_fields;
+        } else {
+            // Standard fallback-felter hvis databasen ikke har konfigureret nogen endnu
+            $this->allowedFields = [
+                'sagsnr',
+                'navn',
+                'adresse',
+                'postnr',
+                'by',
+                'hovedstol',
+                'renter',
+                'gebyr',
+                'indbetalt'
+            ];
         }
+
         $user = Auth::user();
 
         if ($sag) {
