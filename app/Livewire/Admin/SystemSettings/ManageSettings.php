@@ -200,17 +200,17 @@ class ManageSettings extends Component
         Artisan::call('config:clear');
         Artisan::call('view:clear');
 
-        // 3. Generér data via ToastService
+        // 3. Hent toast data via din ToastService
         $toastData = app(ToastService::class)->success(
             'Systemet er nulstillet og cachen er ryddet.',
             'Succes!'
         );
 
-        // 4. Gem i session så den vises efter reload
-        session()->flash('toast', $toastData);
+        // 4. Send eventen direkte til din toaster via Livewire dispatch
+        $this->dispatch('notify', $toastData);
         
-        // 5. Genindlæs siden
-        $this->js("setTimeout(() => { window.location.reload(); }, 300);");
+        // 5. Genindlæs først siden EFTER brugeren har nået at se notifikationen (f.eks. efter 2 sekunder)
+        $this->js("setTimeout(() => { window.location.reload(); }, 2000);");
     }
 
     public function render()
