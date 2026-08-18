@@ -34,9 +34,14 @@ use App\Models\SagLock;
 use Illuminate\Support\Facades\Cache;
 use App\Models\SagEditRequest;
 use Illuminate\Support\Facades\Broadcast;
+use Livewire\WithFileUploads;
+use App\Models\Dokument;
 
 class SagEditor extends Component
 {
+    use WithFileUploads; // Gør det muligt at uploade filer med Livewire
+
+    public $newDokument; // Binder til inputfeltet i formen    
     #[On('tab-changed')]
     public function setTab(string $tab): void
     {
@@ -823,11 +828,7 @@ class SagEditor extends Component
         return $distance < 10 ? 10 + $distance : 100;
     }
 
-    public function getDokumenterCountPropertyOLD()
-    {
-        return $this->sag->dokumenter()->count();
-    }
-
+    
     public function getDokumenterCountProperty()
     {
         if(!$this->sag) return 0;
@@ -1214,5 +1215,47 @@ class SagEditor extends Component
             $this->showAfsluttetDateReminder = true;
         }
     }
-    
+
+    public function uploadDokument()
+    {
+        $this->validate([
+            'newDokument' => 'required|file|max:10240', // Maks 10MB
+        ]);
+
+        $file = $this->newDokument;
+        $path = $file->store('dokumenter/' . $this->sag->id, 'public');
+
+        Dokument::create([
+            'sag_id'        => $this->sag->id,
+            'file_name'     => $file->getClientOriginalName(),
+            'file_path'     => $path,
+            'file_size'     => $file->getSize(),
+            'uploaded_date' => now(),
+        ]);
+
+        // Nulstil feltet efter upload
+        $this->reset('newDokument');
+
+        $this->dispatch('toast', [
+            'message' => 'Dokumentet blev uploadet succesfuldt!',
+            'type'    => 'success'
+        ]);
+    }
+
+    // Håndtér sletning af dokument
+    public function deleteDokument($dokumentId)
+    {
+        $dokument = Dokument::find($dokumentId);
+
+        if ($dokument && $dokument->sag_id === $this->sag->id) {
+            Storage::disk('public')->delete($dokument->file_path);
+            $dokument->delete();
+
+            $this->dispatch('toast', [
+                'message' => 'Dokumentet blev slettet.',
+                'type'    => 'success'
+            ]);
+        }
+    }
+
 }

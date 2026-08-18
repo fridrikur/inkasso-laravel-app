@@ -55,8 +55,23 @@ class DokumenterController extends Controller
             return view('sager.dokumenter.index', compact('sag', 'dokumenter'));
         }
 
-        public function download(Dokument $dokument)
+        public function download(Sager $sag, Dokument $dokument)
         {
-            return Storage::disk('public')->download($dokument->file_path);
+            $user = auth()->user();
+            
+            if (!$user->hasAnyRole(['Admin', 'Medarbejder', 'Kreditor'])) {
+                abort(403);
+            }
+
+            // Ekstra sikkerhed: Tjek at dokumentet rent faktisk tilhører den pågældende sag
+            if ($dokument->sag_id !== $sag->id) {
+                abort(404);
+            }
+
+            if (!Storage::disk('public')->exists($dokument->file_path)) {
+                abort(404, 'Filen blev ikke fundet.');
+            }
+
+            return Storage::disk('public')->download($dokument->file_path, $dokument->file_name);
         }
 }
