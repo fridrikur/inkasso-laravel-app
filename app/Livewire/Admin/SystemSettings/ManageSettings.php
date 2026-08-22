@@ -9,9 +9,16 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Artisan;
 use App\Services\ToastService; 
 use Database\Seeders\DemoSeeder;
+use App\Models\SystemSetting;
+use Illuminate\Support\Facades\Hash;
 
 class ManageSettings extends Component
 {
+    //låse kode
+    public string $unlock_code = '';
+    public string $unlock_code_confirmation = '';
+    public bool $hasUnlockCode = false;
+
     // Default farver (Indigo / Slate)
     public const DEFAULT_PRIMARY           = '#4f46e5';
     public const DEFAULT_SIDEBAR_BG        = '#0f172a';
@@ -75,6 +82,8 @@ class ManageSettings extends Component
             $this->environment = $isLiveDomain ? 'live' : ($savedEnv ?? 'sandbox');
             $this->is_live_locked = false;
         }
+
+        $this->hasUnlockCode = SystemSetting::where('key', 'global_unlock_code')->value('value') !== null;
 
         // Farver & Temaer
         $this->theme_preset                = $settings->get('theme_preset', 'default');
@@ -176,6 +185,20 @@ class ManageSettings extends Component
             Role::where('id', $roleId)->update([
                 'requires_two_factor' => (bool) $required,
             ]);
+        }
+
+        if (!empty($this->unlock_code)) {
+            $this->validate([
+                'unlock_code' => 'min:4|same:unlock_code_confirmation',
+            ]);
+
+            SystemSetting::updateOrCreate(
+                ['key' => 'global_unlock_code'],
+                ['value' => Hash::make($this->unlock_code)]
+            );
+
+            $this->hasUnlockCode = true;
+            $this->reset(['unlock_code', 'unlock_code_confirmation']);
         }
 
         $this->dispatch('toast', [

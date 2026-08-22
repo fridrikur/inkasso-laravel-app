@@ -15,7 +15,8 @@ class SystemSecurity extends Component
 
     public function mount()
     {
-        $this->hasCode = SystemSetting::get('global_unlock_code') !== null;
+        // Hent koden fra system_settings tabellen via modellen
+        $this->hasCode = SystemSetting::where('key', 'global_unlock_code')->value('value') !== null;
     }
 
     public function save()
@@ -24,9 +25,10 @@ class SystemSecurity extends Component
             'unlock_code' => 'required|min:4|same:unlock_code_confirmation',
         ]);
 
-        SystemSetting::set(
-            'global_unlock_code',
-            Hash::make($this->unlock_code)
+        // Gem eller opdater koden som en nøgle i system_settings tabellen
+        SystemSetting::updateOrCreate(
+            ['key' => 'global_unlock_code'],
+            ['value' => Hash::make($this->unlock_code)]
         );
 
         $this->reset([
@@ -38,7 +40,7 @@ class SystemSecurity extends Component
 
         $this->dispatch(
             'toast',
-            message: 'Global unlock code updated',
+            message: 'Global låsekode opdateret',
             type: 'success'
         );
     }

@@ -478,6 +478,59 @@
             </div>
         @endif
     </div>
+    {{-- 🔐 GLOBAL SYSTEM UNLOCK KODE --}}
+    <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                    <span>🔑</span> Global System Unlock Kode
+                </h2>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    Angiv en global sikkerhedskode, der kan bruges til at låse kritiske handlinger eller visninger op.
+                </p>
+            </div>
+            <div>
+                @if($hasUnlockCode)
+                    <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
+                        ✓ Kode er aktiv
+                    </span>
+                @else
+                    <span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold border border-amber-200">
+                        ⚠ Ingen kode sat
+                    </span>
+                @endif
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                    Ny Unlock Kode (valgfri ved opdatering af andre indstillinger)
+                </label>
+                <input 
+                    type="password" 
+                    wire:model="unlock_code" 
+                    placeholder="Indtast min. 4 tegn"
+                    class="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none @error('unlock_code') border-rose-500 @enderror"
+                >
+                @error('unlock_code') 
+                    <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> 
+                @enderror
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                    Bekræft Unlock Kode
+                </label>
+                <input 
+                    type="password" 
+                    wire:model="unlock_code_confirmation" 
+                    placeholder="Gentag kode"
+                    class="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none"
+                >
+            </div>
+        </div>
+    </div>
 
     {{-- BUND GEM-KNAP --}}
     <div class="flex justify-end pt-2">

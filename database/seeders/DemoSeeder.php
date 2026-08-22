@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Sager;
@@ -24,7 +23,16 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. OPRET ROLLER OG BRUGERE
+        // 1. Kalder stamdata-seedere inkl. den nye DebitorSeeder
+        $this->call([
+            DropdownDataSeeder::class,
+            KreditorSeeder::class,
+            SagsbehandlerSeeder::class,
+            LegacyUserSeeder::class,
+            DebitorSeeder::class,
+        ]);
+
+        // 2. OPRET ROLLER OG BRUGERE
         $roles = ['Admin', 'Medarbejder', 'Kreditor'];
         foreach ($roles as $roleName) {
             Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
@@ -45,29 +53,10 @@ class DemoSeeder extends Seeder
             }
         }
 
-        // 2. OPRET KREDITORER OG STAMDATA
-        // 2. OPRET KREDITORER
-        $kreditorDataList = [
-            ['navn' => 'Danske Bank Inkasso', 'lotusID' => 'LOTUS-001'],
-            ['navn' => 'Jyske Finans A/S', 'lotusID' => 'LOTUS-002'],
-            ['navn' => 'Nordea Kredit', 'lotusID' => 'LOTUS-003'],
-            ['navn' => 'Express Bank', 'lotusID' => 'LOTUS-004'],
-            ['navn' => 'Resurs Bank', 'lotusID' => 'LOTUS-005'],
-        ];
-
-        foreach ($kreditorDataList as $kData) {
-            Kreditorer::firstOrCreate(
-                ['navn' => $kData['navn']],
-                [
-                    'lotusID' => $kData['lotusID'],
-                ]
-            );
-        }
-
         // 3. OPRET SAGSBEHANDLERE OG KLYNGER KREDITORER TIL DEM
         $sagsbehandlereData = [
-            ['navn' => 'Mette Frederiksen', 'email' => 'mette@inkasso.dk', 'tlf' => '30123456', 'mobil' => '50123456', 'kreditor_navn' => 'Danske Bank Inkasso'],
-            ['navn' => 'Lars Løkke', 'email' => 'loekke@inkasso.dk', 'tlf' => '30654321', 'mobil' => '50654321', 'kreditor_navn' => 'Jyske Finans A/S'],
+            ['navn' => 'Mette Frederiksen', 'email' => 'mette@inkasso.dk', 'tlf' => '30123456', 'mobil' => '50123456', 'kreditor_navn' => 'Santander Consumer Bank'],
+            ['navn' => 'Lars Løkke', 'email' => 'loekke@inkasso.dk', 'tlf' => '30654321', 'mobil' => '50654321', 'kreditor_navn' => 'PartnerLeasing A/S'],
         ];
 
         foreach ($sagsbehandlereData as $data) {
@@ -83,70 +72,7 @@ class DemoSeeder extends Seeder
             }
         }
 
-        // 4. OPRET DEBITORER, KONSULENTER OG DROPDOWN-STAMDATA (hvis tomme)
-        if (Debitorer::count() === 0) {
-            $danskeByer = [
-                ['postnr' => 6400, 'by' => 'Sønderborg'],
-                ['postnr' => 5000, 'by' => 'Odense C'],
-                ['postnr' => 8000, 'by' => 'Aarhus C'],
-            ];
-            $tilfaeldigeNavne = ['Lars Jensen', 'Anna Hansen', 'Peter Nielsen', 'Mette Jensen', 'Henrik Poulsen'];
-            $gader = ['Nørregade', 'Søndergade', 'Hovedgaden', 'Kirkegade', 'Bredgade'];
-
-            for ($d = 1; $d <= 100; $d++) {
-                $tilfaeldigLokation = $danskeByer[array_rand($danskeByer)];
-                $navn = $tilfaeldigeNavne[array_rand($tilfaeldigeNavne)] . ' ' . rand(1, 99);
-
-                Debitorer::create([
-                    'navn' => $navn,
-                    'pnr' => rand(100000, 999999) . '-' . rand(1000, 9999),
-                    'adresse' => rand(1, 150) . ' ' . $gader[array_rand($gader)],
-                    'postnr' => $tilfaeldigLokation['postnr'],
-                    'tlf' => '20' . rand(100000, 999999),
-                    'email' => strtolower(Str::slug($navn)) . rand(1, 999) . '@gmail.com',
-                ]);
-            }
-        }
-
-        if (Konsulenter::count() === 0) {
-            $konsulentNavne = ['Anders Fogh', 'Helle Thorning', 'Poul Nyrup', 'Sven Auken'];
-            foreach ($konsulentNavne as $index => $navn) {
-                Konsulenter::create([
-                    'navn' => $navn,
-                    'email' => Str::slug($navn) . '.' . ($index + 1) . '@konsulent.dk',
-                    'tlf' => '40' . rand(1000000, 9999999),
-                    'mobil' => '50' . rand(1000000 + $index, 9999999), // Sikrer unikt mobilnummer
-                ]);
-            }
-        }
-
-        if (Status::count() === 0) {
-            foreach ([
-                ['tekst' => 'Modtaget', 'forkortelse' => 'MOD'],
-                ['tekst' => 'Varsel sendt', 'forkortelse' => 'VAR'],
-                ['tekst' => 'Afsluttet - Indbetalt', 'forkortelse' => 'IND'],
-            ] as $status) {
-                Status::create($status);
-            }
-        }
-
-        if (KTR::count() === 0) {
-            KTR::create(['tekst' => 'KTR-100 Konto i berod', 'forkortelse' => 'KTR100']);
-        }
-
-        if (bemaerkning::count() === 0) {
-            bemaerkning::create(['tekst' => 'Debitor har lovet indbetaling fredag', 'forkortelse' => 'BEM1']);
-        }
-
-        if (afslutning::count() === 0) {
-            afslutning::create(['tekst' => 'Fuld indfrielse', 'forkortelse' => 'AFSL1']);
-        }
-
-        if (udlaeg::count() === 0) {
-            udlaeg::create(['tekst' => 'Ingen aktiver', 'forkortelse' => 'UDL1']);
-        }
-
-        // 5. NULSTIL OG OPRET SAGER OG PIVOT-TABELLER
+        // 4. NULSTIL OG OPRET SAGER OG PIVOT-TABELLER
         $kreditorer = Kreditorer::all();
         $debitorer = Debitorer::all();
         $sagsbehandlere = Sagsbehandler::all();
@@ -176,7 +102,6 @@ class DemoSeeder extends Seeder
         for ($i = 1; $i <= $totalSager; $i++) {
             $uniqueSagsnr = 100000 + $i;
             
-            // Fordel datoer så de første 35 sager ligger inden for de seneste 45 dage (så grafen virker!)
             if ($i <= 35) {
                 $modtagetDato = Carbon::now()->subDays(rand(1, 45));
                 $isAfsluttet = (rand(1, 100) <= 20);
@@ -207,7 +132,11 @@ class DemoSeeder extends Seeder
             $debitor = $shuffledDebitorer->isNotEmpty() ? $shuffledDebitorer->pop() : $debitorer->random();
             $sag->sagerdebitor()->attach($debitor->id);
             $sag->sagersagsbehandler()->attach($sagsbehandlere->random()->id);
-            $sag->sagerkonsulent()->attach($konsulenter->random()->id);
+            
+            if ($konsulenter->isNotEmpty()) {
+                $sag->sagerkonsulent()->attach($konsulenter->random()->id);
+            }
+            
             $sag->sagerStatus()->attach($statuser->random()->id);
             
             if ($ktrListe->isNotEmpty()) $sag->sagerKtr()->attach($ktrListe->random()->id);

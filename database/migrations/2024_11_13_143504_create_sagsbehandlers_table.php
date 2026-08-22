@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('sagsbehandlers', function (Blueprint $table) {
             $table->id();
             $table->string('navn');
-            $table->string('email')->unique();
-            $table->integer('tlf')->unique();
-            $table->integer('mobil')->unique();
+            $table->string('email')->nullable();
+            $table->integer('tlf')->nullable();
+            $table->integer('mobil')->nullable();
+            $table->softDeletes(); // 🟢 Opretter 'deleted_at' kolonnen til SoftDeletes
             $table->timestamps();
         });
     }

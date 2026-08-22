@@ -1,5 +1,3 @@
-<div>
-@if($kreditor && $kreditor->exists)
 <div class="space-y-6">
 
     {{-- TOP NAVIGATION / BREADCRUMB --}}
@@ -11,7 +9,6 @@
         </div>
 
         <div class="flex items-center gap-2">
-            {{-- 🏷️ KNAP TIL KREDITORS STATUS OVERSIKT --}}
             <a 
                 href="{{ route('admin.sager.status.show', ['status' => 1, 'kreditor_id' => $kreditor->id]) }}"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
@@ -30,10 +27,10 @@
             </button>
         </div>
     </div>
-
+    
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-        {{-- SIDEBAR: STAMDATA & SLET KNAP --}}
+        {{-- SIDEBAR: STAMDATA & HOVEDSAGSBEHANDLER --}}
         <div class="lg:col-span-1 space-y-6">
 
             <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6 sticky top-6">
@@ -64,6 +61,57 @@
                         <span>Sagsbehandlere</span>
                         <span class="font-bold text-slate-900 font-mono">{{ $this->kreditor->sagsbehandlere->count() }}</span>
                     </div>
+                </div>
+
+                {{-- HOVEDSAGSBEHANDLER KORT --}}
+                <div class="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Hovedsagsbehandler</span>
+                        @if($this->kreditor->hovedsagsbehandler->isNotEmpty())
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                Aktiv
+                            </span>
+                        @else
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                                Ikke sat
+                            </span>
+                        @endif
+                    </div>
+
+                    @php
+                        $currentHsb = $this->kreditor->hovedsagsbehandler->first();
+                    @endphp
+
+                    @if($currentHsb)
+                        <div class="space-y-1">
+                            <p class="text-sm font-bold text-slate-900">{{ $currentHsb->navn }}</p>
+                            @if($currentHsb->email)
+                                <p class="text-xs font-mono text-slate-500 truncate">{{ $currentHsb->email }}</p>
+                            @endif
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-2 border-t border-slate-200/60">
+                            <button
+                                type="button"
+                                wire:click="openSagsbehandlerModal({{ $currentHsb->id }})"
+                                class="flex-1 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer text-center"
+                            >
+                                Redigér
+                            </button>
+                        </div>
+                    @else
+                        <p class="text-xs text-slate-500 italic">Ingen hovedsagsbehandler valgt endnu.</p>
+                        
+                        <div class="flex items-center gap-2 pt-2 border-t border-slate-200/60">
+                            <button
+                                type="button"
+                                wire:click="openSagsbehandlerModal"
+                                class="w-full px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer text-center"
+                            >
+                                Opret ny sagsbehandler
+                            </button>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- GENVEJE & ACTIONS --}}
@@ -126,13 +174,13 @@
                     </div>
 
                     <button
-                        type="button"
-                        wire:click="openUserModal"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
-                    >
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        <span>Ny bruger</span>
-                    </button>
+                    type="button"
+                    wire:click="$dispatch('open-user-create', { kreditorId: {{ $kreditor->id }} })"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
+                >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    <span>Ny bruger</span>
+                </button>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -150,23 +198,11 @@
                                     <td class="px-6 py-3.5 font-semibold text-slate-900">{{ $user->name }}</td>
                                     <td class="px-6 py-3.5 font-mono text-slate-500">{{ $user->email }}</td>
                                     <td class="px-6 py-3.5 text-right font-medium">
-                                        <div class="flex items-center justify-end gap-1.5">
-                                            <button
-                                                type="button"
-                                                wire:click="openUserModal({{ $user->id }})"
-                                                class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold shadow-xs transition cursor-pointer"
-                                            >
-                                                Redigér
-                                            </button>
-                                            <button
-                                                type="button"
-                                                wire:click="detachUser({{ $user->id }})"
-                                                wire:confirm="Fjern brugeren fra denne kreditor?"
-                                                class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-rose-600 hover:bg-rose-50 hover:border-rose-200 font-semibold shadow-xs transition cursor-pointer"
-                                            >
-                                                Fjern
-                                            </button>
-                                        </div>
+                                        <x-table-actions 
+                                            :id="$user->id" 
+                                            editAction="$dispatch('open-user-edit', { id: {{ $user->id }} })"
+                                            deleteAction="$dispatch('open-user-delete', { id: {{ $user->id }}, kreditorId: {{ $kreditor->id }} })"
+                                        />
                                     </td>
                                 </tr>
                             @empty
@@ -189,7 +225,7 @@
 
                     <button
                         type="button"
-                        wire:click="openSagsbehandlerModal"
+                        wire:click="$dispatch('open-sagsbehandler-create', { kreditorId: {{ $kreditor->id }} })"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
                     >
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -216,23 +252,11 @@
                                         {{ implode(' / ', array_filter([$sagsbehandler->tlf, $sagsbehandler->mobil])) ?: '-' }}
                                     </td>
                                     <td class="px-6 py-3.5 text-right font-medium">
-                                        <div class="flex items-center justify-end gap-1.5">
-                                            <button
-                                                type="button"
-                                                wire:click="openSagsbehandlerModal({{ $sagsbehandler->id }})"
-                                                class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold shadow-xs transition cursor-pointer"
-                                            >
-                                                Redigér
-                                            </button>
-                                            <button
-                                                type="button"
-                                                wire:click="detachSagsbehandler({{ $sagsbehandler->id }})"
-                                                wire:confirm="Fjern sagsbehandleren fra denne kreditor?"
-                                                class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-rose-600 hover:bg-rose-50 hover:border-rose-200 font-semibold shadow-xs transition cursor-pointer"
-                                            >
-                                                Fjern
-                                            </button>
-                                        </div>
+                                        <x-table-actions 
+                                            :id="$sagsbehandler->id" 
+                                            editAction="$dispatch('open-sagsbehandler-edit', { id: {{ $sagsbehandler->id }} })"
+                                            deleteAction="$dispatch('open-sagsbehandler-delete', { id: {{ $sagsbehandler->id }}, kreditorId: {{ $kreditor->id }} })"
+                                        />
                                     </td>
                                 </tr>
                             @empty
@@ -315,15 +339,18 @@
 
     </div>
 
-    {{-- MODAL 1: SLET KREDITOR --}}
+    {{-- ================================================================= --}}
+    {{-- MODALER I BUNDEN --}}
+    {{-- ================================================================= --}}
+
+    {{-- 1. SLET KREDITOR MODAL --}}
     @if($showDeleteModal)
-        <div class="fixed inset-0 top-0 left-0 z-50 w-screen h-screen bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-            <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95 duration-150 my-auto">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-4">
+                <button type="button" wire:click="closeModals" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">&times;</button>
                 <div class="flex items-center gap-3">
                     <div class="p-3 bg-rose-50 rounded-2xl text-rose-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     </div>
                     <div>
                         <h3 class="text-lg font-bold text-slate-900">Slet kreditor</h3>
@@ -333,168 +360,29 @@
 
                 @if($sagerCount > 0)
                     <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
-                        <div class="flex items-center gap-2 text-xs font-bold text-amber-900 uppercase tracking-wider">
-                            <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                            </svg>
-                            <span>Advarsel: {{ $sagerCount }} aktive sager</span>
-                        </div>
-                        <p class="text-xs text-amber-800 leading-relaxed">
-                            Kreditoren har sager tilknyttet. Vælg venligst en modtager-kreditor og indtast sikkerhedskoden for at gennemføre overførslen og sletningen:
-                        </p>
-
-                        <div class="space-y-1">
-                            <label class="block text-[11px] font-bold uppercase tracking-wider text-amber-900">Vælg modtager-kreditor</label>
-                            <select
-                                wire:model="transferToKreditorId"
-                                class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs text-slate-800 shadow-xs focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-hidden"
-                            >
-                                <option value="">-- Vælg ny kreditor til sagerne --</option>
-                                @foreach($transferTargets as $target)
-                                    <option value="{{ $target->id }}">{{ $target->navn }}</option>
-                                @endforeach
-                            </select>
-                            @error('transferToKreditorId')
-                                <p class="text-xs text-rose-600 font-semibold mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        <p class="text-xs text-amber-800 font-medium">Kreditoren har {{ $sagerCount }} aktive sager. Vælg modtager før sletning:</p>
+                        <select wire:model="transferToKreditorId" class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-hidden">
+                            <option value="">-- Vælg modtager-kreditor --</option>
+                            @foreach($transferTargets as $target)
+                                <option value="{{ $target->id }}">{{ $target->navn }}</option>
+                            @endforeach
+                        </select>
                     </div>
-
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Global sikkerhedskode
-                        </label>
-                        <input
-                            type="password"
-                            wire:model="securityCode"
-                            placeholder="••••••••"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 shadow-xs focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 focus:outline-hidden"
-                        >
-                        @error('securityCode')
-                            <p class="text-xs text-rose-600 font-semibold mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
                 @else
-                    <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs text-slate-600 leading-relaxed">
-                        Er du sikker på, at du vil slette <strong class="font-semibold text-slate-900">{{ $this->kreditor->navn }}</strong>? Kreditoren og dens tilknyttede brugere/sagsbehandlere vil blive slettet permanent.
-                    </div>
+                    <p class="text-xs text-slate-600">Er du sikker på, at du vil slette denne kreditor? Handlingen kan ikke fortrydes.</p>
                 @endif
 
-                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                    <button
-                        type="button"
-                        wire:click="closeModals"
-                        class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition cursor-pointer"
-                    >
-                        Annuller
-                    </button>
-
-                    <button
-                        type="button"
-                        wire:click="confirmDelete"
-                        class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition cursor-pointer"
-                    >
-                        @if($sagerCount > 0)
-                            Bekræft overførsel & slet
-                        @else
-                            Slet permanent
-                        @endif
-                    </button>
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" wire:click="closeModals" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Annuller</button>
+                    <button type="button" wire:click="confirmDelete" class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition cursor-pointer">Slet kreditor</button>
                 </div>
-
             </div>
         </div>
     @endif
 
-    {{-- MODAL 2: BRUGER --}}
-    @if($showUserModal)
-        <div class="fixed inset-0 top-0 left-0 z-50 w-screen h-screen bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-            <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-150 my-auto">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <h3 class="text-lg font-bold text-slate-900">
-                        {{ $activeUser ? 'Redigér bruger' : 'Opret ny bruger' }}
-                    </h3>
-                    <button type="button" wire:click="closeModals" class="text-slate-400 hover:text-slate-600 transition">&times;</button>
-                </div>
-
-                <form wire:submit.prevent="saveUser" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Navn</label>
-                        <input type="text" wire:model="userName" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-hidden">
-                        @error('userName') <p class="text-xs text-rose-600 font-medium mt-1">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">E-mail</label>
-                        <input type="email" wire:model="userEmail" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-hidden">
-                        @error('userEmail') <p class="text-xs text-rose-600 font-medium mt-1">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                            Adgangskode {{ $activeUser ? '(valgfri ved ændring)' : '' }}
-                        </label>
-                        <input type="password" wire:model="userPassword" placeholder="••••••••" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-hidden">
-                        @error('userPassword') <p class="text-xs text-rose-600 font-medium mt-1">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                        <button type="button" wire:click="closeModals" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition cursor-pointer">Annullér</button>
-                        <button type="submit" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">Gem bruger</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
-
-    {{-- MODAL 3: SAGSBEHANDLER --}}
-    @if($showSagsModal)
-        <div class="fixed inset-0 top-0 left-0 z-50 w-screen h-screen bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-            <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-150 my-auto">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <h3 class="text-lg font-bold text-slate-900">
-                        {{ $activeSagsbehandler ? 'Redigér sagsbehandler' : 'Opret sagsbehandler' }}
-                    </h3>
-                    <button type="button" wire:click="closeModals" class="text-slate-400 hover:text-slate-600 transition">&times;</button>
-                </div>
-
-                <form wire:submit.prevent="saveSagsbehandler" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Navn</label>
-                        <input type="text" wire:model="modalNavn" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-hidden">
-                        @error('modalNavn') <p class="text-xs text-rose-600 font-medium mt-1">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">E-mail</label>
-                        <input type="email" wire:model="modalEmail" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-hidden">
-                        @error('modalEmail') <p class="text-xs text-rose-600 font-medium mt-1">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Telefon</label>
-                            <input type="text" wire:model="modalTlf" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-hidden">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Mobil</label>
-                            <input type="text" wire:model="modalMobil" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-hidden">
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                        <button type="button" wire:click="closeModals" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition cursor-pointer">Annullér</button>
-                        <button type="submit" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">Gem sagsbehandler</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
-
-    {{-- MODAL: KREDITOR STAMDATA --}}
+    {{-- MODALER (Isoleret og lynhurtige) --}}
     @livewire('kreditor.kreditor-form-modal')
+    @livewire('kreditor.sagsbehandler-form-modal')
+    @livewire('kreditor.user-form-modal')
 
-</div>
-@endif
 </div>

@@ -107,6 +107,7 @@ use App\Livewire\Auth\TwoFactorSetupRequired;
 use App\Livewire\Tekster\ShowTekster;
 use App\Livewire\Kreditor\Search;
 use App\Livewire\Autotekster\AutotekstIndex;
+use App\Livewire\Imports\DataImporter;
 
 /*
 |--------------------------------------------------------------------------
@@ -298,7 +299,14 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         })->name('lukkede.sager.search');
 
         Route::get('/saved-search/{saved}/results', SavedSearchResults::class)->name('saved-search.results');
-
+    
+        Route::prefix('admin/import')
+        ->name('import.')
+        ->middleware(['auth', 'verified', 'role:Admin'])
+        ->group(function () {
+            Route::get('/', DataImporter::class)->name('index');
+        });
+        
         Route::prefix('sager/import')
             ->name('sager.import.')
             ->middleware(['auth', 'verified'])
@@ -388,4 +396,3 @@ Route::middleware(['auth', 'verified', 'role:Admin|Medarbejder|Kreditor'])
         Route::get('/{dokument}/download', [DokumenterController::class, 'download'])->name('download');
         Route::delete('/{dokument}', [DokumenterController::class, 'destroy'])->name('destroy');
     });
-

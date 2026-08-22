@@ -13,10 +13,10 @@ class ManageKreditor extends Component
     public Kreditorer $kreditor;
 
     // Modal synlighed
+// Modal synlighed - sikring af ensartede navne
     public bool $showDeleteModal = false;
     public bool $showUserModal = false;
-    public bool $showSagsModal = false;
-
+    public bool $showSagsbehandlerModal = false; // Ændret fra showSagsModal
     // Slette/overførsel egenskaber
     public ?int $transferToKreditorId = null;
     public string $securityCode = '';
@@ -38,28 +38,19 @@ class ManageKreditor extends Component
     public string $modalEmail = '';
     public string $modalTlf = '';
     public string $modalMobil = '';
+    
+    public ?int $deletingId = null;
+    
+    protected $listeners = [
+        'kreditor-updated' => 'loadRelations', // Kalder loadRelations i stedet for blot $refresh
+    ];
 
+    
     public function mount($kreditor)
     {
         $kreditorId = $kreditor instanceof Kreditorer ? $kreditor->id : $kreditor;
         $this->kreditor = Kreditorer::withTrashed()->findOrFail($kreditorId);
         $this->loadRelations();
-    }
-
-    /**
-     * Genindlæser relationer og sikre tællere
-     */
-    protected function loadRelations(): void
-    {
-        $this->kreditor->load([
-            'users',
-            'sagsbehandlere',
-            'sager' => fn($q) => $q->latest()->take(10)
-        ]);
-
-        $this->sagerCount = $this->kreditor->sager()->count();
-        $this->usersCount = $this->kreditor->users()->count();
-        $this->sagsbehandlereCount = $this->kreditor->sagsbehandlere()->count();
     }
 
     public function render()
@@ -80,7 +71,7 @@ class ManageKreditor extends Component
     {
         $this->showDeleteModal = false;
         $this->showUserModal = false;
-        $this->showSagsModal = false;
+        $this->showSagsbehandlerModal = false; // Matcher navnet
 
         $this->reset([
             'activeUser', 'userName', 'userEmail', 'userPassword',
@@ -89,22 +80,26 @@ class ManageKreditor extends Component
         ]);
     }
 
-    // =========================================================================
-    // BRUGER-HANDLINGER (PORTALBRUGERE)
-    // =========================================================================
-    public function openUserModal(?int $userId = null): void
+    public function openSagsbehandlerModal(?int $id = null): void
     {
-        $this->reset(['userName', 'userEmail', 'userPassword']);
+        $this->reset(['modalNavn', 'modalEmail', 'modalTlf', 'modalMobil']);
 
-        if ($userId) {
-            $this->activeUser = User::findOrFail($userId);
-            $this->userName = $this->activeUser->name;
-            $this->userEmail = $this->activeUser->email;
+        if ($id) {
+            $this->activeSagsbehandler = Sagsbehandler::findOrFail($id);
+            $this->modalNavn  = $this->activeSagsbehandler->navn;
+            $this->modalEmail = $this->activeSagsbehandler->email ?? '';
+            $this->modalTlf   = $this->activeSagsbehandler->tlf ?? '';
+            $this->modalMobil = $this->activeSagsbehandler->mobil ?? '';
         } else {
-            $this->activeUser = null;
+            $this->activeSagsbehandler = null;
         }
 
-        $this->showUserModal = true;
+        $this->showSagsbehandlerModal = true; // Sætter den korrekte variabel
+    }
+
+    public function openUserModal(?int $userId = NULL): void
+    {
+        $this->dispatch('open-user-modal', userId: $userId);
     }
 
     public function saveUser(): void
@@ -168,23 +163,7 @@ class ManageKreditor extends Component
     // =========================================================================
     // SAGSBEHANDLER-HANDLINGER
     // =========================================================================
-    public function openSagsbehandlerModal(?int $id = null): void
-    {
-        $this->reset(['modalNavn', 'modalEmail', 'modalTlf', 'modalMobil']);
-
-        if ($id) {
-            $this->activeSagsbehandler = Sagsbehandler::findOrFail($id);
-            $this->modalNavn  = $this->activeSagsbehandler->navn;
-            $this->modalEmail = $this->activeSagsbehandler->email ?? '';
-            $this->modalTlf   = $this->activeSagsbehandler->tlf ?? '';
-            $this->modalMobil = $this->activeSagsbehandler->mobil ?? '';
-        } else {
-            $this->activeSagsbehandler = null;
-        }
-
-        $this->showSagsModal = true;
-    }
-
+    
     public function saveSagsbehandler(): void
     {
         $this->validate([
@@ -217,14 +196,6 @@ class ManageKreditor extends Component
 
         $this->dispatch('toast', ['message' => $toastMsg, 'type' => 'success']);
         $this->closeModals();
-        $this->loadRelations();
-    }
-
-    public function detachSagsbehandler(int $id): void
-    {
-        $this->kreditor->sagsbehandlere()->detach($id);
-
-        $this->dispatch('toast', ['message' => 'Sagsbehandleren er fjernet fra kreditoren.', 'type' => 'success']);
         $this->loadRelations();
     }
 
@@ -275,4 +246,18 @@ class ManageKreditor extends Component
 
         $this->redirect(route('kreditorer.index'), navigate: true);
     }
+
+    public function loadRelations(): void
+    {
+        $this->kreditor->load([
+            'users',
+            'sagsbehandlere',
+            'sager' => fn($q) => $q->latest()->take(10)
+        ]);
+
+        $this->sagerCount = $this->kreditor->sager()->count();
+        $this->usersCount = $this->kreditor->users()->count();
+        $this->sagsbehandlereCount = $this->kreditor->sagsbehandlere()->count();
+    }
+
 }

@@ -225,7 +225,7 @@ class SagEditor extends Component
         }
 
         $kreditor = Kreditorer::where('lotusID', $lotusId)
-            ->with('hovedsagsbehandlere')
+            ->with('hovedsagsbehandler')
             ->first();
 
         if (!$kreditor) {
@@ -238,7 +238,7 @@ class SagEditor extends Component
         $this->form->kreditor_navn = $kreditor->navn;
         $this->selectOptions['sagsbehandler'] = Sagsbehandler::forKreditor($kreditor->id) ?? [];
 
-        $firstHoved = $kreditor->hovedsagsbehandlere->first();
+        $firstHoved = $kreditor->hovedsagsbehandler->first();
         if ($firstHoved && array_key_exists($firstHoved->id, $this->selectOptions['sagsbehandler'])) {
             $this->form->sagsbehandler = $firstHoved->id;
             $this->form->kreditor = $kreditor->id;
@@ -277,25 +277,22 @@ class SagEditor extends Component
                 $this->hasLock = false;
                 $this->isLockedByOther = false;
             }
-        }
 
-        $this->selectOptions['sagsbehandler'] = [];
-
-        if ($this->isEditMode) {
-            $this->acquireLock();
-        }
-
-        if ($this->isEditMode) {
             $kreditor = $this->sag->sagerkreditor->first();
             if ($kreditor) {
                 $this->hydrateFromKreditor($kreditor);
+                $this->selectOptions['sagsbehandler'] = \App\Models\Sagsbehandler::forKreditor($kreditor->id) ?? [];
+            } else {
+                $this->selectOptions['sagsbehandler'] = [];
             }
         } else {
             $this->form->konsulent = null;
             $this->loadKonsulentOptions();
+            $this->selectOptions['sagsbehandler'] = [];
         }
 
         if ($this->isEditMode) {
+            $this->acquireLock();
             $this->refreshBadge();
         }
 
@@ -323,9 +320,7 @@ class SagEditor extends Component
                     'is_editing' => true,
                 ]
             );
-        }
 
-        if ($this->isEditMode) {
             $this->syncLockState();
         }
 
@@ -342,7 +337,6 @@ class SagEditor extends Component
             $this->currentsagLocked = true;
         }
     }
-
     
 
     public function parseNumber(string|float|int|null $value): float

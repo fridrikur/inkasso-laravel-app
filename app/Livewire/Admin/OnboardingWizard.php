@@ -101,7 +101,7 @@ class OnboardingWizard extends Component
     public function goToImport(): void
     {
         app(SettingsService::class)->set('setup_completed', true);
-        $this->redirect(route('sager.import.log'));
+        $this->redirect(route('import.index'));
     }
 
     public function installDemoData()

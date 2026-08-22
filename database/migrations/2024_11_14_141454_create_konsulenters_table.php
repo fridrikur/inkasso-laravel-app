@@ -14,13 +14,10 @@ return new class extends Migration
         Schema::create('konsulenters', function (Blueprint $table) {
             $table->id();
             $table->string('navn')->unique();
-            $table->string('email')->unique();
-            $table->string('tlf')->unique(); // Telefonnumre kan godt være string (pga. landekoder/formatering)
-            $table->string('mobil')->unique(); 
-            
-            // Hvis du har lotusID eller andre numre, der skal tjekkes for ledige værdier:
-            $table->unsignedInteger('lotusID')->unique()->nullable(); 
-
+            $table->string('email')->nullable()->unique();
+            $table->string('tlf')->nullable()->unique(); 
+            $table->string('mobil')->nullable()->unique(); 
+            $table->softDeletes(); 
             $table->timestamps();
         });
     }
