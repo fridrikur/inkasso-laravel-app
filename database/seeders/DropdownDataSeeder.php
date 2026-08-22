@@ -9,12 +9,17 @@ class DropdownDataSeeder extends Seeder
 {
     public function run()
     {
-        // Vi sletter alt først for at have et rent miljø i demoen
+        // Deaktiver fremmednøgler midlertidigt, så truncate ikke fejler
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
         DB::table('status')->truncate();
         DB::table('afslutning')->truncate();
         DB::table('ktr')->truncate();
         DB::table('udlaeg')->truncate();
         DB::table('bemaerkning')->truncate();
+
+        // Slå fremmednøgler til igen
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         DB::table('status')->insert([
             ['tekst' => 'I gang', 'forkortelse' => 'I'],

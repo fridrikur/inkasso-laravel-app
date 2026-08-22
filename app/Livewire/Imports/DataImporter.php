@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 use Illuminate\Support\Facades\Artisan; // Husk denne import i toppen
+use Database\Seeders\DropdownDataSeeder;
 
 class DataImporter extends Component
 {
@@ -464,6 +465,8 @@ class DataImporter extends Component
             \Illuminate\Support\Facades\Log::error('Kritisk fejl i runSystemImport: ' . $e->getMessage() . ' på linje ' . $e->getLine());
             session()->flash('error', 'Kritisk fejl: ' . $e->getMessage());
         }
+        (new DropdownDataSeeder())->run();
+$outputLog[] = "✅ Dropdown data: Fuldført via Seeder";
     }
 
     public function render()
