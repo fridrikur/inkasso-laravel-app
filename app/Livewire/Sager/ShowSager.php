@@ -3,11 +3,13 @@
 namespace App\Livewire\Sager;
 
 use Livewire\Component;
+use Livewire\WithPagination;
 use App\Models\Sager;
 
 class ShowSager extends Component
 {
- public $loading = true;
+    use WithPagination; // 🟢 Aktiver paginering i Livewirepublic $loading = true;
+    
     public $progress = 0;
 
     public function loadSagers()
@@ -39,7 +41,7 @@ class ShowSager extends Component
     public function render()
     {
         return view('livewire.sager.show-sager', [
-            'sager' => Sager::withCount('sagertokens')->get(),
+            'sagers' => Sager::withCount('sagertokens')->paginate(50),
         ]);
     }
 }

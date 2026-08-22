@@ -104,6 +104,7 @@
             </p>
 
             <div class="flex items-center gap-3 pt-2">
+                {{-- Knap til Genindlæs Demo-Data --}}
                 <button 
                     type="button" 
                     @click="showDemoModal = true"
@@ -111,6 +112,14 @@
                 >
                     <span>🔄</span> Genindlæs Demo-Data
                 </button>
+
+                {{-- Knap til Admin Import ved brug af dit navngivne route --}}
+                <a 
+                    href="{{ route('import.index') }}" 
+                    class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-2"
+                >
+                    <span>📥</span> Gå til Data Import
+                </a>
             </div>
         </div>
 
