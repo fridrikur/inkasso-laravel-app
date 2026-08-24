@@ -156,8 +156,8 @@
 
                         <div class="space-y-1">
                             <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sagsbehandling</div>
-                            <a href="{{ route('showsager') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('showsager') || request()->routeIs('sager.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                            <a href="{{ route('sager.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.index') || request()->routeIs('sager.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                 <span>📂</span> Sager
                             </a>
                             <!-- NYT: Debitorer med Badge -->
@@ -196,8 +196,8 @@
                                class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.breve.opret') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                 <span>✉️</span> Opret Brev
                             </a>
-                            <a href="{{ route('sager.trash') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.trash') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                            <a href="{{ route('sager.papirkurv') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.papirkurv') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                 <span>🗑️</span> Papirkurv
                             </a>
                             <a href="{{ route('sager.import.log') }}" 

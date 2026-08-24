@@ -15,11 +15,36 @@ use App\Services\ToastService;
 
 use Illuminate\Support\Facades\DB;
 use App\Traits\HasCrudModal; // 🟢 Vores genbrugelige Trait
+use App\Models\SystemSetting;
+use Illuminate\Support\Facades\Hash;
+
+
+// Overførsels-felter (tilsvarende kreditor-flowet)
 
 class ManageKonsulenter extends Component
 {
     use WithPagination;
     use HasCrudModal; // 🟢 Implementerer modal-tilstande
+
+    // 🟢 Tilføj listeners her, så tabellen opdaterer sig automatisk ved slet
+    protected $listeners = [
+        'refresh-table' => '$refresh',
+        'execute-deletion' => 'handleDeletion', // Lytter på det globale slette-signal
+    ];
+
+    public ?Konsulenter $konsulentToTransferFrom = null;
+    public ?int $transferToKonsulentId = null;
+    public bool $showStandaloneTransferModal = false;
+    
+    public int $userHasSagerCount = 0;
+
+    public function handleDeletion($action, $id)
+    {
+        // Hvis eventet er ment til netop denne komponent (eller matcher vores action)
+        if ($action === 'deleteKonsulent') {
+            $this->deleteKonsulent($id);
+        }
+    }
 
     private function service(): KonsulentService
     {
@@ -124,61 +149,60 @@ class ManageKonsulenter extends Component
         );
     }
 
-    // 🟢 Sletning tilpasset HasCrudModal ($deletingId)
-    /**
-     * Håndterer både åbning af modal (med $id) og selve sletningen (uden $id)
-     */
-    public function confirmDelete($id = null): void
-    {
-        // 1. Åbn modal ved tryk på tabellen
-        if ($id) {
-            $this->deletingId = $id; // $deletingId kommer direkte fra HasCrudModal traiten
-            $this->showDeleteModal = true;
-            return;
-        }
-
-        // 2. Udfør sletning ved bekræftelse i modal
-        if (!$this->deletingId) {
-            $this->cancelDelete();
-            return;
-        }
-
-        $k = Konsulenter::find($this->deletingId);
-
-        if (!$k) {
-            $this->cancelDelete();
-            return;
-        }
-
-        if ($k->sager()->exists()) {
-            $this->cancelDelete();
-            
-            $this->dispatch('toast', [
-                'message' => 'Kan ikke slette konsulent med aktive sager.',
-                'type'    => 'error'
-            ]);
-            return;
-        }
-
-        $this->service()->delete($k);
-        $this->cancelDelete();
-
-        $this->dispatch('toast', [
-            'message' => 'Konsulenten blev slettet.',
-            'type'    => 'success'
-        ]);
-    }
-
     public function cancelDelete(): void
     {
         $this->showDeleteModal = false;
         $this->deletingId = null;
     }
 
+    public function openTransferModal(int $id): void
+    {
+        $this->konsulentToTransferFrom = Konsulenter::with(['sager'])->withCount('sager')->findOrFail($id);
+        $this->transferToKonsulentId = null;
+        $this->showStandaloneTransferModal = true;
+    }
+
+    public function transferAndClose(): void
+    {
+        $this->validate([
+            'transferToKonsulentId' => 'required|exists:konsulenters,id',
+        ]);
+
+        if (!$this->konsulentToTransferFrom) {
+            return;
+        }
+
+        DB::transaction(function () {
+            // Flyt alle sager til den nye konsulent
+            $this->konsulentToTransferFrom->sager()->update([
+                'konsulent_id' => $this->transferToKonsulentId // Ret feltnavnet hvis det hedder noget andet i din database (f.eks. sagsbehandler_id el.lign.)
+            ]);
+
+            // Slet derefter den gamle konsulent
+            $this->service()->delete($this->konsulentToTransferFrom);
+        });
+
+        $this->showStandaloneTransferModal = false;
+        $this->konsulentToTransferFrom = null;
+        $this->transferToKonsulentId = null;
+
+        $this->dispatch('toast', [
+            'message' => 'Sagerne blev overført, og konsulenten blev slettet.',
+            'type'    => 'success'
+        ]);
+    }
+
+    public function cancelTransfer(): void
+    {
+        $this->showStandaloneTransferModal = false;
+        $this->konsulentToTransferFrom = null;
+        $this->transferToKonsulentId = null;
+    }
+
     public function render()
     {
         $query = Konsulenter::query()
-            ->withExists(['skjultRole', 'notifikationRole']);
+            ->withExists(['skjultRole', 'notifikationRole'])->withCount('sager');
 
         if ($this->activeRoleTab === 'hoved') {
             $query->where('id', HovedKonsulent::current()?->id);
@@ -206,4 +230,50 @@ class ManageKonsulenter extends Component
             'skjultCount' => SkjultKonsulent::count(),
         ]);
     }
+
+    // Slet-håndtering
+    public function confirmDelete(int $id): void
+    {
+        $konsulent = \App\Models\Konsulenter::findOrFail($id);
+
+        // Tjek om konsulenten har aktive sager
+        $sagerCount = \App\Models\Sager::whereHas('sagerkonsulent', function ($q) use ($konsulent) {
+            $q->where('konsulenters.id', $konsulent->id);
+        })->count();
+
+        if ($sagerCount > 0) {
+            $this->konsulentToTransferFrom = $konsulent;
+            $this->userHasSagerCount = $sagerCount;
+            $this->showStandaloneTransferModal = true;
+
+            $this->dispatch('toast', [
+                'message' => "Konsulenten har {$sagerCount} aktive sager. Overfør venligst sagerne først.",
+                'type'    => 'warning'
+            ]);
+            return;
+        }
+
+        // Ingen sager -> Åbn den lokale slette-modal
+        $this->deletingId = $id;
+        $this->showDeleteModal = true;
+    }
+
+
+    public function deleteKonsulent(): void
+    {
+        if (! $this->deletingId) return;
+
+        $konsulent = \App\Models\Konsulenter::find($this->deletingId);
+        if ($konsulent) {
+            $konsulent->delete();
+
+            $this->dispatch('toast', [
+                'message' => 'Konsulenten er slettet.',
+                'type'    => 'success'
+            ]);
+        }
+
+        $this->cancelDelete();
+    }
+
 }

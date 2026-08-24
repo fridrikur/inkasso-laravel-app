@@ -3,39 +3,84 @@
 namespace App\Livewire\Kreditorer;
 
 use App\Models\Kreditorer;
+use App\Models\SystemSetting;
+use App\Services\KreditorTransferService;
+use App\Services\KreditorManagementService;
+use App\Traits\HasCrudModal;
+use Illuminate\Support\Facades\Hash;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\On;
 
 class ManageKreditorer extends Component
 {
     use WithPagination;
+    use HasCrudModal;
+
+    protected KreditorTransferService $transfer;
+    protected KreditorManagementService $management;
+
+    public function boot(
+        KreditorTransferService $transfer,
+        KreditorManagementService $management
+    ): void {
+        $this->transfer = $transfer;
+        $this->management = $management;
+    }
+
+    public string $navn = '';
+    public ?string $lotusID = null;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Search / filters
+    |--------------------------------------------------------------------------
+    */
 
     public string $search = '';
-    public string $filter = 'all'; // all, active_cases, no_cases, with_users
+    public string $filter = 'all';
+
+    /*
+    |--------------------------------------------------------------------------
+    | Delete / transfer modal properties (fra ManageKreditor)
+    |--------------------------------------------------------------------------
+    */
 
     public bool $showDeleteModal = false;
-    public bool $showStandaloneTransferModal = false;
-
     public ?Kreditorer $kreditorToDelete = null;
-    public ?Kreditorer $kreditorToTransferFrom = null;
-
-    public ?int $transferToKreditorId = null;
+    public int $sagerCount = 0;
     public string $securityCode = '';
+    public ?int $transferToKreditorId = null;
 
     protected $queryString = [
         'search' => ['except' => ''],
         'filter' => ['except' => 'all'],
     ];
 
-    #[On('kreditor-saved')]
-    public function refreshTable(): void
+    public function mount(): void
     {
-        // Genberegner automatisk render()
+        //
+    }
+
+    public function resetForm(): void
+    {
+        $this->editingId = null;
+    }
+
+    public function opretnykreditor(): void
+    {
+        $this->openCreateModal();
+        $this->dispatch('open-kreditor-modal');
     }
 
     public function setFilter(string $filter): void
     {
+        $allowed = ['all', 'active_cases', 'no_cases', 'with_users'];
+
+        if (! in_array($filter, $allowed, true)) {
+            $filter = 'all';
+        }
+
         $this->filter = $filter;
         $this->resetPage();
     }
@@ -45,150 +90,161 @@ class ManageKreditorer extends Component
         $this->resetPage();
     }
 
-    public function render()
+    #[On('kreditor-saved')]
+    #[On('kreditor-updated')]
+    #[On('refresh-table')]
+    public function refreshTable(): void
     {
-        $query = Kreditorer::query()
-            ->withCount(['sager', 'users', 'sagsbehandlere']);
-
-        // Søgefiltrering
-        if (!empty($this->search)) {
-            $query->where(function ($q) {
-                $q->where('navn', 'like', '%' . $this->search . '%')
-                  ->orWhere('lotusID', 'like', '%' . $this->search . '%')
-                  ->orWhere('id', $this->search);
-            });
-        }
-
-        // Dynamiske status-faner
-        match ($this->filter) {
-            'active_cases' => $query->has('sager'),
-            'no_cases'     => $query->doesntHave('sager'),
-            'with_users'   => $query->has('users'),
-            default        => null,
-        };
-
-        $kreditorer = $query->orderBy('navn')->paginate(15);
-
-        // Statistik sammentælling
-        $totalKreditorer = Kreditorer::count();
-        $medSagerCount   = Kreditorer::has('sager')->count();
-        $udenSagerCount  = Kreditorer::doesntHave('sager')->count();
-        $medBrugereCount = Kreditorer::has('users')->count();
-
-        return view('livewire.kreditorer.manage-kreditorer', [
-            'kreditorer'       => $kreditorer,
-            'totalKreditorer'  => $totalKreditorer,
-            'medSagerCount'    => $medSagerCount,
-            'udenSagerCount'   => $udenSagerCount,
-            'medBrugereCount'  => $medBrugereCount,
-            'transferTargets'  => $this->kreditorToDelete || $this->kreditorToTransferFrom
-                ? Kreditorer::where('id', '!=', $this->kreditorToDelete?->id ?? $this->kreditorToTransferFrom?->id)->orderBy('navn')->get()
-                : collect(),
-        ]);
+        $this->resetPage();
     }
 
-    public function opretnykreditor(): void
-    {
-        $this->dispatch('open-kreditor-modal');
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | Delete & Transfer (Tilpasset præcis som i ManageKreditor)
+    |--------------------------------------------------------------------------
+    */
 
-    // -------------------------------------------------
-    // Slette- & Overførselslogik
-    // -------------------------------------------------
-    public function requestDelete(int $id): void
-    {
-        $this->kreditorToDelete = Kreditorer::with(['sager'])->withCount('sager')->findOrFail($id);
-        $this->transferToKreditorId = null;
-        $this->securityCode = '';
-        $this->showDeleteModal = true;
-    }
-
-    public function cancelDelete(): void
+    public function closeModals(): void
     {
         $this->showDeleteModal = false;
         $this->kreditorToDelete = null;
-        $this->transferToKreditorId = null;
+        $this->resetValidation();
     }
 
-    // 🟢 BEKRÆFT SLETTELSE MED EVENTUEL SAGSOVERFØRSEL
     public function confirmDelete(): void
     {
-        if (! $this->kreditorToDelete) {
+        $this->resetValidation();
+
+        if (! $this->kreditorToDelete?->exists) {
             return;
         }
 
-        // Tjek om sager skal overføres før sletning
-        if ($this->kreditorToDelete->sager_count > 0) {
-            if (! $this->transferToKreditorId) {
-                $this->dispatch('toast', [
-                    'message' => 'Vælg venligst en modtager-kreditor, som sagerne skal overføres til.',
-                    'type'    => 'error'
-                ]);
+        if ($this->kreditorToDelete->sager()->exists()) {
+            $expectedCode = SystemSetting::where('key', 'global_unlock_code')->value('value');
+
+            if (! $expectedCode || ! Hash::check($this->securityCode, $expectedCode)) {
+                $this->addError('securityCode', 'Forkert sikkerhedskode.');
                 return;
             }
 
-            $targetKreditor = Kreditorer::findOrFail($this->transferToKreditorId);
-
-            // Overfør alle sager til modtager-kreditoren
-            foreach ($this->kreditorToDelete->sager as $sag) {
-                $sag->kreditorer()->detach($this->kreditorToDelete->id);
-                $sag->kreditorer()->syncWithoutDetaching([$targetKreditor->id]);
+            if (! $this->transferToKreditorId) {
+                $this->addError('transferToKreditorId', 'Vælg en modtager-kreditor.');
+                return;
             }
+
+            if ((int) $this->transferToKreditorId === (int) $this->kreditorToDelete->id) {
+                $this->addError('transferToKreditorId', 'Du kan ikke overføre sager til den samme kreditor.');
+                return;
+            }
+
+            $target = Kreditorer::findOrFail($this->transferToKreditorId);
+
+            $this->transfer->transferSager(
+                $this->kreditorToDelete,
+                $target
+            );
         }
 
-        // SoftDelete kreditor
-        $this->kreditorToDelete->delete();
+        $this->management->delete($this->kreditorToDelete);
 
+        // Luk modalen og genstart/nulstil variablerne
+        $this->closeModals();
+
+        // Vis toast-besked i stedet for redirect
         $this->dispatch('toast', [
-            'message' => 'Kreditor blev slettet.',
-            'type'    => 'success'
+            'type' => 'success',
+            'message' => 'Kreditoren blev slettet succesfuldt.',
         ]);
 
-        $this->cancelDelete();
         $this->resetPage();
     }
 
-    // -------------------------------------------------
-    // Standalone overførsel af sager
-    // -------------------------------------------------
-    public function openTransferModal(int $id): void
-    {
-        $this->kreditorToTransferFrom = Kreditorer::with(['sager'])->withCount('sager')->findOrFail($id);
-        $this->transferToKreditorId = null;
-        $this->showStandaloneTransferModal = true;
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | Render
+    |--------------------------------------------------------------------------
+    */
 
-    public function closeTransferModal(): void
+    public function render()
     {
-        $this->showStandaloneTransferModal = false;
-        $this->kreditorToTransferFrom = null;
-        $this->transferToKreditorId = null;
-    }
-
-    // 🟢 UDFØR KUN OVERFØRSEL AF SAGER
-    public function executeStandaloneTransfer(): void
-    {
-        if (! $this->kreditorToTransferFrom || ! $this->transferToKreditorId) {
-            $this->dispatch('toast', [
-                'message' => 'Vælg venligst en modtager-kreditor.',
-                'type'    => 'error'
+        $query = Kreditorer::query()
+            ->withCount([
+                'sager',
+                'users',
+                'sagsbehandlere',
             ]);
-            return;
+
+        if ($this->search !== '') {
+            $search = trim($this->search);
+
+            $query->where(function ($q) use ($search) {
+                $q->where('navn', 'like', "%{$search}%")
+                    ->orWhere('lotusID', 'like', "%{$search}%");
+
+                if (is_numeric($search)) {
+                    $q->orWhere('id', (int) $search);
+                }
+            });
         }
 
-        $targetKreditor = Kreditorer::findOrFail($this->transferToKreditorId);
+        match ($this->filter) {
+            'active_cases' => $query->has('sager'),
+            'no_cases' => $query->doesntHave('sager'),
+            'with_users' => $query->has('users'),
+            default => null,
+        };
 
-        foreach ($this->kreditorToTransferFrom->sager as $sag) {
-            $sag->kreditorer()->detach($this->kreditorToTransferFrom->id);
-            $sag->kreditorer()->syncWithoutDetaching([$targetKreditor->id]);
-        }
+        $kreditorer = $query
+            ->orderBy('navn')
+            ->paginate(15);
 
-        $this->dispatch('toast', [
-            'message' => 'Sagerne blev overført til ' . $targetKreditor->navn,
-            'type'    => 'success'
-        ]);
+        $totalKreditorer = Kreditorer::count();
+        $medSagerCount = Kreditorer::has('sager')->count();
+        $udenSagerCount = Kreditorer::doesntHave('sager')->count();
+        $medBrugereCount = Kreditorer::has('users')->count();
 
-        $this->closeTransferModal();
-        $this->resetPage();
+        // Modtager-lister til dropdown i modalen (alle undtagen den der slettes)
+        $transferTargets = $this->kreditorToDelete
+            ? Kreditorer::whereKeyNot($this->kreditorToDelete->id)->orderBy('navn')->get()
+            : collect();
+
+        return view(
+            'livewire.kreditorer.manage-kreditorer',
+            [
+                'kreditorer' => $kreditorer,
+                'totalKreditorer' => $totalKreditorer,
+                'medSagerCount' => $medSagerCount,
+                'udenSagerCount' => $udenSagerCount,
+                'medBrugereCount' => $medBrugereCount,
+                'transferTargets' => $transferTargets,
+            ]
+        );
+    }
+
+    public function requestDelete(int $id): void
+    {
+        $this->resetValidation();
+
+        $this->securityCode = '';
+        $this->transferToKreditorId = null;
+
+        $this->kreditorToDelete = Kreditorer::withCount('sager')->findOrFail($id);
+        $this->sagerCount = $this->kreditorToDelete->sager_count ?? 0;
+
+        $this->showDeleteModal = true;
+    }
+
+    public function loadItemData($id): void
+    {
+        $kreditor = Kreditorer::findOrFail($id);
+
+        $this->navn = $kreditor->navn;
+        $this->lotusID = $kreditor->lotusID;
+    }
+
+    public function editKreditor(int $id): void
+    {
+        // Sender ID'et direkte til KreditorFormModal komponenten
+        $this->dispatch('open-edit-modal', id: $id)->to('kreditor.kreditor-form-modal');
     }
 }

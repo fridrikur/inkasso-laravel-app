@@ -1,6 +1,5 @@
 <div class="max-w-4xl mx-auto space-y-6">
 
-    {{-- 🟢 ERSTATTER BÅDE HEADER OG TABEL-STRUKTUR --}}
     <x-data-table 
         title="💬 Autotekster" 
         description="Administrer skabelontekster og sags-dialog beskeder."
@@ -9,7 +8,7 @@
     >
         @forelse ($autotekster as $item)
             <tr wire:key="auto-{{ $item->id }}" class="hover:bg-slate-50/50 transition">
-                <td class="px-6 py-4 font-semibold text-slate-900 max-w-md">
+                <td class="px-6 py-4 font-semibold text-slate-900 w-3/5">
                     <button 
                         type="button"
                         wire:click="openEditModal({{ $item->id }})" 
@@ -18,17 +17,25 @@
                         {{ $item->tekst }}
                     </button>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-500 font-mono">
+                <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-500 font-mono w-1/4">
                     {{ $item->dato }}
                 </td>
                 
-                {{-- 🟢 ERSTATTER DE MANUELLE REDIGER/SLET KNAPPER --}}
-                <x-table-actions :id="$item->id" />
+                {{-- Brug standard table-actions, hvor du peger på de rette metoder i din Trait --}}
+                <td class="px-6 py-4 text-right whitespace-nowrap w-32">
+                    <div class="flex items-center justify-end gap-1.5">
+                        <x-table-actions 
+                            :id="$item->id" 
+                            editAction="openEditModal" 
+                            deleteAction="confirmDelete" 
+                        />
+                    </div>
+                </td>
             </tr>
         @empty
             <tr>
                 <td colspan="3" class="px-6 py-10 text-center text-slate-400 text-xs">
-                    Ingen autotekster fundet.
+                            Ingen autotekster fundet.
                 </td>
             </tr>
         @endforelse

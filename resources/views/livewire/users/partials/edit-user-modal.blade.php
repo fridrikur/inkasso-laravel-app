@@ -13,10 +13,10 @@
             <div class="flex items-center justify-between px-8 py-6 border-b border-slate-200 bg-slate-50">
                 <div>
                     <h2 class="text-xl font-bold text-slate-900">
-                        {{ $activeUserId ? 'Rediger bruger' : 'Opret ny bruger' }}
+                        {{ $editingId ? 'Rediger bruger' : 'Opret bruger' }}
                     </h2>
                     <p class="text-sm text-slate-500 mt-1">
-                        {{ $activeUserId ? 'Opdater brugeroplysninger, rolle og evt. kreditor' : 'Udfyld oplysninger for at oprette en ny bruger' }}
+                        {{ $editingId ? 'Opdater brugeroplysninger, rolle og evt. kreditor' : 'Udfyld oplysninger for at oprette en ny bruger' }}
                     </p>
                 </div>
 
@@ -31,12 +31,12 @@
 
             {{-- Content --}}
             <div class="p-8">
-                @if($activeUserId)
+                @if($editingId)
                     {{-- 🟢 REDIGER EKSISTERENDE BRUGER --}}
                     @livewire(
                         'users.update-user',
-                        ['userId' => $activeUserId],
-                        key('update-user-'.$activeUserId)
+                        ['userId' => $editingId],
+                        key('update-user-'.$editingId)
                     )
                 @else
                     {{-- 🟢 OPRET NY BRUGER --}}

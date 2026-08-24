@@ -12,12 +12,11 @@ class ManageDebitorer extends Component
     use WithPagination;
 
     public $activeTab = 'active';
-    public $search = ''; // Søgefelt
+    public $search = '';
 
     public ?Debitorer $selectedDebitor = null;
     public bool $showModal = false;
 
-    // Nulstil pagination når der søges eller skiftes fane
     public function updatedSearch()
     {
         $this->resetPage();
@@ -45,36 +44,32 @@ class ManageDebitorer extends Component
         $debitor = Debitorer::find($id);
         if ($debitor) {
             $debitor->delete();
-            session()->flash('message', 'Debitor blev slettet.');
+            $this->dispatch('toast', message: 'Debitor blev slettet.', type: 'success');
         }
     }
 
     public function render()
     {
-        // 1. Base Query med søgning (filtrerer på navn, email eller pnr/cpr)
+        // 1. Base Query med søgning
         $query = Debitorer::with('sager')
             ->when($this->search, function ($q) {
                 $q->where(function ($sub) {
                     $sub->where('navn', 'like', '%' . $this->search . '%')
                         ->orWhere('email', 'like', '%' . $this->search . '%')
+                        ->orWhere('pnr', 'like', '%' . $this->search . '%')
                         ->orWhere('pnr', 'like', '%' . $this->search . '%');
                 });
             });
 
-        // Hent alle til optælling af faner (eller brug ufiltrerede til counts hvis du vil vise totaler)
-        $allDebitorer = (clone $query)->get();
+        // 2. Aktiv fane (Pagineret baseret på aktivt tab)
+        $activeDebitorer = ($this->activeTab === 'active') 
+            ? (clone $query)->whereHas('sager')->orderBy('navn')->paginate(15) 
+            : collect();
 
-        // 2. Aktive / med sager (pagineret)
-        $activeDebitorer = (clone $query)
-            ->whereHas('sager')
-            ->orderBy('navn')
-            ->paginate(15);
-
-        // 3. Forældreløse / uden sager (pagineret)
-        $orphans = (clone $query)
-            ->whereDoesntHave('sager')
-            ->orderBy('navn')
-            ->paginate(15);
+        // 3. Forældreløse fane
+        $orphans = ($this->activeTab === 'orphans') 
+            ? (clone $query)->whereDoesntHave('sager')->orderBy('navn')->paginate(15) 
+            : collect();
 
         // 4. Dubletter: Samme navn
         $sameNameNames = Debitorer::select('navn')
@@ -83,37 +78,41 @@ class ManageDebitorer extends Component
             ->groupBy('navn')
             ->having(DB::raw('count(*)'), '>', 1)
             ->pluck('navn');
-        
-        $sameNameDebitorer = Debitorer::whereIn('navn', $sameNameNames)->orderBy('navn')->paginate(15);
 
-        // 5. Dubletter: Samme CPR/PNR
-        $cprColumn = \Schema::hasColumn('debitors', 'cpr') ? 'cpr' : 'pnr';
+        $sameNameDebitorer = ($this->activeTab === 'same_name') 
+            ? (clone $query)->whereIn('navn', $sameNameNames)->orderBy('navn')->paginate(15) 
+            : collect();
+
+        // 5. Dubletter: Samme pnr/PNR
+        $pnrColumn = \Schema::hasColumn('debitors', 'pnr') ? 'pnr' : 'pnr';
         
-        $sameCprValues = Debitorer::select($cprColumn)
-            ->whereNotNull($cprColumn)
-            ->where($cprColumn, '!=', '')
-            ->groupBy($cprColumn)
+        $samepnrValues = Debitorer::select($pnrColumn)
+            ->whereNotNull($pnrColumn)
+            ->where($pnrColumn, '!=', '')
+            ->groupBy($pnrColumn)
             ->having(DB::raw('count(*)'), '>', 1)
-            ->pluck($cprColumn);
+            ->pluck($pnrColumn);
 
-        $sameCprDebitorer = Debitorer::whereIn($cprColumn, $sameCprValues)->orderBy($cprColumn)->paginate(15);
+        $samepnrDebitorer = ($this->activeTab === 'same_pnr') 
+            ? (clone $query)->whereIn($pnrColumn, $samepnrValues)->orderBy($pnrColumn)->paginate(15) 
+            : collect();
 
-        // Optællinger til fanerne (totalt uden for søgning, eller tilpas efter behov)
+        // Optællinger til fanerne (hurtige database counts)
         $totalActive = Debitorer::has('sager')->count();
         $totalOrphans = Debitorer::doesntHave('sager')->count();
         $totalSameName = Debitorer::whereIn('navn', $sameNameNames)->count();
-        $totalSameCpr = Debitorer::whereIn($cprColumn, $sameCprValues)->count();
+        $totalSamepnr = Debitorer::whereIn($pnrColumn, $samepnrValues)->count();
 
         return view('livewire.debitorer.manage-debitorer', [
             'activeDebitorer'     => $activeDebitorer,
             'orphans'             => $orphans,
             'sameNameDebitorer'   => $sameNameDebitorer,
-            'sameCprDebitorer'    => $sameCprDebitorer,
+            'samepnrDebitorer'    => $samepnrDebitorer,
             
             'activeCount'         => $totalActive,
             'orphansCount'        => $totalOrphans,
             'sameNameCount'       => $totalSameName,
-            'sameCprCount'        => $totalSameCpr,
+            'samepnrCount'        => $totalSamepnr,
         ]);
     }
 }

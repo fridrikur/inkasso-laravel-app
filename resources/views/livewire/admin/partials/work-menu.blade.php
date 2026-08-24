@@ -41,7 +41,7 @@
             <div class="space-y-2.5">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Sager & Behandling</span>
-                    <a href="{{ route('showsager') }}" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">Se alle →</a>
+                    <a href="{{ route('sager.index') }}" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">Se alle →</a>
                 </div>
 
                 <div class="grid grid-cols-1 gap-2">

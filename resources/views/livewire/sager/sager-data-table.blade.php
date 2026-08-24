@@ -1,7 +1,7 @@
 <div class="space-y-6">
 
     {{-- LIVEWIRE INITIAL / GLOBAL LOADER --}}
-    <div wire:loading.delay wire:target="search, filterByKreditor, sortBy, gotoPage, nextPage, previousPage, setMode" class="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div wire:loading.delay wire:target="search, filterByKreditor, sortBy, gotoPage, nextPage, previousPage" class="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-sm w-full">
             <x-ui-loader type="sager" :count="$modeCount" />
         </div>
@@ -299,7 +299,7 @@
 
                                     <button 
                                         type="button" 
-                                        wire:click="confirmDelete({{ $sag->id }})"
+                                        wire:click="confirmDeleteModal({{ $sag->id }})"
                                         class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-600 shadow-sm hover:bg-rose-50 transition cursor-pointer"
                                         title="Slet permanent"
                                     >
@@ -311,9 +311,11 @@
                                     GDPR Låst
                                 </span>
                             @else
+                                {{-- 🟢 Bruger x-table-actions korrekt koblet til traitens metoder --}}
                                 <x-table-actions 
                                     :id="$sag->id" 
                                     :editUrl="route('sager.edit', $sag)" 
+                                    deleteAction="confirmDeleteModal"
                                 />
                             @endif
                         </td>
@@ -337,11 +339,32 @@
         </div>
     </div>
 
-    {{-- 🟢 DYNAMISK SLETTEMODAL TIL SAGER --}}
-    <x-confirm-delete-modal 
-        :show="$showDeleteModal" 
-        :title="$mode === 'trash' ? 'Slet sagen permanent?' : 'Send sag i papirkurv?'" 
-        :message="$mode === 'trash' ? 'Er du sikker på, at du vil slette denne sag permanent fra databasen? Denne handling kan IKKE fortrydes!' : 'Er du sikker på, at du vil flytte denne sag til papirkurven? Sagen kan gendannes fra papirkurven.'" 
-    />
+    {{-- 🟢 DYNAMISK SLETTEMODAL TIL SAGER KOBLET TIL TRAIT --}}
+    @if($showDeleteModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-4">
+                <button type="button" wire:click="cancelDelete" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">&times;</button>
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-rose-50 rounded-2xl text-rose-600 shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">
+                            {{ $mode === 'trash' ? 'Slet sagen permanent?' : 'Send sag i papirkurv?' }}
+                        </h3>
+                    </div>
+                </div>
+
+                <p class="text-xs text-slate-600">
+                    {{ $mode === 'trash' ? 'Er du sikker på, at du vil slette denne sag permanent fra databasen? Denne handling kan IKKE fortrydes!' : 'Er du sikker på, at du vil flytte denne sag til papirkurven? Sagen kan gendannes fra papirkurven.' }}
+                </p>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" wire:click="cancelDelete" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Annuller</button>
+                    <button type="button" wire:click="deleteSag" class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition cursor-pointer">Bekræft sletning</button>
+                </div>
+            </div>
+        </div>
+    @endif
 
 </div>

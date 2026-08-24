@@ -5,6 +5,7 @@ namespace App\Livewire\Kreditor;
 use Livewire\Component;
 use App\Models\Kreditorer;
 use App\Traits\HasCrudModal;
+use Livewire\Attributes\On;
 
 class KreditorFormModal extends Component
 {
@@ -13,6 +14,14 @@ class KreditorFormModal extends Component
     public string $navn = '';
     public $lotusID = null; // 🟢 Ændret fra public ?int $lotusID = null;
     public array $usedLotusIds = [];
+
+    #[On('open-edit-modal')]
+    public function openEditModalFromParent($id): void
+    {
+        // Kalder traitens indbyggede metode, som sætter $editingId = $id,
+        // henter data via loadItemData() og åbner modalen ($showFormModal = true)
+        $this->openEditModal($id);
+    }
 
     protected $listeners = [
         'open-kreditor-modal' => 'openCreateModal',

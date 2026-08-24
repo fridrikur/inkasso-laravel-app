@@ -1,119 +1,101 @@
-<div class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
-    
-    <!-- TOAST NOTIFIKATION (Alpine.js) -->
-    <div 
-        x-data="{ show: false, message: '' }"
-        @notify.window="message = $event.detail.message; show = true; setTimeout(() => show = false, 4000)"
-        x-show="show"
-        x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0 transform translate-y-2"
-        x-transition:enter-end="opacity-100 transform translate-y-0"
-        x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="opacity-100 transform translate-y-0"
-        x-transition:leave-end="opacity-0 transform translate-y-2"
-        style="display: none;"
-        class="fixed top-5 right-5 z-50 flex items-center bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-xl border border-emerald-500 space-x-3"
-    >
-        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-        <span class="font-medium text-sm" x-text="message"></span>
-    </div>
+<div class="max-w-4xl mx-auto space-y-6">
 
-    <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg border border-gray-200">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
         
-        <!-- Header -->
-        <div class="bg-slate-800 px-6 py-4 flex justify-between items-center text-white">
-            <h2 class="text-xl font-semibold">Rediger Debitor: {{ $form->navn ?? '' }}</h2>
-            <a href="{{ route('debitorer.index') }}" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-sm transition">
+        <!-- HEADER -->
+        <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <span class="p-2 rounded-xl bg-indigo-50 text-indigo-600 font-bold text-sm shadow-sm">🏢</span>
+                <h2 class="text-base font-bold text-slate-900">Rediger Debitor: {{ $form->navn ?? '' }}</h2>
+            </div>
+            <a href="{{ route('debitorer.index') }}" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer">
                 Tilbage til oversigt
             </a>
         </div>
 
-        <!-- Formular -->
-        <form wire:submit.prevent="save" class="p-6 space-y-6">
+        <!-- FORMULAR -->
+        <form wire:submit.prevent="save" class="p-6 space-y-5">
 
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 
                 <!-- Navn -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Navn</label>
-                    <input type="text" wire:model.defer="form.navn" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2">
-                    @error('form.navn') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Navn</label>
+                    <input type="text" wire:model.defer="form.navn" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition">
+                    @error('form.navn') <span class="text-xs text-rose-600 font-semibold mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- C/O -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">C/O</label>
-                    <input type="text" wire:model.defer="form.co" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2">
-                    @error('form.co') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">C/O</label>
+                    <input type="text" wire:model.defer="form.co" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition">
+                    @error('form.co') <span class="text-xs text-rose-600 font-semibold mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- Adresse -->
                 <div class="sm:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700">Adresse</label>
-                    <input type="text" wire:model.defer="form.adresse" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2">
-                    @error('form.adresse') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Adresse</label>
+                    <input type="text" wire:model.defer="form.adresse" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition">
+                    @error('form.adresse') <span class="text-xs text-rose-600 font-semibold mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- Postnr -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Postnummer</label>
-                    <input type="text" wire:model.defer="form.postnr" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2">
-                    @error('form.postnr') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Postnummer</label>
+                    <input type="text" wire:model.defer="form.postnr" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition">
+                    @error('form.postnr') <span class="text-xs text-rose-600 font-semibold mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- CPR / PNR -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">CPR / PNR</label>
-                    <input type="text" wire:model.defer="form.pnr" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2">
-                    @error('form.pnr') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">CPR / PNR</label>
+                    <input type="text" wire:model.defer="form.pnr" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-mono outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition">
+                    @error('form.pnr') <span class="text-xs text-rose-600 font-semibold mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- Email -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">E-mail</label>
-                    <input type="email" wire:model.defer="form.email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2">
-                    @error('form.email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">E-mail</label>
+                    <input type="email" wire:model.defer="form.email" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition">
+                    @error('form.email') <span class="text-xs text-rose-600 font-semibold mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- Tlf -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Telefon</label>
-                    <input type="text" wire:model.defer="form.tlf" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2">
-                    @error('form.tlf') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Telefon</label>
+                    <input type="text" wire:model.defer="form.tlf" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition">
+                    @error('form.tlf') <span class="text-xs text-rose-600 font-semibold mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- Mobil -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Mobil</label>
-                    <input type="text" wire:model.defer="form.mobil" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2">
-                    @error('form.mobil') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Mobil</label>
+                    <input type="text" wire:model.defer="form.mobil" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition">
+                    @error('form.mobil') <span class="text-xs text-rose-600 font-semibold mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
-                <!-- Adropl -->
                 <!-- Adropl (Datofelt) -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Adropl (Dato)</label>
-                    <input type="date" wire:model.defer="form.adropl" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2">
-                    @error('form.adropl') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Adropl (Dato)</label>
+                    <input type="date" wire:model.defer="form.adropl" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition">
+                    @error('form.adropl') <span class="text-xs text-rose-600 font-semibold mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- Kontakt bemærkning -->
                 <div class="sm:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700">Kontakt bemærkning</label>
-                    <textarea wire:model.defer="form.kontakt_bemaerkning" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"></textarea>
-                    @error('form.kontakt_bemaerkning') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Kontakt bemærkning</label>
+                    <textarea wire:model.defer="form.kontakt_bemaerkning" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition"></textarea>
+                    @error('form.kontakt_bemaerkning') <span class="text-xs text-rose-600 font-semibold mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
             </div>
 
-            <!-- Handlingsknapper -->
-            <div class="flex justify-end space-x-4 border-t pt-4">
-                <a href="{{ route('debitorer.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 transition">
+            <!-- HANDLINGSKNAPPER -->
+            <div class="bg-slate-50/80 -mx-6 -mb-6 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3 mt-6">
+                <a href="{{ route('debitorer.index') }}" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold text-xs cursor-pointer transition">
                     Annuller
                 </a>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition">
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs cursor-pointer shadow-sm transition">
                     Gem ændringer
                 </button>
             </div>

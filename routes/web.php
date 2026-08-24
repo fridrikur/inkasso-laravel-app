@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
+use App\Livewire\Sager\SagerIndex;
 use App\Livewire\Admin\DropdownIndex;
 use App\Livewire\AdminDashboard;
 use App\Livewire\Admin\SystemSettings\ManageSettings;
@@ -19,7 +20,6 @@ use App\Livewire\ManageRoles;
 use App\Livewire\Admin\SagFieldManager;
 use App\Livewire\Users\AssignMedarbejder;
 use App\Livewire\Forms\UserForm;
-use App\Livewire\Sager\ShowSager;
 use App\Livewire\Sager\ShowKreditorSager;
 use App\Livewire\kreditorer\CreateKreditor;
 use App\Livewire\kreditorer\ManageKreditor;
@@ -189,7 +189,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
     ->group(function () {
 
         /* SAGER */
-        Route::get('/sager', ShowSager::class)->name('showsager');
+        Route::get('/sager', SagerIndex::class)->name('sager.index');
         Route::get('/sager/create', SagEditor::class)->name('sager.create');
         Route::get('/sager/{sag}/edit', SagEditor::class)
             ->whereNumber('sag')
@@ -335,7 +335,7 @@ Route::middleware(['auth', 'role:Medarbejder'])
     ->name('medarbejder.')
     ->group(function () {
         Route::get('/dashboard', MedarbejderDashboard::class)->name('dashboard');
-        Route::get('/sager', ShowSager::class)->name('sager.index');
+        Route::get('/sager', SagerIndex::class)->name('sager.index');
         Route::get('/sager/create', SagEditor::class)->name('sager.create');
         Route::get('/sager/search', SagSearch::class)->name('sager.search');
         Route::get('/sager/{sag}/edit', SagEditor::class)->whereNumber('sag')->name('sager.edit');
@@ -376,7 +376,7 @@ Route::post('/release-sag-lock/{id}', function ($id) {
     Cache::forget("sag_lock_$id");
 });
 
-Route::get('/sager/papirkurv', \App\Livewire\Sager\Papirkurv::class)->name('sager.trash');
+Route::get('/sager/papirkurv', \App\Livewire\Sager\Papirkurv::class)->name('sager.papirkurv');
 
 Route::get('/two-factor-login', TwoFactorLogin::class)->name('two-factor.login');
 Route::get('/two-factor-setup-required', TwoFactorSetupRequired::class)->name('two-factor.setup-required');

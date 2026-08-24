@@ -4,62 +4,65 @@ namespace App\Services;
 
 use App\Models\Kreditorer;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class KreditorTransferService
 {
-    public function __construct(
-        protected KreditorManagementService $management
-    ) {
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Transfer cases
-    |--------------------------------------------------------------------------
-    */
-
+    /**
+     * Transfer all cases from one creditor to another.
+     *
+     * Returns the number of newly transferred cases.
+     */
     public function transferSager(
         Kreditorer $from,
         Kreditorer $to
-    ): void {
-
-        if ($from->is($to)) {
-            throw new \InvalidArgumentException(
-                'Cannot transfer cases to the same creditor.'
+    ): int {
+        if ($from->id === $to->id) {
+            throw new RuntimeException(
+                'Kilde- og modtager-kreditor må ikke være den samme.'
             );
         }
 
-        DB::transaction(function () use ($from, $to) {
+        return DB::transaction(function () use ($from, $to) {
 
-            $sagIds = $from->sager()->pluck('sagers.id');
+            $sagIds = DB::table('sager_kreditor')
+                ->where('kreditor_id', $from->id)
+                ->pluck('sag_id');
 
-            if ($sagIds->isEmpty()) {
-                return;
+            $transferred = 0;
+
+            foreach ($sagIds as $sagId) {
+
+                /*
+                 * Check whether the target already owns this case.
+                 */
+                $exists = DB::table('sager_kreditor')
+                    ->where('sag_id', $sagId)
+                    ->where('kreditor_id', $to->id)
+                    ->exists();
+
+                if (!$exists) {
+
+                    DB::table('sager_kreditor')->insert([
+                        'sag_id' => $sagId,
+                        'kreditor_id' => $to->id,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    $transferred++;
+                }
+
+                /*
+                 * Remove the case from the old creditor.
+                 */
+                DB::table('sager_kreditor')
+                    ->where('sag_id', $sagId)
+                    ->where('kreditor_id', $from->id)
+                    ->delete();
             }
 
-            $to->sager()->syncWithoutDetaching($sagIds);
-            $from->sager()->detach($sagIds);
-
-        });
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Transfer and delete
-    |--------------------------------------------------------------------------
-    */
-
-    public function transferAndDelete(
-        Kreditorer $from,
-        Kreditorer $to
-    ): void {
-
-        DB::transaction(function () use ($from, $to) {
-
-            $this->transferSager($from, $to);
-
-            $this->management->delete($from);
-
+            return $transferred;
         });
     }
 }

@@ -120,7 +120,9 @@
                                     class="font-bold text-slate-900 text-sm hover:text-indigo-600 transition flex items-center gap-2 group"
                                 >
                                     <span>{{ $kreditor->navn }}</span>
-                                    <svg class="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-indigo-500 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    <svg class="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-indigo-500 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
                                 </a>
 
                                 <div class="mt-1 flex items-center gap-2">
@@ -160,37 +162,14 @@
                                 {{ $kreditor->created_at?->format('d-m-Y') ?? '-' }}
                             </td>
 
-                            {{-- HANDLINGER --}}
+                            {{-- 🟢 REN OG PÆN HANDLINGER KOLONNE MED X-TABLE-ACTIONS --}}
                             <td class="px-6 py-4 text-right whitespace-nowrap">
-                                <div class="inline-flex items-center justify-end gap-2">
-                                    <a 
-                                        href="{{ route('kreditor.manage', $kreditor) }}"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 text-xs font-bold rounded-xl transition cursor-pointer"
-                                    >
-                                        <span>Administrer</span>
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                                    </a>
-
-                                    @if($kreditor->sager_count > 0)
-                                        <button
-                                            type="button"
-                                            wire:click="openTransferModal({{ $kreditor->id }})"
-                                            class="inline-flex items-center justify-center p-1.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-                                            title="Overfør sager til anden kreditor"
-                                        >
-                                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                                            </svg>
-                                        </button>
-                                    @endif
-
-                                    <!-- NY (Åbner KreditorFormModal til redigering) -->
-                                    <x-table-actions 
-                                        :id="$kreditor->id" 
-                                        editAction="$dispatch('edit-kreditor-modal', { id: {{ $kreditor->id }} })"
-                                        deleteAction="requestDelete"
-                                    />
-                                </div>
+                                <x-table-actions 
+                                    :id="$kreditor->id" 
+                                    :viewUrl="route('kreditor.manage', $kreditor)"
+                                    editAction="editKreditor"
+                                    deleteAction="requestDelete"
+                                />
                             </td>
 
                         </tr>
@@ -210,15 +189,17 @@
         </div>
     </div>
 
-    {{-- SLETTEMODAL --}}
+    {{-- KREDITOR OPRET/REDIGER FORM MODAL (Sub-komponent) --}}
+    @livewire('kreditor.kreditor-form-modal')
+
+    {{-- SLET KREDITOR MODAL --}}
     @if($showDeleteModal && $kreditorToDelete)
-        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-4">
+                <button type="button" wire:click="closeModals" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">&times;</button>
                 <div class="flex items-center gap-3">
                     <div class="p-3 bg-rose-50 rounded-2xl text-rose-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     </div>
                     <div>
                         <h3 class="text-lg font-bold text-slate-900">Slet kreditor</h3>
@@ -226,71 +207,54 @@
                     </div>
                 </div>
 
-                @if($kreditorToDelete->sager_count > 0)
-                    <div class="p-4 bg-amber-50 border border-amber-200/80 rounded-2xl space-y-3">
-                        <div class="flex items-center gap-2 text-xs font-bold text-amber-900 uppercase tracking-wider">
-                            <span>Advarsel: {{ $kreditorToDelete->sager_count }} aktive sager</span>
+                @if($sagerCount > 0)
+                    <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
+                        <p class="text-xs text-amber-800 font-medium">Kreditoren har {{ $sagerCount }} aktive sager. Vælg modtager og indtast sikkerhedskode:</p>
+                        
+                        {{-- Vælg modtager --}}
+                        <div class="space-y-1">
+                            <select wire:model="transferToKreditorId" class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-hidden">
+                                <option value="">-- Vælg modtager-kreditor --</option>
+                                @foreach($transferTargets as $target)
+                                    <option value="{{ $target->id }}">{{ $target->navn }}</option>
+                                @endforeach
+                            </select>
+                            @error('transferToKreditorId') <span class="text-[10px] text-rose-600 font-bold">{{ $message }}</span> @enderror
                         </div>
-                        <p class="text-xs text-amber-800">
-                            Vælg den kreditor, som sagerne skal overføres til før sletning:
-                        </p>
 
-                        <select
-                            wire:model="transferToKreditorId"
-                            class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-hidden"
-                        >
-                            <option value="">-- Vælg modtager-kreditor --</option>
-                            @foreach($transferTargets as $target)
-                                <option value="{{ $target->id }}">{{ $target->navn }}</option>
-                            @endforeach
-                        </select>
+                        {{-- Sikkerhedskode felt --}}
+                        <div class="space-y-1">
+                            <input 
+                                type="password" 
+                                wire:model="securityCode" 
+                                placeholder="Indtast global sikkerhedskode" 
+                                class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-hidden"
+                            >
+                            @error('securityCode') <span class="text-[10px] text-rose-600 font-bold">{{ $message }}</span> @enderror
+                        </div>
                     </div>
                 @else
-                    <p class="text-xs text-slate-600">
-                        Er du sikker på, at du vil slette <strong class="text-slate-900">{{ $kreditorToDelete->navn }}</strong>? Handlingen kan ikke fortrydes.
-                    </p>
+                    <p class="text-xs text-slate-600">Er du sikker på, at du vil slette denne kreditor? Handlingen kan ikke fortrydes.</p>
                 @endif
 
-                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                    <button type="button" wire:click="cancelDelete" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Annuller</button>
-                    <button type="button" wire:click="confirmDelete" class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition cursor-pointer">Slet kreditor</button>
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" wire:click="closeModals" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Annuller</button>
+                    
+                    <button 
+                        type="button" 
+                        wire:click="confirmDelete" 
+                        wire:loading.attr="disabled"
+                        class="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50"
+                    >
+                        <svg wire:loading wire:target="confirmDelete" class="h-3.5 w-3.5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <span wire:loading.remove wire:target="confirmDelete">Slet kreditor</span>
+                        <span wire:loading wire:target="confirmDelete">Arbejder...</span>
+                    </button>
                 </div>
             </div>
         </div>
     @endif
-
-    {{-- STANDALONE OVERFØR MODAL --}}
-    @if($showStandaloneTransferModal && $kreditorToTransferFrom)
-        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
-                <div class="flex items-center gap-3">
-                    <div class="p-3 bg-indigo-50 rounded-2xl text-indigo-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-900">Overfør sager</h3>
-                        <p class="text-xs font-semibold text-slate-500 font-mono">{{ $kreditorToTransferFrom->navn }}</p>
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Modtager-kreditor</label>
-                    <select wire:model="transferToKreditorId" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-hidden">
-                        <option value="">-- Vælg modtager-kreditor --</option>
-                        @foreach($transferTargets as $target)
-                            <option value="{{ $target->id }}">{{ $target->navn }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                    <button type="button" wire:click="closeTransferModal" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Annuller</button>
-                    <button type="button" wire:click="executeStandaloneTransfer" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">Overfør sager nu</button>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    {{-- KREDITOR OPRET/REDIGER FORM MODAL --}}
-    @livewire('kreditor.kreditor-form-modal')
 </div>

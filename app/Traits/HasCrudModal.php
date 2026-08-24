@@ -33,38 +33,29 @@ trait HasCrudModal
     public function closeFormModal(): void
     {
         $this->showFormModal = false;
-
         $this->editingId = null;
 
         $this->resetForm();
     }
 
-    public function openDeleteModal($id): void
+    public function confirmDeleteModal($id = null): void
     {
         $this->resetValidation();
 
         $this->deletingId = $id;
 
-        $this->prepareDelete($id);
-
         $this->showDeleteModal = true;
     }
 
-    public function closeDeleteModal(): void
+    public function cancelDelete(): void
     {
         $this->showDeleteModal = false;
-
         $this->deletingId = null;
+
+        $this->resetValidation();
     }
 
     abstract public function resetForm(): void;
 
     abstract public function loadItemData($id): void;
-
-    /**
-     * Optional hook.
-     */
-    public function prepareDelete($id): void
-    {
-    }
 }

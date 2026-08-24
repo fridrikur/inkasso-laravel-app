@@ -31,7 +31,9 @@ class AutotekstIndex extends Component
     {
         $item = Autotekster::findOrFail($id);
         $this->tekst = $item->tekst;
-        $this->dato = $item->dato;
+        
+        // Sørg for kun at tage de første 10 tegn (YYYY-MM-DD), hvis det er en datetime-streng
+        $this->dato = $item->dato ? substr($item->dato, 0, 10) : now()->format('Y-m-d');
     }
 
     public function save()
@@ -56,13 +58,29 @@ class AutotekstIndex extends Component
         $this->dispatch('toast', message: $msg, type: 'success');
     }
 
-    public function confirmDelete()
+    public function confirmDelete($id = null): void
     {
-        if ($this->deletingId) {
-            Autotekster::find($this->deletingId)?->delete();
-            $this->cancelDelete();
-            $this->dispatch('toast', message: 'Autotekst slettet!', type: 'success');
+        // 1. Hvis der sendes et ID med fra tabellen, så åbn slette-modalen
+        if ($id) {
+            $this->deletingId = $id;
+            $this->showDeleteModal = true;
+            return;
         }
+
+        // 2. Hvis der ikke er et deletingId, så luk modalen og afbryd
+        if (!$this->deletingId) {
+            $this->cancelDelete();
+            return;
+        }
+
+        // 3. Udfør selve sletningen i databasen
+        Autotekster::find($this->deletingId)?->delete();
+
+        // 4. Luk modalen og nulstil ID'et
+        $this->cancelDelete();
+
+        // 5. Giv besked via toast
+        $this->dispatch('toast', message: 'Autotekst slettet!', type: 'success');
     }
 
     public function render()

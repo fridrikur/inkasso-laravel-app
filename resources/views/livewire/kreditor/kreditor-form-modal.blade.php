@@ -20,7 +20,7 @@
             
             {{-- NAVN --}}
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Navn</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Nassssvn</label>
                 <input
                     type="text"
                     wire:model="navn"

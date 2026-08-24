@@ -1,269 +1,267 @@
-<div class="space-y-6">
+<div class="max-w-7xl mx-auto space-y-6">
 
-    <!-- SØGEFELT -->
-    <div class="flex justify-between items-center bg-white p-4 shadow rounded-lg border border-gray-200">
-        <div class="w-full max-w-md">
+    <!-- HEADER & SØGEFELT -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">🏢 Administrer Debitorer</h1>
+            <p class="text-xs text-slate-500 mt-1">Overblik over aktive debitorer, forældreløse poster og systemdubletter.</p>
+        </div>
+
+        <div class="flex items-center gap-2 w-full sm:w-auto">
             <input 
                 type="text" 
                 wire:model.live.debounce.300ms="search" 
-                placeholder="Søg efter navn, e-mail eller CPR/PNR..." 
-                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-            >
+                placeholder="Søg på navn, e-mail eller pnr/PNR..." 
+                class="w-full sm:w-72 rounded-xl border border-slate-200 px-4 py-2.5 text-xs outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition"
+            />
+            @if($search)
+                <button wire:click="$set('search', '')" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer shrink-0">
+                    Nulstil
+                </button>
+            @endif
         </div>
-        @if($search)
-            <button wire:click="$set('search', '')" class="text-sm text-gray-500 hover:text-gray-700 underline ml-4">
-                Nulstil søgning
-            </button>
-        @endif
     </div>
 
-    <!-- FANEBLAD NAVIGATION -->
-    <div class="border-b border-gray-200 overflow-x-auto">
-        <nav class="-mb-px flex space-x-6 min-w-max" aria-label="Tabs">
-            
-            <!-- Tab 1: Med sager -->
-            <button wire:click="$set('activeTab', 'active')" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition {{ $activeTab === 'active' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
-                Debitorer med sager
-                <span class="ml-2 py-0.5 px-2.5 rounded-full text-xs font-semibold {{ $activeTab === 'active' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-900' }}">{{ $activeCount }}</span>
-            </button>
+    <!-- FANER FOR DEBITORER -->
+    <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-2 overflow-x-auto">
+        <button 
+            wire:click="$set('activeTab', 'active')"
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 {{ $activeTab === 'active' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100' }}"
+        >
+            <span>📁</span>
+            <span>Med sager</span>
+            <span class="px-2 py-0.5 rounded-lg text-[10px] {{ $activeTab === 'active' ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-700' }}">{{ $activeCount }}</span>
+        </button>
 
-            <!-- Tab 2: Uden sager -->
-            <button wire:click="$set('activeTab', 'orphans')" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition {{ $activeTab === 'orphans' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
-                Uden sager (Forældreløse)
-                <span class="ml-2 py-0.5 px-2.5 rounded-full text-xs font-semibold {{ $activeTab === 'orphans' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-900' }}">{{ $orphansCount }}</span>
-            </button>
+        <button 
+            wire:click="$set('activeTab', 'orphans')"
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 {{ $activeTab === 'orphans' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100' }}"
+        >
+            <span>⚠️</span>
+            <span>Uden sager (Forældreløse)</span>
+            <span class="px-2 py-0.5 rounded-lg text-[10px] {{ $activeTab === 'orphans' ? 'bg-emerald-700 text-white' : 'bg-slate-100 text-slate-700' }}">{{ $orphansCount }}</span>
+        </button>
 
-            <!-- Tab 3: Samme Navn -->
-            <button wire:click="$set('activeTab', 'same_name')" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition {{ $activeTab === 'same_name' ? 'border-amber-600 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
-                Dubletter: Samme navn
-                <span class="ml-2 py-0.5 px-2.5 rounded-full text-xs font-semibold {{ $activeTab === 'same_name' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-900' }}">{{ $sameNameCount }}</span>
-            </button>
+        <button 
+            wire:click="$set('activeTab', 'same_name')"
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 {{ $activeTab === 'same_name' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100' }}"
+        >
+            <span>👥</span>
+            <span>Dubletter: Samme navn</span>
+            <span class="px-2 py-0.5 rounded-lg text-[10px] {{ $activeTab === 'same_name' ? 'bg-amber-700 text-white' : 'bg-slate-100 text-slate-700' }}">{{ $sameNameCount }}</span>
+        </button>
 
-            <!-- Tab 4: Samme CPR/PNR -->
-            <button wire:click="$set('activeTab', 'same_cpr')" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition {{ $activeTab === 'same_cpr' ? 'border-red-600 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
-                Dubletter: Samme CPR / PNR
-                <span class="ml-2 py-0.5 px-2.5 rounded-full text-xs font-semibold {{ $activeTab === 'same_cpr' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-900' }}">{{ $sameCprCount }}</span>
-            </button>
-
-        </nav>
+        <button 
+            wire:click="$set('activeTab', 'same_pnr')"
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 {{ $activeTab === 'same_pnr' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100' }}"
+        >
+            <span>🔍</span>
+            <span>Dubletter: Samme pnr / PNR</span>
+            <span class="px-2 py-0.5 rounded-lg text-[10px] {{ $activeTab === 'same_pnr' ? 'bg-rose-700 text-white' : 'bg-slate-100 text-slate-700' }}">{{ $samepnrCount }}</span>
+        </button>
     </div>
 
-    <!-- TAB 1: MED SAGER -->
-    @if($activeTab === 'active')
-        <div class="overflow-hidden bg-white shadow rounded-lg border border-gray-200">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-slate-800 text-white">
+    <!-- TABELLER -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     <tr>
-                        <th class="px-4 py-3 text-left">ID</th>
-                        <th class="px-4 py-3 text-left">Debitor</th>
-                        <th class="px-4 py-3 text-left">Sager</th>
-                        <th class="px-4 py-3 text-center">Handlinger</th>
+                        <th class="px-6 py-3.5">ID</th>
+                        <th class="px-6 py-3.5">Debitor / Navn</th>
+                        @if($activeTab === 'active')
+                            <th class="px-6 py-3.5">Tilknyttede sager</th>
+                        @elseif($activeTab === 'same_name')
+                            <th class="px-6 py-3.5">pnr / PNR</th>
+                        @elseif($activeTab === 'same_pnr')
+                            <th class="px-6 py-3.5">pnr / PNR (Dublet)</th>
+                        @else
+                            <th class="px-6 py-3.5">Status</th>
+                        @endif
+                        <th class="px-6 py-3.5 text-right">Handlinger</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @forelse($activeDebitorer as $debitor)
-                        <tr class="hover:bg-blue-50 transition">
-                            <td class="px-4 py-3 font-mono">#{{ $debitor->id }}</td>
-                            <td class="px-4 py-3">
-                                <button wire:click="openDebitorModal({{ $debitor->id }})" class="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left">
-                                    {{ $debitor->navn }}
-                                </button>
-                            </td>
-                            <td class="px-4 py-3">
+                <tbody class="divide-y divide-slate-100">
+
+                    {{-- TAB 1: MED SAGER --}}
+                    @if($activeTab === 'active')
+                        @forelse($activeDebitorer as $debitor)
+                            <tr wire:key="deb-{{ $debitor->id }}" class="hover:bg-slate-50/50 transition">
+                                <td class="px-6 py-4 font-mono text-xs text-slate-400">#{{ $debitor->id }}</td>
+                                <td class="px-6 py-4 font-semibold text-slate-900">
+                                    <button wire:click="openDebitorModal({{ $debitor->id }})" class="hover:text-indigo-600 transition text-left cursor-pointer">
+                                        {{ $debitor->navn }}
+                                    </button>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-wrap gap-1.5">
+                                        @foreach($debitor->sager as $sag)
+                                            <a href="{{ route('sager.edit', $sag) }}" class="px-2 py-0.5 rounded-lg bg-slate-100 text-xs font-mono font-bold text-slate-700 border border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 transition">Sag #{{ $sag->id }}</a>
+                                        @endforeach
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <x-table-actions :id="$debitor->id" editAction="openDebitorModal" deleteAction="deleteDebitor" />
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 text-xs">Ingen aktive debitorer fundet.</td></tr>
+                        @endforelse
+                    @endif
+
+                    {{-- TAB 2: ORPHANS --}}
+                    @if($activeTab === 'orphans')
+                        @forelse($orphans as $debitor)
+                            <tr wire:key="deb-{{ $debitor->id }}" class="hover:bg-slate-50/50 transition">
+                                <td class="px-6 py-4 font-mono text-xs text-slate-400">#{{ $debitor->id }}</td>
+                                <td class="px-6 py-4 font-semibold text-slate-900">
+                                    <button wire:click="openDebitorModal({{ $debitor->id }})" class="hover:text-indigo-600 transition text-left cursor-pointer">
+                                        {{ $debitor->navn }}
+                                    </button>
+                                </td>
+                                <td class="px-6 py-4 text-xs text-slate-400 italic">Ingen sager tilknyttet</td>
+                                <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <x-table-actions :id="$debitor->id" editAction="openDebitorModal" deleteAction="deleteDebitor" />
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 text-xs">Ingen forældreløse debitorer fundet.</td></tr>
+                        @endforelse
+                    @endif
+
+                    {{-- TAB 3: SAMME NAVN --}}
+                    @if($activeTab === 'same_name')
+                        @forelse($sameNameDebitorer as $debitor)
+                            <tr wire:key="deb-{{ $debitor->id }}" class="hover:bg-slate-50/50 transition">
+                                <td class="px-6 py-4 font-mono text-xs text-slate-400">#{{ $debitor->id }}</td>
+                                <td class="px-6 py-4 font-semibold text-slate-900">
+                                    <button wire:click="openDebitorModal({{ $debitor->id }})" class="hover:text-indigo-600 transition text-left cursor-pointer">
+                                        {{ $debitor->navn }}
+                                    </button>
+                                </td>
+                                <td class="px-6 py-4 font-mono text-xs text-slate-600">{{ $debitor->pnr ?? $debitor->pnr ?? '-' }}</td>
+                                <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <x-table-actions :id="$debitor->id" editAction="openDebitorModal" deleteAction="deleteDebitor" />
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 text-xs">Ingen navne-dubletter fundet.</td></tr>
+                        @endforelse
+                    @endif
+
+                    {{-- TAB 4: SAMME pnr --}}
+                    @if($activeTab === 'same_pnr')
+                        @forelse($samepnrDebitorer as $debitor)
+                            <tr wire:key="deb-{{ $debitor->id }}" class="hover:bg-slate-50/50 transition">
+                                <td class="px-6 py-4 font-mono text-xs text-slate-400">#{{ $debitor->id }}</td>
+                                <td class="px-6 py-4 font-semibold text-slate-900">
+                                    <button wire:click="openDebitorModal({{ $debitor->id }})" class="hover:text-indigo-600 transition text-left cursor-pointer">
+                                        {{ $debitor->navn }}
+                                    </button>
+                                </td>
+                                <td class="px-6 py-4 font-mono text-xs font-bold text-rose-600">{{ $debitor->pnr ?? $debitor->pnr ?? '-' }}</td>
+                                <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <x-table-actions :id="$debitor->id" editAction="openDebitorModal" deleteAction="deleteDebitor" />
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 text-xs">Ingen pnr/PNR-dubletter fundet.</td></tr>
+                        @endforelse
+                    @endif
+
+                </tbody>
+            </table>
+        </div>
+
+        {{-- PAGINATION LINKS --}}
+        <div class="p-4 border-t border-slate-100 bg-slate-50/30">
+            @if($activeTab === 'active')
+                {{ $activeDebitorer->links() }}
+            @elseif($activeTab === 'orphans')
+                {{ $orphans->links() }}
+            @elseif($activeTab === 'same_name')
+                {{ $sameNameDebitorer->links() }}
+            @elseif($activeTab === 'same_pnr')
+                {{ $samepnrDebitorer->links() }}
+            @endif
+        </div>
+    </div>
+
+    <!-- MODAL: DETALJER -->
+    @if($showModal && $selectedDebitor)
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div wire:click="closeModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-xl border border-slate-100">
+                    
+                    <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="p-2 rounded-xl bg-indigo-50 text-indigo-600 font-bold text-sm shadow-sm">🏢</span>
+                            <h3 class="text-base font-bold text-slate-900">Debitor Detaljer: {{ $selectedDebitor->navn }}</h3>
+                        </div>
+                        <button type="button" wire:click="closeModal" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <span class="block text-slate-400 font-bold uppercase tracking-wider mb-1">ID</span>
+                                <span class="font-mono font-semibold text-slate-800">#{{ $selectedDebitor->id }}</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <span class="block text-slate-400 font-bold uppercase tracking-wider mb-1">Navn</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedDebitor->navn }}</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <span class="block text-slate-400 font-bold uppercase tracking-wider mb-1">pnr / PNR</span>
+                                <span class="font-mono font-semibold text-slate-800">{{ $selectedDebitor->pnr ?? $selectedDebitor->pnr ?? 'Ikke angivet' }}</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <span class="block text-slate-400 font-bold uppercase tracking-wider mb-1">E-mail</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedDebitor->email ?? '-' }}</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <span class="block text-slate-400 font-bold uppercase tracking-wider mb-1">Adresse</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedDebitor->adresse ?? '-' }}</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <span class="block text-slate-400 font-bold uppercase tracking-wider mb-1">Telefon / Mobil</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedDebitor->tlf ?? $selectedDebitor->mobil ?? '-' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Tilknyttede Sager ({{ $selectedDebitor->sager->count() }})</h4>
+                            @if($selectedDebitor->sager->count() > 0)
                                 <div class="flex flex-wrap gap-2">
-                                    @foreach($debitor->sager as $sag)
-                                        <a href="{{ route('sager.edit', $sag) }}" class="px-2 py-1 rounded bg-slate-100 text-sm hover:bg-slate-200">Sag #{{ $sag->id }}</a>
+                                    @foreach($selectedDebitor->sager as $sag)
+                                        <a href="{{ route('sager.edit', $sag) }}" target="_blank" class="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-indigo-600 hover:bg-indigo-50 transition">
+                                            Sag #{{ $sag->id }}
+                                        </a>
                                     @endforeach
                                 </div>
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <a href="{{ route('debitorer.edit', $debitor) }}" class="px-2 py-1 rounded bg-gray-100 text-xs hover:bg-gray-200">Rediger</a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Ingen debitorer fundet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-            <div class="p-4 bg-gray-50 border-t">
-                {{ $activeDebitorer->links() }}
-            </div>
-        </div>
-    @endif
-
-    <!-- TAB 2: FORÆLDRELØSE -->
-    @if($activeTab === 'orphans')
-        <div class="overflow-hidden bg-white shadow rounded-lg border border-gray-200">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-emerald-700 text-white">
-                    <tr>
-                        <th class="px-4 py-3 text-left">ID</th>
-                        <th class="px-4 py-3 text-left">Debitor</th>
-                        <th class="px-4 py-3 text-center">Handlinger</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @forelse($orphans as $debitor)
-                        <tr class="hover:bg-emerald-50 transition">
-                            <td class="px-4 py-3 font-mono">#{{ $debitor->id }}</td>
-                            <td class="px-4 py-3">
-                                <button wire:click="openDebitorModal({{ $debitor->id }})" class="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left">
-                                    {{ $debitor->navn }}
-                                </button>
-                            </td>
-                            <td class="px-4 py-3 text-center space-x-2">
-                                <a href="{{ route('debitorer.edit', $debitor) }}" class="px-2 py-1 rounded bg-gray-100 text-xs hover:bg-gray-200">Rediger</a>
-                                <button wire:click="deleteDebitor({{ $debitor->id }})" wire:confirm="Er du sikker på du vil slette debitoren?" class="px-3 py-1 rounded bg-red-600 text-white text-xs hover:bg-red-700">Slet</button>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="3" class="px-4 py-8 text-center text-gray-500">Ingen forældreløse debitorer fundet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-            <div class="p-4 bg-gray-50 border-t">
-                {{ $orphans->links() }}
-            </div>
-        </div>
-    @endif
-
-    <!-- TAB 3: SAMME NAVN -->
-    @if($activeTab === 'same_name')
-        <div class="overflow-hidden bg-white shadow rounded-lg border border-gray-200">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-amber-700 text-white">
-                    <tr>
-                        <th class="px-4 py-3 text-left">ID</th>
-                        <th class="px-4 py-3 text-left">Navn (Dublet)</th>
-                        <th class="px-4 py-3 text-left">CPR/PNR</th>
-                        <th class="px-4 py-3 text-center">Handlinger</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @forelse($sameNameDebitorer as $debitor)
-                        <tr class="hover:bg-amber-50 transition">
-                            <td class="px-4 py-3 font-mono">#{{ $debitor->id }}</td>
-                            <td class="px-4 py-3">
-                                <button wire:click="openDebitorModal({{ $debitor->id }})" class="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left">
-                                    {{ $debitor->navn }}
-                                </button>
-                            </td>
-                            <td class="px-4 py-3 font-mono text-sm text-gray-600">{{ $debitor->cpr ?? $debitor->pnr ?? '-' }}</td>
-                            <td class="px-4 py-3 text-center">
-                                <a href="{{ route('debitorer.edit', $debitor) }}" class="px-2 py-1 rounded bg-gray-100 text-xs hover:bg-gray-200">Rediger</a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Ingen navne-dubletter fundet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-            <div class="p-4 bg-gray-50 border-t">
-                {{ $sameNameDebitorer->links() }}
-            </div>
-        </div>
-    @endif
-
-    <!-- TAB 4: SAMME CPR / PNR -->
-    @if($activeTab === 'same_cpr')
-        <div class="overflow-hidden bg-white shadow rounded-lg border border-gray-200">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-red-700 text-white">
-                    <tr>
-                        <th class="px-4 py-3 text-left">ID</th>
-                        <th class="px-4 py-3 text-left">Navn</th>
-                        <th class="px-4 py-3 text-left">CPR / PNR (Dublet)</th>
-                        <th class="px-4 py-3 text-center">Handlinger</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @forelse($sameCprDebitorer as $debitor)
-                        <tr class="hover:bg-red-50 transition">
-                            <td class="px-4 py-3 font-mono">#{{ $debitor->id }}</td>
-                            <td class="px-4 py-3">
-                                <button wire:click="openDebitorModal({{ $debitor->id }})" class="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left">
-                                    {{ $debitor->navn }}
-                                </button>
-                            </td>
-                            <td class="px-4 py-3 font-mono font-semibold text-red-600">{{ $debitor->cpr ?? $debitor->pnr ?? '-' }}</td>
-                            <td class="px-4 py-3 text-center">
-                                <a href="{{ route('debitorer.edit', $debitor) }}" class="px-2 py-1 rounded bg-gray-100 text-xs hover:bg-gray-200">Rediger</a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Ingen CPR/PNR-dubletter fundet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-            <div class="p-4 bg-gray-50 border-t">
-                {{ $sameCprDebitorer->links() }}
-            </div>
-        </div>
-    @endif
-
-    <!-- MODAL: VIS ALLE DEBITOR-DATA -->
-    @if($showModal && $selectedDebitor)
-        <div class="fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full overflow-hidden border border-gray-200">
-                
-                <div class="bg-slate-800 text-white px-6 py-4 flex justify-between items-center">
-                    <h3 class="text-lg font-semibold">Debitor Detaljer: {{ $selectedDebitor->navn }}</h3>
-                    <button wire:click="closeModal" class="text-gray-300 hover:text-white font-bold text-xl">&times;</button>
-                </div>
-
-                <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div class="bg-gray-50 p-3 rounded border">
-                            <span class="block text-gray-500 text-xs font-semibold uppercase">ID</span>
-                            <span class="font-mono font-medium">#{{ $selectedDebitor->id }}</span>
-                        </div>
-                        <div class="bg-gray-50 p-3 rounded border">
-                            <span class="block text-gray-500 text-xs font-semibold uppercase">Navn</span>
-                            <span class="font-medium">{{ $selectedDebitor->navn }}</span>
-                        </div>
-                        <div class="bg-gray-50 p-3 rounded border">
-                            <span class="block text-gray-500 text-xs font-semibold uppercase">CPR / PNR</span>
-                            <span class="font-mono font-medium">{{ $selectedDebitor->cpr ?? $selectedDebitor->pnr ?? 'Ikke angivet' }}</span>
-                        </div>
-                        <div class="bg-gray-50 p-3 rounded border">
-                            <span class="block text-gray-500 text-xs font-semibold uppercase">E-mail</span>
-                            <span class="font-medium">{{ $selectedDebitor->email ?? '-' }}</span>
-                        </div>
-                        <div class="bg-gray-50 p-3 rounded border">
-                            <span class="block text-gray-500 text-xs font-semibold uppercase">Adresse</span>
-                            <span class="font-medium">{{ $selectedDebitor->adresse ?? '-' }}</span>
-                        </div>
-                        <div class="bg-gray-50 p-3 rounded border">
-                            <span class="block text-gray-500 text-xs font-semibold uppercase">Telefon / Mobil</span>
-                            <span class="font-medium">{{ $selectedDebitor->tlf ?? $selectedDebitor->mobil ?? '-' }}</span>
+                            @else
+                                <p class="text-xs text-slate-400 italic">Ingen sager tilknyttet denne debitor.</p>
+                            @endif
                         </div>
                     </div>
 
-                    <div class="bg-gray-50 p-4 rounded border">
-                        <h4 class="text-xs font-semibold text-gray-500 uppercase mb-2">Tilknyttede Sager ({{ $selectedDebitor->sager->count() }})</h4>
-                        @if($selectedDebitor->sager->count() > 0)
-                            <div class="flex flex-wrap gap-2">
-                                @foreach($selectedDebitor->sager as $sag)
-                                    <a href="{{ route('sager.edit', $sag) }}" target="_blank" class="px-2.5 py-1 bg-white border rounded text-sm text-blue-600 hover:bg-blue-50">
-                                        Sag #{{ $sag->id }}
-                                    </a>
-                                @endforeach
-                            </div>
-                        @else
-                            <p class="text-sm text-gray-500">Ingen sager tilknyttet denne debitor.</p>
-                        @endif
+                    <div class="bg-slate-50/80 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                        <button type="button" wire:click="closeModal" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold text-xs cursor-pointer">Luk</button>
+                        <a href="{{ route('debitorer.edit', $selectedDebitor) }}" class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-xs cursor-pointer shadow-sm">Gå til redigering</a>
                     </div>
-                </div>
 
-                <div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3 border-t">
-                    <a href="{{ route('debitorer.edit', $selectedDebitor) }}" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700">
-                        Gå til redigering
-                    </a>
-                    <button wire:click="closeModal" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded hover:bg-gray-300">
-                        Luk
-                    </button>
                 </div>
-
             </div>
         </div>
     @endif

@@ -54,31 +54,25 @@
                                     {{ $status->forkortelse }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-right space-x-1.5">
-                                {{-- 🟢 KNAP TIL AT SE SAGER UNDER DENNE STATUS --}}
-                                <a 
-                                    href="{{ route('admin.sager.status.show', $status->id) }}" 
-                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition cursor-pointer"
-                                    title="Vis alle sager med denne status"
+                            <td class="px-6 py-4 text-right whitespace-nowrap">
+                                <x-table-actions 
+                                    :id="$status->id" 
+                                    editAction="openEditModal"
+                                    deleteAction="deleteStatus"
+                                    deleteConfirm="Er du sikker på, at du vil slette denne status?"
+                                    :showView="false"
                                 >
-                                    🔍 Vis sager
-                                </a>
-
-                                <button 
-                                    type="button"
-                                    wire:click="openEditModal({{ $status->id }})" 
-                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-600 hover:bg-indigo-50 transition cursor-pointer"
-                                >
-                                    Rediger
-                                </button>
-                                <button 
-                                    type="button"
-                                    wire:click="deleteStatus({{ $status->id }})" 
-                                    wire:confirm="Er du sikker på, at du vil slette denne status?"
-                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                                >
-                                    Slet
-                                </button>
+                                    {{-- "Vis sager"-knappen placeres automatisk foran rediger/slet via slot --}}
+                                    <a 
+                                        href="{{ route('admin.sager.status.show', $status->id) }}" 
+                                        class="rounded-lg p-2 text-emerald-600 transition hover:bg-emerald-50"
+                                        title="Vis alle sager med denne status"
+                                    >
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+                                        </svg>
+                                    </a>
+                                </x-table-actions>
                             </td>
                         </tr>
                     @empty

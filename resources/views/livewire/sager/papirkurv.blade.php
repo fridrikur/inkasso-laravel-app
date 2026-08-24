@@ -13,7 +13,7 @@
         </div>
 
         <a
-            href="{{ route('showsager') }}"
+            href="{{ route('sager.index') }}"
             class="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm shadow-sm hover:bg-gray-50"
         >
             Tilbage til sager

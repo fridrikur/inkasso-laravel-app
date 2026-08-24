@@ -344,6 +344,7 @@
     {{-- ================================================================= --}}
 
     {{-- 1. SLET KREDITOR MODAL --}}
+    {{-- 1. SLET KREDITOR MODAL --}}
     @if($showDeleteModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
             <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-4">
@@ -360,13 +361,29 @@
 
                 @if($sagerCount > 0)
                     <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
-                        <p class="text-xs text-amber-800 font-medium">Kreditoren har {{ $sagerCount }} aktive sager. Vælg modtager før sletning:</p>
-                        <select wire:model="transferToKreditorId" class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-hidden">
-                            <option value="">-- Vælg modtager-kreditor --</option>
-                            @foreach($transferTargets as $target)
-                                <option value="{{ $target->id }}">{{ $target->navn }}</option>
-                            @endforeach
-                        </select>
+                        <p class="text-xs text-amber-800 font-medium">Kreditoren har {{ $sagerCount }} aktive sager. Vælg modtager og indtast sikkerhedskode:</p>
+                        
+                        {{-- Vælg modtager --}}
+                        <div class="space-y-1">
+                            <select wire:model="transferToKreditorId" class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-hidden">
+                                <option value="">-- Vælg modtager-kreditor --</option>
+                                @foreach($transferTargets as $target)
+                                    <option value="{{ $target->id }}">{{ $target->navn }}</option>
+                                @endforeach
+                            </select>
+                            @error('transferToKreditorId') <span class="text-[10px] text-rose-600 font-bold">{{ $message }}</span> @enderror
+                        </div>
+
+                        {{-- Sikkerhedskode felt --}}
+                        <div class="space-y-1">
+                            <input 
+                                type="password" 
+                                wire:model="securityCode" 
+                                placeholder="Indtast global sikkerhedskode" 
+                                class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-hidden"
+                            >
+                            @error('securityCode') <span class="text-[10px] text-rose-600 font-bold">{{ $message }}</span> @enderror
+                        </div>
                     </div>
                 @else
                     <p class="text-xs text-slate-600">Er du sikker på, at du vil slette denne kreditor? Handlingen kan ikke fortrydes.</p>
@@ -374,7 +391,20 @@
 
                 <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
                     <button type="button" wire:click="closeModals" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Annuller</button>
-                    <button type="button" wire:click="confirmDelete" class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition cursor-pointer">Slet kreditor</button>
+                    
+                    <button 
+                        type="button" 
+                        wire:click="confirmDelete" 
+                        wire:loading.attr="disabled"
+                        class="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50"
+                    >
+                        <svg wire:loading wire:target="confirmDelete" class="h-3.5 w-3.5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <span wire:loading.remove wire:target="confirmDelete">Slet kreditor</span>
+                        <span wire:loading wire:target="confirmDelete">Arbejder...</span>
+                    </button>
                 </div>
             </div>
         </div>

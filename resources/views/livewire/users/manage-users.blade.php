@@ -294,7 +294,7 @@
                                 </td>
                             @endif
 
-                            {{-- 🟢 HANDLINGER: BÅDE BEHANDL (FULDE DEDIKEREDE SIDE) OG MODAL HÅNDTERING --}}
+                            {{-- 🟢 HANDLINGER: INTEGRERET X-TABLE-ACTIONS + ADMINISTRER KNAP --}}
                             <td class="px-6 py-3.5 text-right whitespace-nowrap">
                                 <div class="inline-flex items-center justify-end gap-1.5">
                                     
@@ -308,28 +308,14 @@
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                                     </a>
 
-                                    {{-- 2. HURTIG-REDIGER I MODAL --}}
-                                    <button 
-                                        type="button" 
-                                        wire:click="openModal({{ $user->id }})"
-                                        class="p-1.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-                                        title="Hurtig redigering i modal"
-                                    >
-                                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    </button>
-
-                                    {{-- 3. DEAKTIVER BRUGER (KUN SYNLIG HVIS BRUGER IKKE ER ID #1) --}}
-                                    @if($user->id !== 1)
-                                        <button 
-                                            type="button" 
-                                            wire:click="confirmDelete({{ $user->id }})"
-                                            class="p-1.5 rounded-xl border border-rose-100 bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer"
-                                            title="Deaktiver bruger"
-                                        >
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
-                                    @endif
-
+                                    {{-- 2. X-TABLE-ACTIONS (ØJE TIL SIDE, REDIGER TIL MODAL, SLET) --}}
+                                    <x-table-actions 
+                                        :id="$user->id" 
+                                        :viewUrl="route('users.user.manage', $user)"
+                                        editAction="openModal"
+                                        deleteAction="confirmDelete"
+                                        :showDelete="$user->id !== 1"
+                                    />
                                 </div>
                             </td>
 
@@ -352,17 +338,36 @@
     </div>
 
     {{-- EDIT MODAL (REDIERING I MODAL) --}}
-    @if($showUserModal)
+    @if($showFormModal)
         @include('livewire.users.partials.edit-user-modal')
     @endif
 
     {{-- SLETTEMODAL (DEAKTIVATION BEKRÆFTELSE) --}}
-    <x-confirm-delete-modal 
-        :show="$showDeleteModal" 
-        title="Deaktiver bruger / konsulent?" 
-        :message="$userHasSagerCount > 0 
-            ? 'Denne bruger er registreret som konsulent på ' . $userHasSagerCount . ' sag(er). Deaktiveringen vil SoftDelete brugeren, så vedkommende mister sin adgang, men alle historiske sagsdata og aktiviteter bevares uændret.' 
-            : 'Er du sikker på, at du vil deaktivere denne bruger? Brugeren mister sin adgang til systemet, men historiske data bevares.'" 
-    />
+    @if($showDeleteModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-4">
+                <button type="button" wire:click="closeModals" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">&times;</button>
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-rose-50 rounded-2xl text-rose-600 shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">Deaktiver bruger / konsulent?</h3>
+                    </div>
+                </div>
+
+                <p class="text-xs text-slate-600">
+                    {{ $userHasSagerCount > 0 
+                        ? 'Denne bruger er registreret som konsulent på ' . $userHasSagerCount . ' sag(er). Deaktiveringen vil SoftDelete brugeren, så vedkommende mister sin adgang, men alle historiske sagsdata og aktiviteter bevares uændret.' 
+                        : 'Er du sikker på, at du vil deaktivere denne bruger? Brugeren mister sin adgang til systemet, men historiske data bevares.' }}
+                </p>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" wire:click="closeModals" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Annuller</button>
+                    <button type="button" wire:click="deleteUser" class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition cursor-pointer">Deaktiver bruger</button>
+                </div>
+            </div>
+        </div>
+    @endif
 
 </div>

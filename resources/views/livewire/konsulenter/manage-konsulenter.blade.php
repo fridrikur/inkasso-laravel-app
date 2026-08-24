@@ -115,8 +115,14 @@
                 </td>
 
                 {{-- 🟢 INDPAK <X-TABLE-ACTIONS> KORREKT I EN <TD> --}}
-                <td class="px-6 py-4 text-right whitespace-nowrap">
-                    <x-table-actions :id="$k->id" />
+                    {{-- 🟢 ENSEARTET HANDLINGSKOLONNE MED X-TABLE-ACTIONS --}}
+                    <td class="px-6 py-4 text-right whitespace-nowrap">
+                    <x-table-actions 
+                        :id="$k->id" 
+                        editAction="openEditModal"
+                        deleteAction="confirmDelete"
+                        :showView="false"
+                    />
                 </td>
             </tr>
         @empty
@@ -131,15 +137,60 @@
     {{-- FORMULAR MODAL (OPRET / REDIGER) --}}
     @include('livewire.konsulenter.partials.modal')
 
-    {{-- GENBRUGELIG SLET-MODAL --}}
-    {{-- GENBRUGELIG SLET-MODAL --}}
-    <x-confirm-delete-modal 
-        :show="$showDeleteModal" 
-        title="Slet konsulent?" 
-        message="Denne handling kan ikke fortrydes. Er du sikker på, at du vil slette denne konsulent?" 
-        wire:click="confirmDelete" 
-        @confirm="$wire.confirmDelete()"
-        @cancel="$wire.cancelDelete()"
-    />
+    @if($showStandaloneTransferModal && $konsulentToTransferFrom)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-4">
+                <h3 class="text-lg font-bold text-slate-900">Overfør sager før sletning</h3>
+                <p class="text-xs text-slate-500">
+                    Konsulenten <strong>{{ $konsulentToTransferFrom->navn }}</strong> er tilknyttet <strong>{{ $userHasSagerCount }}</strong> aktiv(e) sag(er). Vælg hvem sagerne skal overføres til:
+                </p>
 
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Overfør til konsulent</label>
+                    <select wire:model="transferToKonsulentId" class="w-full rounded-xl border border-slate-200 text-xs p-2.5">
+                        <option value="">Vælg konsulent...</option>
+                        @foreach(\App\Models\Konsulenter::where('id', '!=', $konsulentToTransferFrom->id)->get() as $other)
+                            <option value="{{ $other->id }}">{{ $other->navn }}</option>
+                        @endforeach
+                    </select>
+                    @error('transferToKonsulentId') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" wire:click="cancelTransfer" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">
+                        Annuller
+                    </button>
+                    <button type="button" wire:click="transferAndClose" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">
+                        Overfør sager & slet
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- DIREKTE SLETTEMODAL (UAFHÆNGIG AF GLOBAL MODAL) --}}
+    @if($showDeleteModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-4">
+                <button type="button" wire:click="cancelDelete" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">&times;</button>
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-rose-50 rounded-2xl text-rose-600 shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">Slet konsulent?</h3>
+                    </div>
+                </div>
+
+                <p class="text-xs text-slate-600">
+                    Er du sikker på, at du vil slette denne konsulent? Denne handling kan ikke fortrydes.
+                </p>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" wire:click="cancelDelete" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Annuller</button>
+                    <button type="button" wire:click="deleteKonsulent" class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition cursor-pointer">Slet konsulent</button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

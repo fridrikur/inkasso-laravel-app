@@ -115,20 +115,24 @@
         </div>
     </div>
 
-    {{-- DATA TABLE --}}
-    {{-- DATA TABLE --}}
-    <x-data-table 
-        :title="$currentIcon . ' Administrer ' . $currentTitle" 
-        description="Disse muligheder fremgår i dropdown-vælgerne på sagsredigeringen."
-        :headers="['Tekst / Navn', 'Forkortelse / Kode', '']"
-        :items="$items"
-    >
-        <x-slot:action>
+    {{-- FASTLÅST STANDARD TABEL (ERSTATTER X-DATA-TABLE) --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+        
+        {{-- HEADER / KNAPPER --}}
+        <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/50">
+            <div>
+                <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <span>{{ $currentIcon }}</span>
+                    <span>Administrer {{ $currentTitle }}</span>
+                </h2>
+                <p class="text-xs text-slate-500 mt-0.5">Disse muligheder fremgår i dropdown-vælgerne på sagseditoren.</p>
+            </div>
+
             <div class="flex items-center gap-2">
                 <button 
                     type="button" 
                     wire:click="confirmPurgeCache" 
-                    class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer shadow-sm"
+                    class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer shadow-sm shrink-0"
                     title="Ryd gemt cache for alle dropdowns"
                 >
                     <span>🔄</span>
@@ -138,50 +142,66 @@
                 <button 
                     type="button" 
                     wire:click="openCreateModal" 
-                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition shadow-sm cursor-pointer"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition shadow-sm cursor-pointer shrink-0"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                     <span>Opret ny {{ strtolower($currentTitle) }}</span>
                 </button>
             </div>
-        </x-slot:action>
+        </div>
 
-        @forelse ($items as $item)
-            <tr wire:key="item-{{ $item->id }}" class="hover:bg-slate-50/50 transition">
-                <td class="px-6 py-4 font-semibold text-slate-900">
-                    <button 
-                        type="button"
-                        wire:click="openEditModal({{ $item->id }})" 
-                        class="hover:text-indigo-600 transition flex items-center gap-2 group text-left cursor-pointer"
-                    >
-                        <span>{{ $item->tekst }}</span>
-                    </button>
-                </td>
-                <td class="px-6 py-4">
-                    @if(!empty($item->forkortelse))
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                            {{ $item->forkortelse }}
-                        </span>
-                    @else
-                        <span class="text-xs text-slate-400 italic">-</span>
-                    @endif
-                </td>
-                
-                {{-- 🟢 RETTELSE: Handlinger skal ligge inde i en <td> for at matche kolonnen --}}
-                <td class="px-6 py-4 text-right">
-                    <div class="flex items-center justify-end gap-1.5">
-                        <x-table-actions :id="$item->id" />
-                    </div>
-                </td>
-            </tr>
-        @empty
-            <tr>
-                <td colspan="3" class="px-6 py-10 text-center text-slate-400 text-xs">
-                    Ingen registrerede muligheder fundet for {{ $currentTitle }}.
-                </td>
-            </tr>
-        @endforelse
-    </x-data-table>
+        {{-- TABEL MED TABLE-FIXED --}}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600 table-fixed">
+                <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    <tr>
+                        <th scope="col" class="w-1/2 px-6 py-3.5">Tekst / Navn</th>
+                        <th scope="col" class="w-1/3 px-6 py-3.5">Forkortelse / Kode</th>
+                        <th scope="col" class="w-32 px-6 py-3.5 text-right">Handlinger</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse ($items as $item)
+                        <tr wire:key="item-{{ $item->id }}" class="hover:bg-slate-50/50 transition">
+                            <td class="px-6 py-4 font-semibold text-slate-900 truncate">
+                                <button 
+                                    type="button"
+                                    wire:click="openEditModal({{ $item->id }})" 
+                                    class="hover:text-indigo-600 transition flex items-center gap-2 group text-left cursor-pointer truncate"
+                                >
+                                    <span>{{ $item->tekst }}</span>
+                                </button>
+                            </td>
+                            <td class="px-6 py-4 truncate">
+                                @if(!empty($item->forkortelse))
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                        {{ $item->forkortelse }}
+                                    </span>
+                                @else
+                                    <span class="text-xs text-slate-400 italic">-</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 text-right whitespace-nowrap w-32">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <x-table-actions 
+                                        :id="$item->id" 
+                                        editAction="openEditModal" 
+                                        deleteAction="confirmDelete" 
+                                    />
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3" class="px-6 py-10 text-center text-slate-400 text-xs">
+                                Ingen registrerede muligheder fundet for {{ $currentTitle }}.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     {{-- MODAL 1: OPRET / REDIGER --}}
     @if($showFormModal)
@@ -221,7 +241,6 @@
         </div>
     @endif
 
-    {{-- 🟢 SLETTEMODAL TIL TABELELEMENTER --}}
     {{-- MODAL TIL SLETNING --}}
     <x-confirm-delete-modal 
         :show="$showDeleteModal" 
@@ -232,7 +251,7 @@
         @cancel="$wire.cancelDelete()"
     />
 
-    {{-- 🟢 MODAL TIL PURGE CACHE --}}
+    {{-- MODAL TIL PURGE CACHE --}}
     @if($showPurgeModal)
         <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div wire:click="closeFormModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"></div>

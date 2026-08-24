@@ -171,12 +171,12 @@
         <div class="flex items-center justify-end gap-3 pt-2">
             <button
                 type="button"
-                wire:click="close"
+                wire:click="$parent.closeModals"
                 class="px-5 py-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
             >
                 Luk
             </button>
-
+                
             <button
                 type="submit"
                 class="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm transition"
