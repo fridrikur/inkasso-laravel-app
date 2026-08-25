@@ -108,6 +108,8 @@ use App\Livewire\Tekster\ShowTekster;
 use App\Livewire\Kreditor\Search;
 use App\Livewire\Autotekster\AutotekstIndex;
 use App\Livewire\Imports\DataImporter;
+use App\Livewire\Admin\SystemSecuritySetup;
+use App\Livewire\Admin\OnboardingWizard;
 
 /*
 |--------------------------------------------------------------------------
@@ -215,6 +217,9 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         /* SYSTEM & SECURITY */
         Route::get('/system-security', SystemSecurity::class)
             ->name('system-security');
+
+        Route::get('/setup/security', SystemSecuritySetup::class)->name('setup.security');
+        Route::get('/setup/wizard', OnboardingWizard::class)->name('setup.wizard');
 
         Route::get('/admin/system-settings', ManageSettings::class)
             ->name('admin.system-settings.index');

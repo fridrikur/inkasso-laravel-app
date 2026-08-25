@@ -8,24 +8,22 @@ trait BuildsSagerQuery
 {
     protected function baseSagerQuery()
     {
-        return Sager::query()
-            ->join('sager_debitor', 'sagers.id', '=', 'sager_debitor.sag_id')
-            ->join('debitors', 'sager_debitor.debitor_id', '=', 'debitors.id')
+        // 1. Start med en ren og hurtig query på Sager
+        $query = Sager::query()->select('sagers.*');
 
-            ->join('sager_kreditor', 'sagers.id', '=', 'sager_kreditor.sag_id')
-            ->join('kreditors', 'sager_kreditor.kreditor_id', '=', 'kreditors.id')
+        // 2. Tilføj søgning via subqueries (meget hurtigere end INNER JOINs)
+        $query->when(property_exists($this, 'search') && !empty($this->search), function ($q) {
+            $q->where(function ($sub) {
+                $sub->where('sagers.id', 'like', '%' . $this->search . '%')
+                    ->orWhereHas('debitors', function ($debQuery) {
+                        $debQuery->where('navn', 'like', '%' . $this->search . '%');
+                    })
+                    ->orWhereHas('kreditors', function ($kredQuery) {
+                        $kredQuery->where('navn', 'like', '%' . $this->search . '%');
+                    });
+            });
+        });
 
-            ->leftJoin('sag_activities', 'sagers.id', '=', 'sag_activities.sag_id')
-            ->leftJoin('users as editors', 'sag_activities.user_id', '=', 'editors.id')
-
-            ->select(
-                'sagers.*',
-                'debitors.navn as debitor_navn',
-                'kreditors.navn as kreditor_navn',
-                'editors.name as editor_name',
-                'sag_activities.is_editing',
-                'sag_activities.heartbeat_at'
-            )
-            ->distinct();
+        return $query;
     }
 }
