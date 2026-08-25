@@ -20,7 +20,7 @@ class DataImporter extends Component
     public string $debitorFile = 'debitors.sql';
     public string $sagerFile = 'dkgsager.sql';
     public string $kreditorFile = 'kreditorer.sql';
-    // public string $konsulentFile = 'konsulenter.sql';         // 🟢 Ny property til konsulenter
+    public string $konsulentFile = 'konsulenter.sql';         // 🟢 Ny property til konsulenter
     public string $sagsbehandlerFile = 'sagsbehandlere.sql';
 
     public string $importType = 'sager'; // Standard valg ('sager', 'kreditorer', 'debitorer')

@@ -215,9 +215,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             ->name('sager.import.templates.destroy');
         
         /* SYSTEM & SECURITY */
-        Route::get('/system-security', SystemSecurity::class)
-            ->name('system-security');
-
+        
         Route::get('/setup/security', SystemSecuritySetup::class)->name('setup.security');
         Route::get('/setup/wizard', OnboardingWizard::class)->name('setup.wizard');
 

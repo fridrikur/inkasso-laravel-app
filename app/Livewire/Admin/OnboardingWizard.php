@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use Livewire\Component;
 use App\Models\Sager;
 use App\Models\Kreditorer;
+use App\Models\SystemSetting;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
@@ -32,6 +33,20 @@ class OnboardingWizard extends Component
         if (! $this->hasDatabaseTables) {
             $this->showWizard = true;
             return;
+        }
+
+        // SIKKERHEDSTJEK: Tjek om global_unlock_code er sat i system_settings. 
+        // Hvis tabellen findes, men koden mangler, sender vi dem til SystemSecuritySetup (setup.security)
+        try {
+            if (Schema::hasTable('system_settings')) {
+                $hasCode = SystemSetting::where('key', 'global_unlock_code')->value('value') !== null;
+                if (! $hasCode) {
+                    $this->redirect(route('setup.security'), navigate: true);
+                    return;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignorer evt. fejl her hvis tabellen ikke er klar endnu
         }
 
         try {
@@ -96,12 +111,14 @@ class OnboardingWizard extends Component
             'message' => 'Ren installation startet! Velkommen.',
             'type'    => 'success'
         ]);
+
+        $this->redirect(route('dashboard'), navigate: true);
     }
 
-    public function goToImport(): void
+    public function goToImport()
     {
         app(SettingsService::class)->set('setup_completed', true);
-        $this->redirect(route('import.index'));
+        return $this->redirect(route('admin.system-settings.index'), navigate: true);
     }
 
     public function installDemoData()
@@ -135,8 +152,7 @@ class OnboardingWizard extends Component
         session(['show_welcome_modal' => true]);
         $this->showWizard = false;
         
-        // Returner et rent HTTP-redirect (IKKE navigate: true)
-        return redirect()->route('dashboard');
+        return $this->redirect(route('dashboard'), navigate: true);
     }
 
     public function render()

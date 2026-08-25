@@ -16,14 +16,16 @@ class SystemSecuritySetup extends Component
 
     public function mount()
     {
-        // Hvis tabellen ikke findes endnu, eller koden allerede er sat, gå videre
+        // Hvis tabellen ikke findes endnu, kan vi ikke tjekke koden
         if (!Schema::hasTable('system_settings')) {
             return;
         }
 
+        // Hvis låsekoden ALLEREDE er gemt, skal brugeren IKKE se denne side igen. 
+        // Vi sender dem direkte videre til wizarden i stedet!
         $hasCode = SystemSetting::where('key', 'global_unlock_code')->value('value') !== null;
         if ($hasCode) {
-            $this->redirect(route('dashboard'), navigate: true);
+            return redirect()->route('setup.wizard');
         }
     }
 
@@ -44,12 +46,14 @@ class SystemSecuritySetup extends Component
         }
 
         $this->dispatch('toast', message: 'Låsekode gemt med succes!', type: 'success');
-        $this->redirect(route('dashboard'), navigate: true);
+        
+        // FJERN 'return' HER - kør den som en ren kommando
+        $this->redirect(route('setup.wizard'), navigate: true);
     }
 
     public function render()
     {
         return view('livewire.admin.system-security-setup')
-            ->layout('layouts.guest'); // Eller jeres standard fuldskærms-layout
+            ->layout('layouts.guest');
     }
 }
