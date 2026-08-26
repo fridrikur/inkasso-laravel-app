@@ -118,7 +118,7 @@ class OnboardingWizard extends Component
     public function goToImport()
     {
         app(SettingsService::class)->set('setup_completed', true);
-        return $this->redirect(route('admin.system-settings.index'), navigate: true);
+        return $this->redirect(route('import.index'), navigate: true);
     }
 
     public function installDemoData()
@@ -130,7 +130,7 @@ class OnboardingWizard extends Component
             Schema::disableForeignKeyConstraints();
 
             $seedersToRun = [
-                \Database\Seeders\DemoSeeder::class,
+                \Database\Seeders\DemoDataSeeder::class,
             ];
 
             foreach ($seedersToRun as $seederClass) {

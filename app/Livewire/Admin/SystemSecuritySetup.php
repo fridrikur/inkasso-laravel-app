@@ -14,6 +14,7 @@ class SystemSecuritySetup extends Component
     public string $digit3 = '';
     public string $digit4 = '';
 
+
     public function mount()
     {
         // Hvis tabellen ikke findes endnu, kan vi ikke tjekke koden

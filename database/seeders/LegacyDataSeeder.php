@@ -19,11 +19,11 @@ use App\Models\udlaeg;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 
-class DemoSeeder extends Seeder
+class LegacyDataSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Kalder stamdata-seedere inkl. den nye DebitorSeeder
+        // 1. Kalder stamdata-seedere
         $this->call([
             DropdownDataSeeder::class,
             KreditorSeeder::class,

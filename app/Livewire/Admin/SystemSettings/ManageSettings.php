@@ -8,7 +8,7 @@ use App\Services\SettingsService;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Artisan;
 use App\Services\ToastService; 
-use Database\Seeders\DemoSeeder;
+use Database\Seeders\DemoDataSeeder;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Hash;
 
@@ -221,7 +221,7 @@ class ManageSettings extends Component
             Schema::disableForeignKeyConstraints();
 
             $seedersToRun = [
-                DemoSeeder::class,
+                DemoDataSeeder::class,
             ];
 
             foreach ($seedersToRun as $seederClass) {
