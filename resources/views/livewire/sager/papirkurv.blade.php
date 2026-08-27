@@ -13,7 +13,6 @@
         </div>
 
         <div class="flex items-center gap-3">
-            {{-- 🟢 SLET ALT KNAP (Åbner modal i stedet for browser-alert) --}}
             @if($sagers->total() > 0)
                 <button
                     wire:click="confirmEmptyTrash"
@@ -42,7 +41,7 @@
         {{ $sagers->links() }}
     </div>
 
-    {{-- 🟢 FLOT SKRÆDDERSYET MODAL --}}
+    {{-- MODAL: TØM PAPIRKURV --}}
     @if($showEmptyTrashModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
             <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-100 space-y-4">
@@ -74,6 +73,45 @@
                         class="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-rose-500 transition cursor-pointer"
                     >
                         Ja, slet alt permanent
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    @endif
+
+    {{-- 🟢 MODAL: GENDAN SAG --}}
+    @if($showRestoreModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-100 space-y-4">
+                
+                <div class="flex items-center gap-3">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                        ♻️
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">Gendan sag</h3>
+                        <p class="text-xs text-slate-500">Flyt sagen tilbage til aktive sager.</p>
+                    </div>
+                </div>
+
+                <p class="text-sm text-slate-600">
+                    Er du sikker på, at du vil gendanne denne sag fra papirkurven? Sagen vil igen blive tilgængelig i sagslisten.
+                </p>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button
+                        wire:click="cancelRestoreSag"
+                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                    >
+                        Annuller
+                    </button>
+                    
+                    <button
+                        wire:click="executeRestore"
+                        class="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition cursor-pointer"
+                    >
+                        Ja, gendan sag
                     </button>
                 </div>
 

@@ -15,8 +15,9 @@ class Papirkurv extends Component
     public $mode = 'trash';
     public int $trashCount = 0;
 
-    // 🟢 Tilføj denne state til at styre modalen
     public bool $showEmptyTrashModal = false;
+    public bool $showRestoreModal = false;
+    public ?int $sagToRestoreId = null;
 
     public function render()
     {
@@ -31,10 +32,31 @@ class Papirkurv extends Component
 
     public function restoreSag($id)
     {
-        $sag = Sager::onlyTrashed()->findOrFail($id);
+        $this->sagToRestoreId = $id;
+        $this->showRestoreModal = true;
+    }
+
+    public function cancelRestoreSag()
+    {
+        $this->sagToRestoreId = null;
+        $this->showRestoreModal = false;
+    }
+
+    public function executeRestore()
+    {
+        if (!$this->sagToRestoreId) return;
+
+        $sag = Sager::onlyTrashed()->findOrFail($this->sagToRestoreId);
         $sag->restore();
 
-        session()->flash('success', 'Sag gendannet fra papirkurv.');
+        $this->showRestoreModal = false;
+        $this->sagToRestoreId = null;
+
+        $this->dispatch('toast', 
+            message: 'Sag blev succesfuldt gendannet fra papirkurv.', 
+            type: 'success', 
+            icon: 'check'
+        );
     }
 
     public function forceDeleteSag($id)
@@ -45,22 +67,23 @@ class Papirkurv extends Component
             $this->performPermanentDelete($sag);
         });
 
-        session()->flash('success', 'Sag permanent slettet.');
+        $this->dispatch('toast', 
+            message: 'Sag permanent slettet.', 
+            type: 'success', 
+            icon: 'check'
+        );
     }
 
-    // 🟢 Åbn bekræftelses-modalen
     public function confirmEmptyTrash()
     {
         $this->showEmptyTrashModal = true;
     }
 
-    // 🟢 Luk modalen igen uden at slette
     public function cancelEmptyTrash()
     {
         $this->showEmptyTrashModal = false;
     }
 
-    // 🟢 Slet ALT i papirkurven (nu udløst fra modalen)
     public function emptyTrash()
     {
         $trashedSager = Sager::onlyTrashed()->get();
@@ -76,9 +99,17 @@ class Papirkurv extends Component
         $this->showEmptyTrashModal = false;
 
         if ($deletedCount > 0) {
-            session()->flash('success', "Papirkurven blev tømt: {$deletedCount} sager blev slettet permanent.");
+            $this->dispatch('toast', 
+                message: "Papirkurven blev tømt: {$deletedCount} sager blev slettet permanent.", 
+                type: 'success', 
+                icon: 'check'
+            );
         } else {
-            session()->flash('error', 'Papirkurven er allerede tom.');
+            $this->dispatch('toast', 
+                message: 'Papirkurven er allerede tom.', 
+                type: 'warning', 
+                icon: 'warning'
+            );
         }
     }
 

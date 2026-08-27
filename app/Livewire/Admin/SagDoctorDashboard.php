@@ -33,7 +33,7 @@ class SagDoctorDashboard extends Component
 
     public function mount(SagDiagnosisService $doctor)
     {
-        $this->calculateStats($doctor);
+        $this->calculateStats();
     }
 
     public function setTab(string $tab): void
@@ -42,64 +42,45 @@ class SagDoctorDashboard extends Component
         $this->resetPage();
     }
 
-    public function calculateStats(SagDiagnosisService $doctor): void
+    public function calculateStats(): void
     {
-        $allSager = Sager::with([
-            'sagerdebitor',
-            'sagerkreditor',
-            'sagersagsbehandler',
-            'sagerkonsulent',
-            'sagerStatus',
-            'sagerAfslutning',
-        ])->get();
+        // 🟢 Hurtige SQL-tællinger i stedet for at loade alle modeller i hukommelsen
+        $this->stats = [
+            'critical' => Sager::query()->where(function ($q) {
+                $q->whereNull('sagsnr')
+                  ->orWhere('sagsnr', '')
+                  ->orWhereDoesntHave('sagerdebitor')
+                  ->orWhereDoesntHave('sagerkreditor');
+            })->count(),
 
-        $stats = [
-            'critical' => 0,
-            'missing_handler' => 0,
-            'missing_status' => 0,
-            'invalid_closure' => 0,
-            'healthy' => 0,
+            'missing_handler' => Sager::query()->where(function ($q) {
+                $q->whereDoesntHave('sagersagsbehandler')
+                  ->orWhereDoesntHave('sagerkonsulent');
+            })->count(),
+
+            'missing_status' => Sager::query()->where(function ($q) {
+                $q->whereDoesntHave('sagerStatus')
+                  ->orWhereHas('sagerStatus', null, '>', 1);
+            })->count(),
+
+            'invalid_closure' => Sager::query()->whereNotNull('afsluttet')
+                ->whereDoesntHave('sagerAfslutning')
+                ->count(),
+
+            'healthy' => Sager::query()
+                ->whereNotNull('sagsnr')
+                ->where('sagsnr', '!=', '')
+                ->whereHas('sagerdebitor')
+                ->whereHas('sagerkreditor')
+                ->whereHas('sagersagsbehandler')
+                ->whereHas('sagerkonsulent')
+                ->whereHas('sagerStatus', null, '=', 1)
+                ->where(fn($q) => $q->whereNull('afsluttet')->orWhereHas('sagerAfslutning'))
+                ->count(),
         ];
-
-        foreach ($allSager as $sag) {
-            // Tving opfriskning af relationer i hukommelsen
-            $sag->unsetRelations();
-            $sag->load([
-                'sagerdebitor',
-                'sagerkreditor',
-                'sagersagsbehandler',
-                'sagerkonsulent',
-                'sagerStatus',
-                'sagerAfslutning',
-            ]);
-
-            $diag = $doctor->diagnose($sag);
-
-            if ($diag['healthy']) {
-                $stats['healthy']++;
-            }
-
-            if (empty($sag->sagsnr) || $sag->sagerdebitor->isEmpty() || $sag->sagerkreditor->isEmpty()) {
-                $stats['critical']++;
-            }
-
-            if ($sag->sagersagsbehandler->isEmpty() || $sag->sagerkonsulent->isEmpty()) {
-                $stats['missing_handler']++;
-            }
-
-            if ($sag->sagerStatus->isEmpty() || $sag->sagerStatus->count() > 1) {
-                $stats['missing_status']++;
-            }
-
-            if ($sag->afsluttet && $sag->sagerAfslutning->isEmpty()) {
-                $stats['invalid_closure']++;
-            }
-        }
-
-        $this->stats = $stats;
     }
 
-    public function repairSag(int $sagId, SagRepairService $repairService, SagDiagnosisService $doctor): void
+    public function repairSag(int $sagId, SagRepairService $repairService): void
     {
         $sag = Sager::find($sagId);
 
@@ -108,7 +89,7 @@ class SagDoctorDashboard extends Component
             $this->repairedSagId = $sag->id;
             $this->showRepairModal = true;
 
-            $this->calculateStats($doctor);
+            $this->calculateStats();
         }
     }
 
@@ -118,11 +99,8 @@ class SagDoctorDashboard extends Component
         $this->activeRepairLog = [];
         $this->repairedSagId = null;
 
-        // 🟢 NULSTIL CACHE OG PAGINERING
-        $doctor = app(SagDiagnosisService::class);
-        $this->calculateStats($doctor);
+        $this->calculateStats();
         $this->resetPage();
-        unset($this->results);
     }
 
     public function updatedSearch(): void
@@ -207,20 +185,10 @@ class SagDoctorDashboard extends Component
             });
         });
 
-        $allSager = $query->get();
-        
-        $diagnosed = $allSager->map(function ($sag) use ($doctor) {
-            // Tving genindlæsning af relationer så ændringer i databasen slår igennem med det samme
-            $sag->unsetRelations();
-            $sag->load([
-                'sagerdebitor',
-                'sagerkreditor',
-                'sagersagsbehandler',
-                'sagerkonsulent',
-                'sagerStatus',
-                'sagerAfslutning',
-            ]);
+        // 🟢 Paginér FØR diagnosekørslen, så vi KUN analyserer de 10 sager der vises på siden!
+        $paginatedSager = $query->paginate(10);
 
+        $diagnosedItems = $paginatedSager->getCollection()->map(function ($sag) use ($doctor) {
             $diag = $doctor->diagnose($sag);
             return (object) [
                 'sag' => $sag,
@@ -231,18 +199,15 @@ class SagDoctorDashboard extends Component
         });
 
         if ($this->activeTab === 'healthy') {
-            $diagnosed = $diagnosed->filter(fn($item) => $item->healthy)->values();
+            $diagnosedItems = $diagnosedItems->filter(fn($item) => $item->healthy)->values();
         }
 
-        $page = $this->getPage();
-        $perPage = 10;
-        $paginatedItems = $diagnosed->slice(($page - 1) * $perPage, $perPage)->values();
-
+        // Returnér en paginator med de diagnosticerede elementer for den aktuelle side
         return new LengthAwarePaginator(
-            $paginatedItems,
-            $diagnosed->count(),
-            $perPage,
-            $page,
+            $diagnosedItems,
+            $paginatedSager->total(),
+            $paginatedSager->perPage(),
+            $paginatedSager->currentPage(),
             ['path' => request()->url(), 'query' => request()->query()]
         );
     }
@@ -252,7 +217,15 @@ class SagDoctorDashboard extends Component
         return view('livewire.admin.sag-doctor-dashboard', [
             'results' => $this->results,
             'orphanCount' => Debitorer::doesntHave('sager')->count(),
-            'duplicateCount' => Sager::query()->select('sagsnr')->whereNotNull('sagsnr')->where('sagsnr', '!=', '')->groupBy('sagsnr')->havingRaw('COUNT(*) > 1')->get()->count(),
+            'duplicateCount' => Sager::query()
+                ->select('sagsnr')
+                ->whereNotNull('sagsnr')
+                ->where('sagsnr', '!=', '')
+                ->groupBy('sagsnr')
+                ->havingRaw('COUNT(*) > 1')
+                ->toBase()
+                ->get()
+                ->count(),
         ]);
     }
 }
