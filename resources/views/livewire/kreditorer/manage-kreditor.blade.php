@@ -1,5 +1,27 @@
 <div class="space-y-6">
 
+    {{-- NOTIFIKATION NÅR KREDITOR NETOP ER OPRETTET --}}
+    @if($kreditor_lige_oprettet)
+        <div 
+            x-data="{ show: true }" 
+            x-init="setTimeout(() => show = false, 5000)" 
+            x-show="show" 
+            x-transition.duration.300ms
+            class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl flex items-center justify-between shadow-sm"
+        >
+            <div class="flex items-center gap-3">
+                <span class="text-xl">✨</span>
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-800">Succes!</h3>
+                    <p class="text-xs text-emerald-700">Kreditor er netop blevet oprettet og du er stillet videre til detaljer.</p>
+                </div>
+            </div>
+
+            <button @click="show = false" class="text-emerald-600 hover:text-emerald-900 font-bold text-xs p-1">
+                ✕
+            </button>
+        </div>
+    @endif
     {{-- TOP NAVIGATION / BREADCRUMB --}}
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">

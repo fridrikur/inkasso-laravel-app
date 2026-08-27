@@ -6,20 +6,19 @@ use Livewire\Component;
 use App\Models\Kreditorer;
 use App\Traits\HasCrudModal;
 use Livewire\Attributes\On;
+use App\Services\KreditorManagementService;
 
 class KreditorFormModal extends Component
 {
     use HasCrudModal;
 
     public string $navn = '';
-    public $lotusID = null; // 🟢 Ændret fra public ?int $lotusID = null;
+    public $lotusID = null;
     public array $usedLotusIds = [];
 
     #[On('open-edit-modal')]
     public function openEditModalFromParent($id): void
     {
-        // Kalder traitens indbyggede metode, som sætter $editingId = $id,
-        // henter data via loadItemData() og åbner modalen ($showFormModal = true)
         $this->openEditModal($id);
     }
 
@@ -30,23 +29,42 @@ class KreditorFormModal extends Component
 
     public function mount($id = null): void
     {
-        // Hent kun aktive LotusIDs til forslag
-        $this->usedLotusIds = Kreditorer::pluck('lotusID')->filter()->toArray();
+        $this->refreshLotusList();
 
         if ($id) {
             $this->openEditModal($id);
+        } else {
+            $this->setNextAvailableLotusId();
         }
     }
 
+    // Denne kører automatisk, når HasCrudModal åbner oprettelsesmodalen
     public function resetForm(): void
     {
         $this->navn = '';
-        $this->lotusID = $this->suggestedLotusId;
+        $this->refreshLotusList();
+        $this->setNextAvailableLotusId();
+    }
+
+    public function refreshLotusList(): void
+    {
+        $this->usedLotusIds = Kreditorer::withTrashed()->pluck('lotusID')->filter()->toArray();
+    }
+
+    public function setNextAvailableLotusId(): void
+    {
+        $nextId = (int) (Kreditorer::withTrashed()->max('lotusID') ?? 0) + 1;
+        
+        // Sikr at vi finder det første ledige ID hvis der er huller i rækken
+        while (in_array($nextId, $this->usedLotusIds)) {
+            $nextId++;
+        }
+
+        $this->lotusID = $nextId;
     }
 
     public function loadItemData($id): void
     {
-        // Brug withTrashed så vi også kan åbne/redigere en der er i papirkurven
         $kreditor = Kreditorer::withTrashed()->findOrFail($id);
         $this->navn = $kreditor->navn;
         $this->lotusID = $kreditor->lotusID;
@@ -54,40 +72,15 @@ class KreditorFormModal extends Component
 
     public function getSuggestedLotusIdProperty()
     {
-        // Tæller også soft-deleted med for at undgå LotusID-sammenstød
-        return (int) (Kreditorer::withTrashed()->max('lotusID') ?? 0) + 1;
+        $nextId = (int) (Kreditorer::withTrashed()->max('lotusID') ?? 0) + 1;
+        while (in_array($nextId, $this->usedLotusIds)) {
+            $nextId++;
+        }
+        return $nextId;
     }
 
     public function save()
     {
-        // 1. Tjek om der findes en SOFT-DELETED kreditor med samme navn eller LotusID
-        if (! $this->editingId) {
-            $trashedKreditor = Kreditorer::onlyTrashed()
-                ->where(function ($q) {
-                    $q->where('navn', $this->navn)
-                      ->orWhere('lotusID', $this->lotusID);
-                })
-                ->first();
-
-            // 🟢 HVIS DEN FINDES I PAPIRKURVEN: GENSKAB OG OPDATER DEN!
-            if ($trashedKreditor) {
-                $trashedKreditor->restore(); // Genskaber (fjerner deleted_at timestamp)
-                $trashedKreditor->update([
-                    'navn' => $this->navn,
-                    'lotusID' => $this->lotusID,
-                ]);
-
-                $this->closeFormModal();
-                $this->dispatch('kreditor-saved');
-                $this->dispatch('toast', [
-                    'message' => 'Kreditoren var tidligere slettet og er nu genoprettet succesfuldt!',
-                    'type'    => 'success'
-                ]);
-                return;
-            }
-        }
-
-        // 2. Normal Validering (Ignorerer soft-deleted i unik-tjekket, da vi har håndteret dem ovenfor)
         $this->validate([
             'navn' => [
                 'required', 
@@ -100,30 +93,34 @@ class KreditorFormModal extends Component
                 'integer', 
                 'unique:kreditors,lotusID,' . $this->editingId . ',id,deleted_at,NULL'
             ],
-        ], [
-            'navn.unique' => 'En aktiv kreditor med dette navn findes allerede.',
-            'lotusID.unique' => 'Dette Lotus ID er allerede optaget af en aktiv kreditor.',
         ]);
 
-        // 3. Normal Opret / Gem
+        $management = app(KreditorManagementService::class);
+
         if ($this->editingId) {
             $kreditor = Kreditorer::withTrashed()->findOrFail($this->editingId);
-            $kreditor->update([
+            $management->update($kreditor, [
                 'navn' => $this->navn,
                 'lotusID' => $this->lotusID,
             ]);
             $msg = 'Kreditor opdateret.';
+
+            $this->closeFormModal();
+            $this->dispatch('kreditor-saved');
+            $this->dispatch('toast', ['message' => $msg, 'type' => 'success']);
         } else {
-            $kreditor = Kreditorer::create([
+            $kreditor = $management->create([
                 'navn' => $this->navn,
                 'lotusID' => $this->lotusID,
             ]);
-            $msg = 'Kreditor oprettet succesfuldt.';
-        }
 
-        $this->closeFormModal();
-        $this->dispatch('kreditor-saved');
-        $this->dispatch('toast', ['message' => $msg, 'type' => 'success']);
+            $msg = 'Ny kreditor er oprettet og tilføjet til oversigten.';
+
+            $this->closeFormModal();
+            
+            $this->dispatch('kreditor-saved', id: $kreditor->id);
+            $this->dispatch('toast', ['message' => $msg, 'type' => 'success']);
+        }
     }
 
     public function render()

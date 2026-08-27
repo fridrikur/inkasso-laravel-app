@@ -1,6 +1,15 @@
 <div class="space-y-4">
     <div class="flex items-center justify-between mb-2">
-        <h2 class="text-xl font-bold text-slate-800">Klientinformation</h2>
+        <div>
+            <h2 class="text-xl font-bold text-slate-800">Klientinformation</h2>
+            {{-- Viser sagsnummer og navn her --}}
+            <p class="text-xs font-medium text-slate-500 mt-0.5">
+                Sagsnr: <span class="font-bold text-indigo-600">#{{ $sag->sagsnr }}</span> 
+                @if(isset($sagName) && $sagName)
+                    <span class="mx-1.5">•</span> Navn: <span class="font-bold text-slate-700">{{ $sagName }}</span>
+                @endif
+            </p>
+        </div>
 
         {{-- KNAP TIL AT INDSÆTTE MEDDEBITOR / UBETALTE MÅNEDER BOBLE --}}
         <button 
@@ -12,7 +21,7 @@
         </button>
     </div>
 
-    {{-- FORMULAR TIL ALMINDELIG BESKED --}}
+    {{-- Resten af din kode (formular, bobler og modal) forbliver uændret --}}
     <form wire:submit.prevent="save" class="space-y-2">
         <textarea 
             wire:model.defer="tekst"
@@ -37,7 +46,6 @@
         @forelse($dialogMessages as $message)
             @php
                 $isOwn = $message->sender_id === auth()->id();
-                // Finder navnet på den indloggede bruger eller afsenderen
                 $senderName = $message->sender?->name ?? 'System';
             @endphp
 
@@ -64,7 +72,6 @@
                     </div>
                 </div>
 
-                {{-- HVIS BESKEDEN ER UNDER REDIGERING --}}
                 @if($editingMessageId === $message->id)
                     <div class="space-y-2 mt-2">
                         <textarea 
@@ -91,7 +98,6 @@
                         </div>
                     </div>
                 @else
-                    {{-- ALMINDELIG VISNING AF BOBLEN --}}
                     <p class="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{{ $message->tekst }}</p>
                 @endif
             </div>
@@ -119,7 +125,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Ubetalte Måneder</label>
+                    <label class="block text-xs font-bold text-slate-700 md-1">Ubetalte Måneder</label>
                     <input 
                         type="text" 
                         wire:model="ubetalteMaaneder" 

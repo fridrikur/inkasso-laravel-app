@@ -2,11 +2,22 @@
 
 <div class="max-w-5xl mx-auto">
 
-    <h1 class="text-2xl font-bold mb-6">
-        Dokumenter - Sag {{ $sag->sagsnr }}
-    </h1>
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">
+            Dokumenter - Sag {{ $sag->sagsnr }}
+        </h1>
 
-    {{-- Rettet så det matcher controllerens tilladelse for upload --}}
+        {{-- 🟢 DOWNLOAD ALT KNAP --}}
+        @if(isset($dokumenter) && $dokumenter->isNotEmpty())
+            <a href="{{ route('sager.dokumenter.downloadAll', $sag) }}"
+               class="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-semibold hover:bg-slate-700 transition flex items-center gap-2">
+                <span>⬇ Download alt (.zip)</span>
+            </a>
+        @endif
+    </div>
+
+    {{-- Resten af dokument-oversigten ... --}}
+</div>    {{-- Rettet så det matcher controllerens tilladelse for upload --}}
     @role('Admin|Medarbejder|Kreditor')
     <form action="{{ route('sager.dokumenter.store', $sag) }}"
           method="POST"

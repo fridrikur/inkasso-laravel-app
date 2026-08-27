@@ -236,7 +236,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             Route::get('/', ManageKreditorer::class)->name('kreditorer.index');
             Route::get('/create', CreateKreditor::class)->name('kreditorer.create');
             Route::get('/{kreditor}/edit', UpdateKreditor::class)->name('kreditorer.edit');
-            Route::get('/{kreditor}', ManageKreditor::class)->name('kreditor.manage')->withTrashed(); 
+            Route::get('/{kreditor}/show', ManageKreditor::class)->name('kreditor.manage')->withTrashed();
             Route::get('/{kreditor}/sager', ShowKreditorSager::class)->name('kreditorer.sager');
         });
 
@@ -398,4 +398,8 @@ Route::middleware(['auth', 'verified', 'role:Admin|Medarbejder|Kreditor'])
         Route::post('/', [DokumenterController::class, 'store'])->name('store');
         Route::get('/{dokument}/download', [DokumenterController::class, 'download'])->name('download');
         Route::delete('/{dokument}', [DokumenterController::class, 'destroy'])->name('destroy');
+        
+        // 🟢 RETTET: Fjern det overskydende prefix, da gruppen allerede lægger det på
+        Route::get('/download-all', [DokumenterController::class, 'downloadAll'])
+            ->name('downloadAll');
     });

@@ -830,13 +830,6 @@ class SagEditor extends Component
     }
 
     
-    public function getDokumenterCountProperty()
-    {
-        if(!$this->sag) return 0;
-
-        return $this->sag->dokumenter()->count();
-    }
-
     public function refreshBadge()
     {
         $dialog = Dialog::where('sag_id', $this->sag->id)
@@ -1237,6 +1230,8 @@ class SagEditor extends Component
         // Nulstil feltet efter upload
         $this->reset('newDokument');
 
+        $this->dispatch('dokumentChanged');
+
         $this->dispatch('toast', [
             'message' => 'Dokumentet blev uploadet succesfuldt!',
             'type'    => 'success'
@@ -1257,6 +1252,12 @@ class SagEditor extends Component
                 'type'    => 'success'
             ]);
         }
+    }
+
+    // Hent antallet af dokumenter til tælleren på fanen
+    public function getDokumenterCountProperty()
+    {
+        return $this->sag->dokumenter()->count();
     }
 
 }

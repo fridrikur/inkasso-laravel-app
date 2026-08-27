@@ -24,6 +24,12 @@ class SagTabs extends Component
         $this->refreshBadges();
     }
 
+    #[On('dokumentChanged')]
+    public function refreshDokumenterCount(): void
+    {
+        // Livewire renderer automatisk komponenten igen, når denne metode kører
+    }
+
     public function selectTab(string $tab): void
     {
         $this->activeTab = $tab;

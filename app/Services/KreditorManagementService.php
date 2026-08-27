@@ -10,6 +10,28 @@ use Illuminate\Support\Facades\DB;
 class KreditorManagementService
 {
     /**
+     * Create a new creditor safely within a transaction.
+     */
+    public function create(array $data): Kreditorer
+    {
+        return DB::transaction(function () use ($data) {
+            // Du kan tilføje evt. yderligere forretningslogik her, f.eks. standardindstillinger, logging m.m.
+            return Kreditorer::create($data);
+        });
+    }
+
+    /**
+     * Update an existing creditor.
+     */
+    public function update(Kreditorer $kreditor, array $data): Kreditorer
+    {
+        return DB::transaction(function () use ($kreditor, $data) {
+            $kreditor->update($data);
+            return $kreditor;
+        });
+    }
+
+    /**
      * Delete a creditor and all creditor-specific data.
      *
      * Assumes all cases have already been transferred (or none exist).

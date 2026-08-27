@@ -74,4 +74,44 @@ class DokumenterController extends Controller
 
             return Storage::disk('public')->download($dokument->file_path, $dokument->file_name);
         }
+
+        public function downloadAll(Sager $sag)
+        {
+            $user = auth()->user();
+            
+            if (!$user->hasAnyRole(['Admin', 'Medarbejder', 'Kreditor'])) {
+                abort(403);
+            }
+
+            $dokumenter = $sag->dokumenter;
+
+            if ($dokumenter->isEmpty()) {
+                return back()->with('error', 'Ingen dokumenter at downloade.');
+            }
+
+            // Opret et unikt navn til den midlertidige zip-fil
+            $zipFileName = 'sag_' . ($sag->sagsnr ?? $sag->id) . '_dokumenter.zip';
+            $zipPath = storage_path('app/public/' . $zipFileName);
+
+            $zip = new \ZipArchive();
+
+            if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+                foreach ($dokumenter as $dok) {
+                    $fullPath = storage_path('app/public/' . $dok->file_path);
+                    
+                    // Tjek at filen rent faktisk eksisterer på disken, før den tilføjes
+                    if (file_exists($fullPath)) {
+                        // Brug det originale filnavn i zip-arkivet (sørg for at undgå navnekonflikter hvis filer hedder det samme)
+                        $zip->addFile($fullPath, $dok->file_name);
+                    }
+                }
+                $zip->close();
+            } else {
+                return back()->with('error', 'Kunne ikke oprette zip-arkiv.');
+            }
+
+            // Send zip-filen til download og slet den midlertidigt fra serveren bagefter
+            return response()->download($zipPath)->deleteFileAfterSend(true);
+        }
+
 }

@@ -185,24 +185,33 @@ class AdminDashboard extends Component
             ]);
         }
 
-        $sagers = Sager::join('sager_debitor', 'sagers.id', '=', 'sager_debitor.sag_id')
-            ->join('debitors', 'sager_debitor.debitor_id', '=', 'debitors.id')
-            ->join('sager_kreditor', 'sagers.id', '=', 'sager_kreditor.sag_id')
-            ->join('kreditors', 'sager_kreditor.kreditor_id', '=', 'kreditors.id')
-            ->when($this->search, function ($query) {
-                $query->where('sagers.sagsnr', 'like', '%' . $this->search . '%')
-                    ->orWhere('debitors.navn', 'like', '%' . $this->search . '%')
-                    ->orWhere('kreditors.navn', 'like', '%' . $this->search . '%');
-            })
-            ->when($this->selectedKreditor, function ($query) {
-                return $query->where('kreditors.navn', $this->selectedKreditor);
-            })
-            ->select(
-                'sagers.*',
-                'debitors.navn as debitor_navn',
-                'kreditors.navn as kreditor_navn'
-            )
-            ->orderBy($this->sortField, $this->sortAsc ? 'asc' : 'desc')
+        // 1. Start med en ren forespørgsel på Sager (ingen tunge joins)
+        $query = Sager::query()->select('sagers.*');
+
+        // 2. Hvis der søges, bruges 'whereHas' i stedet for join (tager millisekunder)
+        if (!empty($this->search)) {
+            $search = $this->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('sagers.sagsnr', 'like', '%' . $search . '%')
+                  ->orWhereHas('debitors', function ($sub) use ($search) {
+                      $sub->where('navn', 'like', '%' . $search . '%');
+                  })
+                  ->orWhereHas('kreditors', function ($sub) use ($search) {
+                      $sub->where('navn', 'like', '%' . $search . '%');
+                  });
+            });
+        }
+
+        // 3. Filtrering på valgt kreditor via relation
+        if (!empty($this->selectedKreditor)) {
+            $kreditorNavn = $this->selectedKreditor;
+            $query->whereHas('kreditors', function ($sub) use ($kreditorNavn) {
+                $sub->where('navn', $kreditorNavn);
+            });
+        }
+
+        // 4. Sortering og paginering
+        $sagers = $query->orderBy($this->sortField, $this->sortAsc ? 'asc' : 'desc')
             ->paginate(10);
 
         return view('livewire.admin.dashboard', [

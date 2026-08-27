@@ -13,7 +13,6 @@ class Klientinformation extends Component
 
     public Sager $sag;
 
-    // Felter til meddebitor / ubetalte måneder
     public string $meddebitorNavn = '';
     public string $ubetalteMaaneder = '';
     public bool $showMeddebitorModal = false;
@@ -34,23 +33,29 @@ class Klientinformation extends Component
     }
 
     /**
-     * Send almindelig besked skrevet af den indloggede bruger
+     * Henter navnet til visning sammen med sagsnummeret
      */
+    public function getSagNameProperty()
+    {
+        // Prøver at finde navnet via debitor-relationen (eller tilpas hvis det findes direkte på $this->sag->navn)
+        if ($this->sag->relationLoaded('sagerdebitor') && $this->sag->sagerdebitor->isNotEmpty()) {
+            return $this->sag->sagerdebitor->first()->navn ?? null;
+        }
+
+        // Fallback hvis modellen har et direkte navn-felt
+        return $this->sag->navn ?? optional($this->sag->sagerdebitor()->first())->navn ?? 'Ukendt Klient';
+    }
+
     public function save(): void
     {
         $this->validate([
             'tekst' => 'required|string|min:1',
         ]);
 
-        // Sætter automatiske afsenderoplysninger fra den indloggede bruger
         $this->sendMessage(senderId: auth()->id());
-
         $this->dispatch('dialogUpdated');
     }
 
-    /**
-     * Opretter en ny boble med ubetalte måneder fra meddebitor
-     */
     public function addMeddebitorBubble(): void
     {
         $this->validate([
@@ -58,7 +63,6 @@ class Klientinformation extends Component
             'ubetalteMaaneder' => 'required|string',
         ]);
 
-        // Formaterer teksten til boblen
         $formattedText = "📌 OPLYSNING OM MEDDEBITOR & UBETALTE MÅNEDER:\n"
             . "• Meddebitor: {$this->meddebitorNavn}\n"
             . "• Ubetalte måneder: {$this->ubetalteMaaneder}";
@@ -67,7 +71,6 @@ class Klientinformation extends Component
             'type' => 'klientinformation',
         ]);
 
-        // Opretter boblen med den indloggede brugers ID
         $dialog->messages()->create([
             'sender_id' => auth()->id(),
             'tekst'     => $formattedText,
@@ -83,6 +86,7 @@ class Klientinformation extends Component
     {
         return view('livewire.sager.klientinformation', [
             'dialogMessages' => $this->getDialogMessages(),
+            'sagName'        => $this->getSagNameProperty(),
         ]);
     }
 }

@@ -1,4 +1,4 @@
-<div class="bg-white rounded-2xl border border-slate-200 p-2 shadow-sm">
+<div class="bg-white rounded-2xl border border-slate-200 p-2 shadow-sm flex flex-wrap justify-between items-center gap-4">
     <nav class="flex flex-wrap gap-1 items-center">
         
         {{-- 1. SAGSSTAMME --}}
@@ -65,7 +65,11 @@
                 </span>
             @endif
         </button>
-        {{-- 6. DOKUMENTER --}}
+
+        {{-- 6. DOKUMENTER (Henter direkte via $sag->dokumenter()->count()) --}}
+        @php
+            $docCount = $sag ? $sag->dokumenter()->count() : 0;
+        @endphp
         <button
             type="button"
             wire:click="selectTab('dokumenter')"
@@ -73,12 +77,21 @@
                 {{ $activeTab === 'dokumenter' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
         >
             <span>📁 Dokumenter</span>
-            @if(isset($dokumenterCount) && $dokumenterCount > 0)
-                <span class="bg-slate-200 text-slate-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
-                    {{ $dokumenterCount }}
+            @if($docCount > 0)
+                <span class="inline-flex items-center gap-1 {{ $activeTab === 'dokumenter' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-800' }} text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                    <span>📄</span>
+                    <span>{{ $docCount }}</span>
                 </span>
             @endif
         </button>
 
     </nav>
+
+    {{-- 🟢 Download alt-knap (vises når man er på dokument-fanen og der er filer) --}}
+    @if($activeTab === 'dokumenter' && $docCount > 0)
+        <a href="{{ route('sager.dokumenter.downloadAll', $sag) }}"
+           class="px-3.5 py-2 bg-slate-800 text-white rounded-xl text-xs font-semibold hover:bg-slate-700 transition flex items-center gap-2 shadow-sm mr-2">
+            <span>⬇ Download alt (.zip)</span>
+        </a>
+    @endif
 </div>
