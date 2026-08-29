@@ -259,7 +259,7 @@ class SagEditor extends Component
 
         // 🟢 Hvis sagen er slettet (ligger i papirkurven), skal den ikke kunne redigeres
         if ($sag instanceof Sager && $sag->trashed()) {
-            abort(404, 'Denne sag er i papirkurven og kan ikke redigeres.');
+            abort(403, 'Denne sag er i papirkurven og kan ikke redigeres.');
         }
         // 🟢 Hvis sagen er slettet eller ikke findes, opret en tom instans for at undgå crash
         if ($sag instanceof Sager && $sag->exists) {

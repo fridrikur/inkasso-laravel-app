@@ -156,7 +156,35 @@ class SagerDataTable extends Component
         $this->showDeleteModal = false;
 
         if ($sag->trashed()) {
-            $sag->forceDelete();
+            // 🟢 Ryd relaterede tabeller op før permanent sletning (undgår foreign key fejl)
+            \DB::transaction(function () use ($sag) {
+                $sagId = $sag->id;
+
+                \App\Models\SagLock::where('sag_id', $sagId)->delete();
+                
+                if (class_exists(\App\Models\SagEditRequest::class)) {
+                    \App\Models\SagEditRequest::where('sag_id', $sagId)->delete();
+                }
+
+                $sag->sagerdebitor()->detach();
+                $sag->sagerkreditor()->detach();
+                $sag->sagersagsbehandler()->detach();
+                $sag->sagerkonsulent()?->detach();
+                $sag->sagertokens()->detach();
+
+                $sag->sagerStatus()->detach();
+                $sag->sagerKtr()->detach();
+                $sag->sagerBemaerkning()->detach();
+                $sag->sagerAfslutning()->detach();
+                $sag->sagerUdlaeg()->detach();
+
+                $sag->dialogs()->delete();
+                $sag->dokumenter()->delete();
+                $sag->activities()->delete();
+
+                $sag->forceDelete();
+            });
+
             $toastMsg = 'Sagen er slettet permanent.';
         } else {
             $sag->delete();
