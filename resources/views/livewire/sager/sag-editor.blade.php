@@ -73,6 +73,111 @@
                     </button>
                 </div>
             </form>
+            {{-- Sæt denne knap ind i headeren hvor Slet-knappen skal være (kun for Admin) --}}
+            @if($sag->exists)
+                @role('Admin')
+                <button
+                    type="button"
+                    wire:click="confirmDeleteSag"
+                    class="px-3 py-1 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"
+                >
+                    <span>🗑 Slet sag</span>
+                </button>
+                @endrole
+            @endif
+
+            {{-- Indsæt disse to modaler nederst i filen --}}
+
+            {{-- 1. VALGKOMPONENT: PAPIRKURV ELLER PERMANENT --}}
+            @if($showDeleteOptionsModal)
+                <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+                    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-100 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+                                🗑️
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-900">Slet sag</h3>
+                                <p class="text-xs text-slate-500">Vælg hvordan sagen skal slettes.</p>
+                            </div>
+                        </div>
+
+                        <p class="text-sm text-slate-600">
+                            Vil du flytte sag <span class="font-bold text-slate-900">#{{ $sag->sagsnr }}</span> til papirkurven, eller ønsker du at slette den permanent?
+                        </p>
+
+                        <div class="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+                            <button
+                                wire:click="cancelDeleteSag"
+                                class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                            >
+                                Annuller
+                            </button>
+                            
+                            <button
+                                wire:click="moveToTrash"
+                                class="rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 transition cursor-pointer"
+                            >
+                                Smid i papirkurv
+                            </button>
+
+                            <button
+                                wire:click="promptPermanentDelete"
+                                class="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-rose-500 transition cursor-pointer"
+                            >
+                                Slet permanent...
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- 2. LÅSESKÆRM MODAL TIL PERMANENT SLETNING --}}
+            @if($showPermanentDeleteUnlockModal)
+                <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+                    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-100 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+                                🔒
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-900">Bekræft permanent sletning</h3>
+                                <p class="text-xs text-slate-500">Indtast systemets låsekode for at fortsætte.</p>
+                            </div>
+                        </div>
+
+                        <p class="text-sm text-slate-600">
+                            Denne handling kan <span class="font-bold text-rose-600">ikke</span> fortydes. Alle relationer, dokumenter og data vil blive fjernet for evigt.
+                        </p>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Låsekode</label>
+                            <input 
+                                type="password" 
+                                wire:model="permanentDeleteUnlockCode" 
+                                placeholder="Indtast låsekode..." 
+                                class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500"
+                            >
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-2">
+                            <button
+                                wire:click="cancelDeleteSag"
+                                class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                            >
+                                Annuller
+                            </button>
+                            
+                            <button
+                                wire:click="executePermanentDelete"
+                                class="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-rose-500 transition cursor-pointer"
+                            >
+                                Bekræft og slet permanent
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
         @elseif($activeTab === 'breve')
             {{-- Her kaldes brev-komponenten med den aktuelle sag --}}

@@ -193,9 +193,14 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         /* SAGER */
         Route::get('/sager', SagerIndex::class)->name('sager.index');
         Route::get('/sager/create', SagEditor::class)->name('sager.create');
-        Route::get('/sager/{sag}/edit', SagEditor::class)
-            ->whereNumber('sag')
-            ->name('sager.edit');
+        Route::get('/sager/{sag}/edit', App\Livewire\Sager\SagEditor::class)
+        ->name('sager.edit')
+        ->withTrashed()
+        ->missing(function () {
+            // Hvis sagen ikke findes (f.eks. netop slettet permanent), send brugeren til sagslisten i stedet for at crashe
+            return redirect()->route('sager.index')->with('success', 'Sagen blev slettet.');
+        });
+        
         Route::get('/sager/search', SagSearch::class)->name('sager.search');
         Route::get('/admin/sager/import-log', ImportLogIndex::class)->name('sager.import.log');
         

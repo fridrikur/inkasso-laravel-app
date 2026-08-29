@@ -11,6 +11,7 @@ use App\Models\Kreditorer;
 use App\Services\Search\SagerSearchService;
 use App\Traits\BuildsSagerQuery;
 use App\Traits\HasCrudModal; // 🟢 1. Tilføj trait
+use Livewire\Attributes\Url; 
 
 class SagerDataTable extends Component
 {
@@ -68,8 +69,29 @@ class SagerDataTable extends Component
         return $query->count();
     }
 
-    // FJERNET: public bool $showDeleteModal = false; og public ?int $deleteId = null; 
-    // Da HasCrudModal automatisk stiller $showDeleteModal og $deletingId til rådighed.
+    #[Url(as: 'papirkurv')]
+    public bool $sag_smidt_i_papirkurven = false;
+
+    #[Url(as: 'slettet')]
+    public bool $sag_permanent_slettet = false;
+
+    
+
+    public function mount()
+    {
+        if (request()->query('papirkurv') == 1) {
+            $this->sag_smidt_i_papirkurven = true;
+        }
+
+        // 🟢 Læs direkte fra URL'en i stedet for sessionen
+        if (request()->query('slettet') == 1 || request()->query('deleted') == 1) {
+            $this->sag_permanent_slettet = true;
+        }
+
+        if ($this->uiMode === 'full') {
+            $this->loadKreditorStats();
+        }
+    }
 
     /*
     |--------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 <div class="space-y-6">
 
+
     {{-- LIVEWIRE INITIAL / GLOBAL LOADER --}}
     <div wire:loading.delay wire:target="search, filterByKreditor, sortBy, gotoPage, nextPage, previousPage" class="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-sm w-full">
@@ -66,6 +67,123 @@
             </button>
         @endif
     </div>
+
+    @if($sag_smidt_i_papirkurven)
+
+        <div
+            x-data="{ show: true }"
+            x-init="setTimeout(() => show = false, 5000)"
+            x-show="show"
+            x-transition
+            class="mb-6 flex items-start gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800 shadow-sm"
+        >
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                <svg
+                    class="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                    />
+                </svg>
+            </div>
+
+            <div class="min-w-0 flex-1">
+                <p class="text-sm font-bold">
+                    Sagen er flyttet til papirkurven
+                </p>
+
+                <p class="mt-0.5 text-xs text-emerald-700">
+                    Sagen er ikke længere aktiv, men kan findes under papirkurven.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                @click="show = false"
+                class="shrink-0 rounded-lg p-1.5 text-emerald-500 transition hover:bg-emerald-100 hover:text-emerald-700"
+                title="Luk"
+            >
+                <svg
+                    class="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                    />
+                </svg>
+            </button>
+        </div>
+
+    @endif
+
+
+    @if($sag_permanent_slettet)
+
+        <div
+            x-data="{ show: true }"
+            x-init="setTimeout(() => show = false, 5000)"
+            x-show="show"
+            x-transition
+            class="mb-6 flex items-start gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800 shadow-sm"
+        >
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                <svg
+                    class="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                    />
+                </svg>
+            </div>
+
+            <div class="min-w-0 flex-1">
+                <p class="text-sm font-bold">
+                    Sagen er permanent slettet
+                </p>
+
+            </div>
+
+            <button
+                type="button"
+                @click="show = false"
+                class="shrink-0 rounded-lg p-1.5 text-emerald-500 transition hover:bg-emerald-100 hover:text-emerald-700"
+                title="Luk"
+            >
+                <svg
+                    class="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                    />
+                </svg>
+            </button>
+        </div>
+
+    @endif
+
 
     {{-- STATUS / TILSTAND FANER --}}
     <div class="flex flex-wrap items-center gap-2 border-b border-slate-200/80 pb-3">
@@ -367,4 +485,5 @@
         </div>
     @endif
 
+    
 </div>

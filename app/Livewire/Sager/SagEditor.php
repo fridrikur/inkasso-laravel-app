@@ -42,7 +42,12 @@ class SagEditor extends Component
 {
     use WithFileUploads; // Gør det muligt at uploade filer med Livewire
 
-    public $newDokument; // Binder til inputfeltet i formen    
+    public $newDokument; // Binder til inputfeltet i formen
+    
+    public bool $showDeleteOptionsModal = false;
+    public bool $showPermanentDeleteUnlockModal = false;
+    public string $permanentDeleteUnlockCode = '';
+
     #[On('tab-changed')]
     public function setTab(string $tab): void
     {
@@ -249,13 +254,25 @@ class SagEditor extends Component
 
     public function mount($sag = null, $isSearchMode = false)
     {
+        
         $this->loading = true;
 
-        $this->sag = $sag?->load([
+        // 🟢 Hvis sagen er slettet (ligger i papirkurven), skal den ikke kunne redigeres
+        if ($sag instanceof Sager && $sag->trashed()) {
+            abort(404, 'Denne sag er i papirkurven og kan ikke redigeres.');
+        }
+        // 🟢 Hvis sagen er slettet eller ikke findes, opret en tom instans for at undgå crash
+        if ($sag instanceof Sager && $sag->exists) {
+            $this->sag = $sag;
+        } else {
+            $this->sag = new Sager();
+        }
+
+        $this->sag->load([
             'sagerkreditor',
             'sagersagsbehandler',
             'sagerdebitor'
-        ]) ?? new Sager();
+        ]);
 
         $this->isEditMode = $this->sag->exists;
 
@@ -924,7 +941,7 @@ class SagEditor extends Component
     #[On('verifycurrentsagUnlock')]
     public function verifycurrentsagUnlock(string $code): void
     {
-        $hash = SystemSetting::get('global_unlock_code');
+        $hash = SystemSetting::where('key', 'global_unlock_code')->value('value');
 
         if ($hash && Hash::check($code, $hash)) {
             SagLock::where('sag_id', $this->sagId)
@@ -1260,4 +1277,111 @@ class SagEditor extends Component
         return $this->sag->dokumenter()->count();
     }
 
+    public function confirmDeleteSag()
+    {
+        $this->showDeleteOptionsModal = true;
+    }
+
+    public function cancelDeleteSag()
+    {
+        $this->showDeleteOptionsModal = false;
+        $this->showPermanentDeleteUnlockModal = false;
+        $this->permanentDeleteUnlockCode = '';
+    }
+
+    
+    // 2. Gå videre til kodelås for permanent sletning
+    public function promptPermanentDelete()
+    {
+        $this->showDeleteOptionsModal = false;
+        $this->showPermanentDeleteUnlockModal = true;
+    }
+
+    public function moveToTrash()
+    {
+        if (!$this->sag || !$this->sag->exists) {
+            return;
+        }
+
+        if (!auth()->user()->hasRole('Admin')) {
+            $this->dispatch(
+                'toast',
+                message: 'Kun administratorer kan slette sager.',
+                type: 'error',
+                icon: 'warning'
+            );
+
+            return;
+        }
+
+        $sagId = $this->sag->id;
+
+        Sager::where('id', $sagId)->delete();
+
+        return $this->redirect(
+            route('sager.index', [
+                'papirkurv' => 1,
+                'deleted' => 1,
+            ]),
+            navigate: true
+        );
+    }
+
+    public function executePermanentDelete()
+    {
+        if (!$this->sag || !$this->sag->exists) return;
+
+        $hash = SystemSetting::where('key', 'global_unlock_code')->value('value');
+
+        if (!$hash || !Hash::check($this->permanentDeleteUnlockCode, $hash)) {
+            $this->dispatch('toast', message: 'Forkert låsekode. Permanent sletning afbrudt.', type: 'error', icon: 'error');
+            return;
+        }
+
+        $sagId = $this->sag->id;
+
+        try {
+            DB::transaction(function () use ($sagId) {
+                $sag = Sager::withTrashed()->findOrFail($sagId);
+
+                SagLock::where('sag_id', $sagId)->delete();
+                
+                if (class_exists(SagEditRequest::class)) {
+                    SagEditRequest::where('sag_id', $sagId)->delete();
+                }
+
+                $sag->sagerdebitor()->detach();
+                $sag->sagerkreditor()->detach();
+                $sag->sagersagsbehandler()->detach();
+                $sag->sagerkonsulent()?->detach();
+                $sag->sagertokens()->detach();
+
+                $sag->sagerStatus()->detach();
+                $sag->sagerKtr()->detach();
+                $sag->sagerBemaerkning()->detach();
+                $sag->sagerAfslutning()->detach();
+                $sag->sagerUdlaeg()->detach();
+
+                $sag->dialogs()->delete();
+                $sag->dokumenter()->delete();
+                $sag->activities()->delete();
+
+                $sag->forceDelete();
+            });
+
+        } catch (\Exception $e) {
+            \Log::error("Permanent sletning fejlede for sag #{$sagId}: " . $e->getMessage());
+            
+            $this->dispatch('toast', 
+                message: 'Fejl ved permanent sletning: ' . $e->getMessage(), 
+                type: 'error', 
+                icon: 'error'
+            );
+            return;
+        }
+
+        // 🟢 UDEN FOR try/catch: Tving en benhård HTTP-omdirigering igennem med query-parametre
+        header("Location: " . route('sager.index', ['slettet' => 1, 'deleted' => 1]));
+        exit;
+    }
 }
