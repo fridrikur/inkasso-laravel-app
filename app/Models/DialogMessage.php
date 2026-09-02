@@ -4,16 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes; // 🟢 1. Importér trait
 
 class DialogMessage extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes; // 🟢 2. Tilføj SoftDeletes her
 
     protected $fillable = [
         'dialog_id',
         'sender_id',
-        'tekst', // 🟢 VIGTIGT: Skal hedde 'tekst'
-        'dato', // 🟢 Tilføjet
+        'tekst', 
+        'dato', 
         'read_at',
     ];
 

@@ -69,12 +69,16 @@ class SagEditor extends Component
     public bool $savedRecently = false;
 
     public string $reminderType = 'date'; // 'date' eller 'reason'
+
+    public bool $showDeleteMessageModal = false;
+    public ?int $messageToDeleteId = null;
     
     protected bool $ready = false;
 
     protected $listeners = [
         'kreditor-changed' => 'onKreditorChanged',
         'klientinformationUpdated' => 'refreshKlientinformation',
+        'confirm-delete-message' => 'confirmDeleteMessage',
     ];
 
     protected bool $totalsReady = false;
@@ -1383,5 +1387,57 @@ class SagEditor extends Component
         // 🟢 UDEN FOR try/catch: Tving en benhård HTTP-omdirigering igennem med query-parametre
         header("Location: " . route('sager.index', ['slettet' => 1, 'deleted' => 1]));
         exit;
+    }
+
+    // 1. Åbn modalen og gem ID'et
+    public function confirmDeleteMessage(int $id): void
+    {
+        $this->messageToDeleteId = $id;
+        $this->showDeleteMessageModal = true;
+    }
+
+    // 2. Udfør selve soft deleten og send en toast med "Fortryd" funktion
+    public function executeDeleteMessage()
+    {
+        if (!$this->messageToDeleteId) return;
+
+        // 🟢 Brug DialogMessage i stedet for Message
+        $message = \App\Models\DialogMessage::withTrashed()->find($this->messageToDeleteId);
+
+        if ($message) {
+            $message->delete(); 
+
+            $this->showDeleteMessageModal = false;
+            $msgId = $this->messageToDeleteId;
+            $this->messageToDeleteId = null;
+
+            $this->dispatch('toast', [
+                'message' => 'Beskeden blev flyttet til papirkurven.',
+                'type' => 'success',
+                'action' => [
+                    'label' => 'Fortryd',
+                    'method' => "restoreMessage({$msgId})"
+                ]
+            ]);
+            
+            // Opdater fanen så beskeden forsvinder fra listen
+            $this->dispatch('dialogUpdated');
+        }
+    }
+
+    public function restoreMessage(int $id)
+    {
+        $message = \App\Models\DialogMessage::withTrashed()->find($id);
+
+        if ($message) {
+            $message->restore();
+
+            $this->dispatch('toast', [
+                'message' => 'Sletning fortrydt – beskeden er gendannet.',
+                'type' => 'info'
+            ]);
+
+            $this->dispatch('dialogUpdated');
+        }
     }
 }
