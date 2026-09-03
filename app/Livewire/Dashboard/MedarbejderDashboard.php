@@ -4,9 +4,13 @@ namespace App\Livewire\Dashboard;
 
 use Livewire\Component;
 use App\Models\Sager;
+use Livewire\Attributes\Url;
 
 class MedarbejderDashboard extends Component
 {
+    #[Url(keep: true)]
+    public string $search = '';
+
     public $latestSager = [];
     public $sagerWithNewMessages = [];
     public $unreadSager = [];
@@ -27,6 +31,28 @@ class MedarbejderDashboard extends Component
     public function setTab(string $tab)
     {
         $this->activeTab = $tab;
+    }
+
+    // 🔍 Beregnede søgeresultater baseret på $search inputfeltet
+    public function getSearchResultsProperty()
+    {
+        if (empty(trim($this->search))) {
+            return collect();
+        }
+
+        $searchTerm = trim($this->search);
+
+        return Sager::query()
+            ->with(['sagerdebitor', 'sagerkreditor'])
+            ->where(function ($query) use ($searchTerm) {
+                $query->where('sagsnr', 'like', "%{$searchTerm}%")
+                      ->orWhere('id', 'like', "%{$searchTerm}%")
+                      ->orWhereHas('sagerdebitor', fn($q) => $q->where('navn', 'like', "%{$searchTerm}%"))
+                      ->orWhereHas('sagerkreditor', fn($q) => $q->where('navn', 'like', "%{$searchTerm}%"));
+            })
+            ->latest()
+            ->take(10)
+            ->get();
     }
 
     public function loadData()

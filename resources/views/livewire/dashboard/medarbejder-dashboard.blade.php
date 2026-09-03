@@ -23,11 +23,19 @@
                 <span>Opret ny sag</span>
             </a>
             
-            <a href="{{ route('medarbejder.sager.search') }}"
-               class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition cursor-pointer">
-                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <span>Søg i sager</span>
-            </a>
+            <div class="relative w-full sm:w-96">
+                <input
+                    type="search"
+                    wire:model.live.debounce.600ms="search"
+                    placeholder="Søg sagsnr, debitor eller kreditor..."
+                    class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pl-10 text-sm text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-none"
+                >
+                <div class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m0 0A7.5 7.5 0 1 0 6 6a7.5 7.5 0 0 0 10.65 10.65Z" />
+                    </svg>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -83,6 +91,73 @@
         </div>
 
     </div>
+
+    {{-- 🔍 DYNAMISKE SØGERESULTATER (Placeret øverst i fuld bredde) --}}
+    @if(!empty(trim($search)))
+        <div class="bg-white rounded-3xl border border-indigo-200 shadow-xl overflow-hidden transition-all">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-indigo-100 bg-indigo-50/50">
+                <div class="flex items-center gap-2">
+                    <span class="p-1.5 bg-indigo-600 text-white rounded-lg">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m0 0A7.5 7.5 0 1 0 6 6a7.5 7.5 0 0 0 10.65 10.65Z"/></svg>
+                    </span>
+                    <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                        Søgeresultater for: "<span class="text-indigo-600">{{ $search }}</span>"
+                    </h2>
+                </div>
+                
+                <button wire:click="$set('search', '')" class="text-xs font-semibold text-slate-500 hover:text-slate-800 transition cursor-pointer">
+                    Ryd søgning &times;
+                </button>
+            </div>
+
+            <div class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                @forelse($this->searchResults as $sag)
+                    @php
+                        $debitor = $sag->sagerdebitor->first();
+                        $kreditor = $sag->sagerkreditor->first();
+                    @endphp
+
+                    <a href="{{ route('medarbejder.sager.edit', $sag->id) }}" 
+                       class="flex items-center justify-between p-4 sm:px-6 hover:bg-indigo-50/30 transition duration-150 group">
+                        
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono font-bold text-slate-900 group-hover:text-indigo-600 transition">
+                                    #{{ $sag->display_number ?? $sag->sagsnr ?? $sag->id }}
+                                </span>
+                                @if($sag->status)
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                                        {{ $sag->status->navn ?? 'Aktiv' }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="flex items-center gap-4 text-xs text-slate-500">
+                                <span>Debitor: <strong class="text-slate-700">{{ $debitor->navn ?? 'Ingen debitor' }}</strong></span>
+                                <span>•</span>
+                                <span>Kreditor: <strong class="text-slate-700">{{ $kreditor->navn ?? 'Ingen kreditor' }}</strong></span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-slate-400 font-mono">
+                                {{ $sag->updated_at->format('d/m/Y') }}
+                            </span>
+                            <span class="px-3 py-1 bg-indigo-600 text-white rounded-xl text-xs font-bold group-hover:bg-indigo-700 transition">
+                                Åbn sag &rarr;
+                            </span>
+                        </div>
+                    </a>
+                @empty
+                    <div class="p-12 text-center">
+                        <svg class="w-10 h-10 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <p class="text-sm font-bold text-slate-700">Ingen sager matcher din søgning</p>
+                        <p class="text-xs text-slate-400 mt-1">Prøv at søge efter et andet sagsnummer, debitor- eller kreditornavn.</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    @endif
 
     {{-- HOVEDINDHOLD GRID --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
