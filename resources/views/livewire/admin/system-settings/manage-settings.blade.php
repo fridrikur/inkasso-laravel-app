@@ -93,7 +93,7 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+    <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4"> 
             <div>
                 <h3 class="text-sm font-bold text-slate-900">Rollebaserede Login URL'er / Endpoints</h3>
                 <p class="text-xs text-slate-500 mt-0.5">Definer de specifikke stier eller URL'er, som de forskellige roller skal bruge ved login.</p>

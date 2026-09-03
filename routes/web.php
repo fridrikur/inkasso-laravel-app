@@ -110,7 +110,7 @@ use App\Livewire\Kreditor\Search;
 use App\Livewire\Autotekster\AutotekstIndex;
 use App\Livewire\Imports\DataImporter;
 use App\Livewire\Admin\SystemSecuritySetup;
-use App\Livewire\Admin\OnboardingWizard;
+use App\Livewire\Admin\OnboardingWizard; 
 
 /*
 |--------------------------------------------------------------------------
