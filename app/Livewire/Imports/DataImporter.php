@@ -22,6 +22,7 @@ class DataImporter extends Component
     public string $kreditorFile = 'kreditorer.sql';
     public string $konsulentFile = 'konsulenter.sql';         // 🟢 Ny property til konsulenter
     public string $sagsbehandlerFile = 'sagsbehandlere.sql';
+    public string $dialogFile = 'dialoger.sql';
 
     public string $importType = 'sager'; // Standard valg ('sager', 'kreditorer', 'debitorer')
     public $file;
@@ -426,6 +427,7 @@ class DataImporter extends Component
                 'Sagsbehandlere' => ['cmd' => 'import:sagsbehandlere', 'path' => storage_path($this->sagsbehandlerFile)],
                 'Debitorer'      => ['cmd' => 'import:debitorer',      'path' => storage_path($this->debitorFile)],
                 'Sager'          => ['cmd' => 'import:sager',          'path' => storage_path($this->sagerFile)],
+                'Dialoger'       => ['cmd' => 'import:dialoger',       'path' => storage_path($this->dialogFile)],
             ];
 
             foreach ($tasks as $name => $task) {

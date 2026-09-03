@@ -93,6 +93,43 @@
         </div>
     </div>
 
+    <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div>
+                <h3 class="text-sm font-bold text-slate-900">Rollebaserede Login URL'er / Endpoints</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Definer de specifikke stier eller URL'er, som de forskellige roller skal bruge ved login.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Admin Login Endpoint</label>
+                    <input type="text" wire:model="login_url_admin" placeholder="/login/admin" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none focus:border-indigo-500 font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Medarbejder Login Endpoint</label>
+                    <input type="text" wire:model="login_url_medarbejder" placeholder="/login/medarbejder" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none focus:border-indigo-500 font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Kreditor Login Endpoint</label>
+                    <input type="text" wire:model="login_url_kreditor" placeholder="/login/kreditor" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none focus:border-indigo-500 font-mono">
+                </div>
+            </div>
+        </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+    <div>
+        <h3 class="text-sm font-bold text-slate-900">Sikkerhed & IP-Whitelist</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Angiv godkendte IP-adresser (én pr. linje eller adskilt af komma). Kun disse IP'er kan tilgå login-siderne.</p>
+    </div>
+
+    <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Tilladte IP-adresser</label>
+        <textarea wire:model="allowed_ips" rows="3" placeholder="F.eks. 192.168.1.50, 10.0.0.5" class="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-800 bg-slate-50/50 outline-none focus:border-indigo-500 font-mono"></textarea>
+        <span class="text-[10px] text-slate-400 mt-1 block">Lad feltet være tomt for ikke at afkræve specifik IP-bekræftelse (anbefales ikke i produktion).</span>
+    </div>
+</div>
+
     {{-- 🧪 SANDKASSETILSTAND VÆRKTØJER (SKJULT NÅR SKARPT LIVE) --}}
     @if($environment !== 'live')
         <div class="bg-amber-50 rounded-3xl border border-amber-200 p-6 shadow-xs space-y-3">

@@ -19,6 +19,11 @@ class ManageSettings extends Component
     public string $unlock_code_confirmation = '';
     public bool $hasUnlockCode = false;
 
+    // 🟢 Rolleri bestemte login URL / endpoints
+    public string $login_url_admin = '';
+    public string $login_url_medarbejder = '';
+    public string $login_url_kreditor = '';
+
     // Default farver (Indigo / Slate)
     public const DEFAULT_PRIMARY           = '#4f46e5';
     public const DEFAULT_SIDEBAR_BG        = '#0f172a';
@@ -61,10 +66,19 @@ class ManageSettings extends Component
     public string $two_factor_provider = 'totp';
     public array $role_2fa = [];
 
+    public string $allowed_ips = '';
+
     public function mount(): void
     {
         $settings = app(SettingsService::class);
         $currentRequestUrl = request()->getSchemeAndHttpHost();
+
+        $this->allowed_ips = $settings->get('allowed_ips', '');
+
+        // 🟢 Hent gemte login URL'er (eller sæt fornuftige standarder)
+        $this->login_url_admin       = $settings->get('login_url_admin', '/login/admin');
+        $this->login_url_medarbejder = $settings->get('login_url_medarbejder', '/login/medarbejder');
+        $this->login_url_kreditor    = $settings->get('login_url_kreditor', '/login/kreditor');
 
         // Systemets basisidentitet
         $this->app_name   = $settings->get('app_name', 'Sagsbehandling');
@@ -156,6 +170,11 @@ class ManageSettings extends Component
     {
         $settings = app(SettingsService::class);
 
+        // 🟢 Gem rollelogin URL'er
+        $settings->set('login_url_admin', trim($this->login_url_admin));
+        $settings->set('login_url_medarbejder', trim($this->login_url_medarbejder));
+        $settings->set('login_url_kreditor', trim($this->login_url_kreditor));
+
         $settings->set('app_name', $this->app_name);
         $settings->set('app_slogan', $this->app_slogan);
         $settings->set('app_url', $this->app_url);
@@ -205,6 +224,8 @@ class ManageSettings extends Component
             'message' => 'Systemindstillingerne blev gemt!',
             'type'    => 'success'
         ]);
+
+        $settings->set('allowed_ips', trim($this->allowed_ips));
     }
 
     // Nulstil DB og kør demo fra SystemSettings (Kun i Sandkasse)

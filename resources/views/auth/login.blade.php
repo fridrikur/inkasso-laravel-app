@@ -4,6 +4,21 @@
             <x-authentication-card-logo />
         </x-slot>
 
+        <div class="bg-amber-100 border border-amber-400 text-amber-700 px-4 py-2 text-xs text-center font-mono">
+            Din aktuelle IP registreret af systemet: {{ request()->ip() }}
+        </div>
+
+        {{-- 🟢 Dynamisk overskrift baseret på hvilken URL der besøges --}}
+        <div class="mb-4 text-center">
+            <h2 class="text-lg font-bold text-slate-800">
+                @if(isset($roleTarget))
+                    Log ind som <span class="text-indigo-600">{{ ucfirst($roleTarget) }}</span>
+                @else
+                    Log ind
+                @endif
+            </h2>
+        </div>
+
         <x-validation-errors class="mb-4" />
 
         @session('status')
@@ -14,6 +29,11 @@
 
         <form method="POST" action="{{ route('login') }}">
             @csrf
+
+            {{-- 🟢 Send eventuelt target-rollen med som skjult felt, hvis du vil tjekke det i backend --}}
+            @if(isset($roleTarget))
+                <input type="hidden" name="role_target" value="{{ $roleTarget }}">
+            @endif
 
             <div>
                 <x-label for="email" value="{{ __('Email') }}" />

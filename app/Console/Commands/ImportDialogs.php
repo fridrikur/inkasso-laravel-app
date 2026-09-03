@@ -13,7 +13,7 @@ class ImportDialogs extends Command
     public function handle()
     {
         ini_set('memory_limit', '-1');
-        set_time_limit(600); // Sæt tidsgrænsen op til 10 minutter for store filer
+        set_time_limit(600);
 
         $filePath = $this->argument('file') ?? storage_path('dialoger.sql');
         $filePath = file_exists($filePath) ? $filePath : storage_path($filePath);
@@ -25,7 +25,6 @@ class ImportDialogs extends Command
 
         $this->info("Forbereder database og rydder op i evt. eksisterende 'dialog' tabel...");
 
-        // 🟢 Sørg for at slette den midlertidige dialog-tabel først, så vi ikke får "Table already exists" fejl
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::statement('DROP TABLE IF EXISTS dialog;');
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
@@ -38,11 +37,9 @@ class ImportDialogs extends Command
         $dbUser = config('database.connections.mysql.username');
         $dbPass = config('database.connections.mysql.password');
 
-        // Byg mysql-kommandoen sikkert
         $passArg = $dbPass ? "-p" . escapeshellarg($dbPass) : "";
         $command = "mysql -h " . escapeshellarg($dbHost) . " -P " . escapeshellarg($dbPort) . " -u " . escapeshellarg($dbUser) . " {$passArg} " . escapeshellarg($dbName) . " < " . escapeshellarg($filePath);
 
-        // Kør kommandoen på serverniveau
         exec($command, $output, $returnVar);
 
         if ($returnVar !== 0) {
@@ -52,7 +49,7 @@ class ImportDialogs extends Command
 
         $this->info("SQL-fil importeret til tabellen. Behandler og konverterer relationer...");
 
-        // 1. Opret manglende 'dialogs'-beholdere ved at matche på token
+        // 1. Opret manglende 'dialogs'-beholdere ved at matche på token (rettet st.sager_id til st.sag_id)
         DB::statement("
             INSERT IGNORE INTO dialogs (sag_id, type, created_at, updated_at)
             SELECT DISTINCT s.id, 
@@ -64,11 +61,11 @@ class ImportDialogs extends Command
                    NOW(), NOW()
             FROM dialog d
             JOIN sager_tokens st ON st.token = d.token
-            JOIN sagers s ON s.id = st.sager_id
+            JOIN sagers s ON s.id = st.sag_id
             WHERE d.typeID IN (1, 2, 3)
         ");
 
-        // 2. Indsæt beskeder i 'dialog_messages' ved at matche på token
+        // 2. Indsæt beskeder i 'dialog_messages' ved at matche på token (rettet st.sager_id til st.sag_id)
         DB::statement("
             INSERT INTO dialog_messages (dialog_id, sender_id, tekst, dato, created_at, updated_at)
             SELECT 
@@ -80,7 +77,7 @@ class ImportDialogs extends Command
                 NOW()
             FROM dialog d
             JOIN sager_tokens st ON st.token = d.token
-            JOIN sagers s ON s.id = st.sager_id
+            JOIN sagers s ON s.id = st.sag_id
             JOIN dialogs dg ON dg.sag_id = s.id AND dg.type = CASE 
                 d.typeID WHEN 1 THEN 'historik' 
                          WHEN 2 THEN 'bogholderi' 
@@ -89,7 +86,7 @@ class ImportDialogs extends Command
             LEFT JOIN users u ON u.name = d.brugernavn OR u.email = d.brugernavn
         ");
 
-        // 3. Ryd op efter den midlertidige 'dialog'-tabel fra dumpet
+        // 3. Ryd op efter den midlertidige 'dialog'-tabel
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::statement("DROP TABLE IF EXISTS dialog");
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');

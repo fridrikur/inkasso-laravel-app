@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
+use App\Services\SettingsService;
 use App\Livewire\Sager\SagerIndex;
 use App\Livewire\Admin\DropdownIndex;
 use App\Livewire\AdminDashboard;
@@ -113,15 +114,57 @@ use App\Livewire\Admin\OnboardingWizard;
 
 /*
 |--------------------------------------------------------------------------
-| FORSIDE / ROOT
+| LÅST STANDARD /LOGIN (GIVER 403 FORBIDDEN)
+|--------------------------------------------------------------------------
+*/
+Route::get('/login', function () {
+    abort(403, 'Adgang nægtet.');
+})->name('login');
+
+/*
+|--------------------------------------------------------------------------
+| FORSIDE & IP-BESKYTTEDE HEMMELIGE LOGIN ENDPOINTS
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('dashboard')
-        : redirect('/login');
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    abort(403, 'Adgang nægtet.');
 });
 
+Route::middleware(['ip.whitelist'])->group(function () {
+    $settings = app(SettingsService::class);
+    
+    $adminUrl       = $settings->get('login_url_admin', '/login/admin');
+    $medarbejderUrl = $settings->get('login_url_medarbejder', '/login/medarbejder');
+    $kreditorUrl    = $settings->get('login_url_kreditor', '/login/kreditor');
+
+    Route::get($adminUrl, function () {
+        return view('auth.login', ['roleTarget' => 'Admin']);
+    })->name('login.admin');
+
+    Route::get($medarbejderUrl, function () {
+        return view('auth.login', ['roleTarget' => 'Medarbejder']);
+    })->name('login.medarbejder');
+
+    Route::get($kreditorUrl, function () {
+        return view('auth.login', ['roleTarget' => 'Kreditor']);
+    })->name('login.kreditor');
+});
+
+/*
+|--------------------------------------------------------------------------
+| FORSIDE & STANDARD /LOGIN -> KASTER ALTID FORBIDDEN (403)
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    abort(403, 'Adgang nægtet.');
+});
 /*
 |--------------------------------------------------------------------------
 | FÆLLES AUTHENTICATED ROUTES (GÆLDER ALLE LOGGEDE BRUGERE)
@@ -314,7 +357,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         ->group(function () {
             Route::get('/', DataImporter::class)->name('index');
         });
-        
+        // 1. Admin login view
         Route::prefix('sager/import')
             ->name('sager.import.')
             ->middleware(['auth', 'verified'])
@@ -375,10 +418,6 @@ Route::middleware(['auth', 'verified', 'role:Kreditor'])
 | DIVERSE HJÆLPE- OG AUTH-ROUTES
 |--------------------------------------------------------------------------
 */
-
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login');
 
 Route::post('/release-sag-lock/{id}', function ($id) {
     Cache::forget("sag_lock_$id");
