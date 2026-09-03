@@ -48,7 +48,6 @@
 
         <div class="bg-white rounded-3xl p-6 shadow-2xl w-full max-w-md text-center border border-slate-100 space-y-4">
             
-            {{-- TRIN 1: ADVARSEL (Før de 30 sekunder udløber) --}}
             <div id="modal-step-warning" class="space-y-4">
                 <div class="mx-auto w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
                     <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,7 +70,6 @@
                 </button>
             </div>
 
-            {{-- TRIN 2: LÅST SKÆRM / RE-AUTH (Efter de 30 sekunder er løbet ud) --}}
             <div id="modal-step-reauth" class="space-y-4" style="display:none;">
                 <div class="mx-auto w-12 h-12 rounded-2xl bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] flex items-center justify-center">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +108,6 @@
     {{-- HOVED LAYOUT WRAPPER --}}
     <div class="min-h-screen flex w-full relative overflow-x-hidden">
 
-        {{-- MOBIL OVERLAY (Kun til mobil/tablet) --}}
         <div 
             x-show="sidebarOpen" 
             x-cloak
@@ -132,7 +129,9 @@
                         <span class="p-2 rounded-xl bg-[var(--theme-primary)] text-white font-bold text-base shadow-sm">⚖️</span>
                         <div>
                             <span class="font-bold text-base tracking-wide text-white block">{{ setting('app_name', 'InkassoApp') }}</span>
-                            <span class="text-[10px] text-slate-400 uppercase tracking-wider block">{{ setting('app_slogan', 'Sagsadministration') }}</span>
+                            <span class="text-[10px] text-slate-400 uppercase tracking-wider block">
+                                @role('Admin') Admin Portal @else Medarbejder Portal @endrole
+                            </span>
                         </div>
                     </div>
                     <button @click="toggleSidebar" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer" title="Skjul menu">
@@ -143,9 +142,34 @@
                 <nav class="space-y-6 text-sm font-medium">
 
                     {{-- ============================================================ --}}
-                    {{-- 👑 ADMIN & 💼 MEDARBEJDER MENU --}}
+                    {{-- 💼 MEDARBEJDER MENU (Viser rigtige medarbejder-ruter) --}}
                     {{-- ============================================================ --}}
-                    @hasanyrole('Admin|Medarbejder')
+                    @hasrole('Medarbejder')
+                        <div class="space-y-1">
+                            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Oversigt</div>
+                            <a href="{{ route('medarbejder.dashboard') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('medarbejder.dashboard') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>📊</span> Dashboard
+                            </a>
+                        </div>
+
+                        <div class="space-y-1">
+                            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sagsbehandling</div>
+                            <a href="{{ route('medarbejder.sager.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('medarbejder.sager.index') || request()->routeIs('medarbejder.sager.edit') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>📂</span> Sager
+                            </a>
+                            <a href="{{ route('medarbejder.sager.search') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('medarbejder.sager.search') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>🔍</span> Søg Sager
+                            </a>
+                        </div>
+                    @endhasrole
+
+                    {{-- ============================================================ --}}
+                    {{-- 👑 ADMIN MENU --}}
+                    {{-- ============================================================ --}}
+                    @role('Admin')
                         <div class="space-y-1">
                             <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Oversigt</div>
                             <a href="{{ route('dashboard') }}" 
@@ -160,29 +184,8 @@
                                class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.index') || request()->routeIs('sager.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                 <span>📂</span> Sager
                             </a>
-                            <!-- NYT: Debitorer med Badge -->
-                            @php
-                                // Hent hurtigt antallet af dubletter direkte til menuen (eller send det via view composer / komponent)
-                                $duplicateNamesCount = \App\Models\Debitorer::select('navn')
-                                    ->whereNotNull('navn')->where('navn', '!=', '')
-                                    ->groupBy('navn')->having(\Illuminate\Support\Facades\DB::raw('count(*)'), '>', 1)->count();
-                                    
-                                $cprCol = \Schema::hasColumn('debitors', 'cpr') ? 'cpr' : 'pnr';
-                                $duplicateCprCount = \App\Models\Debitorer::select($cprCol)
-                                    ->whereNotNull($cprCol)->where($cprCol, '!=', '')
-                                    ->groupBy($cprCol)->having(\Illuminate\Support\Facades\DB::raw('count(*)'), '>', 1)->count();
-                                    
-                                $totalDuplicates = $duplicateNamesCount + $duplicateCprCount;
-                            @endphp
-
-                            <a href="{{ route('debitorer.index') }}" class="inline-flex items-center space-x-1 {{ request()->routeIs('debitorer.*') ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:text-gray-900' }}">
-                                <span>Debitorer</span>
-                                
-                                @if($totalDuplicates > 0)
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 animate-pulse" title="Der er debitorer der kræver opmærksomhed (dubletter)">
-                                        {{ $totalDuplicates }}
-                                    </span>
-                                @endif
+                            <a href="{{ route('debitorer.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                                <span>👥</span> Debitorer
                             </a>
                             <a href="{{ route('admin.sager.status.index') }}" 
                                class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('admin.sager.status.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
@@ -218,67 +221,31 @@
                             </a>
                         </div>
 
-                        {{-- KUN ADMIN VÆRKTØJER --}}
-                        @role('Admin')
-                            <div class="space-y-1">
-                                <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Værktøjer & Admin</div>
-                                <a href="{{ route('sager.doctor') }}" 
-                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.doctor') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                    <span>🩺</span> Doctor Norton 3.0
-                                </a>
-                                <a href="{{ route('gdpr.sager.retention') }}" 
-                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('gdpr*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                    <span>🛡️</span> GDPR Retention
-                                </a>
-                                <a href="{{ route('autotekster.index') }}" 
-                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('autotekster*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                    <span>💬</span> Autotekster
-                                </a>
-                                <a href="{{ route('dropdowns.index') }}" 
-                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dropdowns*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                    <span>📋</span> Dropdown felter
-                                </a>
-                                <a href="{{ route('users.manage-users') }}" 
-                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('users*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                    <span>👤</span> Brugere & Roles
-                                </a>
-                                <a href="{{ route('admin.system-settings.index') }}" 
-                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('admin.system-settings.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                    <span>⚙️</span> Systemindstillinger
-                                </a>
-                                <a href="{{ route('backups.index') }}" 
-                                   class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('backups*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                    <span>💾</span> Backups
-                                </a>
-                            </div>
-                        @endrole
-                    @endhasanyrole
-
-                    {{-- ============================================================ --}}
-                    {{-- 🏢 KREDITOR SPECIFIK MENU --}}
-                    {{-- ============================================================ --}}
-                    @role('Kreditor')
                         <div class="space-y-1">
-                            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kreditor Portal</div>
-                            
-                            <a href="{{ route('kreditor.dashboard') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.dashboard') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                <span>📊</span> Dashboard
+                            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Værktøjer & Admin</div>
+                            <a href="{{ route('sager.doctor') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.doctor') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>🩺</span> Doctor Norton 3.0
                             </a>
-
-                            <a href="{{ route('kreditor.sag.create') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sag.create') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                <span>➕</span> Opret Ny Sag
+                            <a href="{{ route('gdpr.sager.retention') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('gdpr*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>🛡️</span> GDPR Retention
                             </a>
-
-                            <a href="{{ route('kreditor.sager.index') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sager.index') || request()->routeIs('kreditor.sag.view') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                <span>📂</span> Mine Sager
+                            <a href="{{ route('autotekster.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('autotekster*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>💬</span> Autotekster
                             </a>
-
-                            <a href="{{ route('kreditor.search') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.search') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                <span>🔍</span> Søg Sager
+                            <a href="{{ route('users.manage-users') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('users*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>👤</span> Brugere & Roles
+                            </a>
+                            <a href="{{ route('admin.system-settings.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('admin.system-settings.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>⚙️</span> Systemindstillinger
+                            </a>
+                            <a href="{{ route('backups.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('backups*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>💾</span> Backups
                             </a>
                         </div>
                     @endrole
@@ -303,10 +270,8 @@
         {{-- HOVED INDHOLDSOMRÅDE --}}
         <div class="flex-1 flex flex-col min-w-0 w-full">
             
-            {{-- TOPHEADER --}}
             <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-20 shadow-sm">
                 
-                {{-- VENSTRE SIDE: MENU KNAP & DATO/KLOKKESLÆT --}}
                 <div class="flex items-center gap-4">
                     <button 
                         @click="toggleSidebar"
@@ -320,7 +285,6 @@
                         <span x-text="sidebarOpen ? 'Skjul menu' : 'Hovedmenu'">Hovedmenu</span>
                     </button>
 
-                    {{-- TEMPUS FUGIT / DATO OG REALTIDS-UR --}}
                     <div 
                         x-data="{ 
                             time: '', 
@@ -342,43 +306,8 @@
                     </div>
                 </div>
 
-                {{-- SESSION NEDTÆLLING I HEADER --}}
-                <div 
-                    x-data="{ 
-                        timeLeft: 900,
-                        timer: null,
-                        formatTime(sec) {
-                            let m = String(Math.floor(sec / 60)).padStart(2, '0');
-                            let s = String(sec % 60).padStart(2, '0');
-                            return `${m}:${s}`;
-                        },
-                        resetTimer() {
-                            let modal = document.getElementById('session-warning');
-                            if (!modal || modal.style.display === 'none') {
-                                this.timeLeft = 900;
-                            }
-                        }
-                    }"
-                    x-init="
-                        timer = setInterval(() => { if (timeLeft > 0) timeLeft--; }, 1000);
-                        ['mousemove', 'keydown', 'click', 'scroll'].forEach(evt => {
-                            window.addEventListener(evt, () => resetTimer());
-                        });
-                    "
-                    class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600"
-                >
-                    <span class="text-slate-400">⏳</span>
-                    <span>Session udløber:</span>
-                    <span x-text="formatTime(timeLeft)" 
-                          :class="timeLeft < 60 ? 'text-rose-600 animate-pulse font-bold' : 'text-slate-900 font-mono font-bold'">
-                        15:00
-                    </span>
-                </div>
-
-                {{-- HØJRE SIDE: BRUGERINFO, SESSION, QUICK MENU & LOG UD --}}
                 <div class="flex items-center gap-3">
                     
-                    {{-- BRUGER BADGE MED ROLLE --}}
                     @auth
                         <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
                             <div class="w-6 h-6 rounded-lg bg-[var(--theme-primary)] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
@@ -393,10 +322,6 @@
                         </div>
                     @endauth
 
-                    {{-- LIVEWIRE SESSION MANAGER / TIMER --}}
-                    <livewire:session-manager />
-
-                    {{-- QUICK MENU KNAP - KUN FOR ADMIN --}}
                     @role('Admin')
                         <button
                             @click="$dispatch('open-quick-menu')"
@@ -404,13 +329,9 @@
                             class="inline-flex items-center gap-1.5 rounded-xl bg-[var(--theme-primary)] hover:opacity-90 px-3.5 py-2 text-xs font-bold text-white transition shadow-sm cursor-pointer"
                         >
                             <span>⚡ Quick Menu</span>
-                            <svg class="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                            </svg>
                         </button>
                     @endrole
 
-                    {{-- 🔴 LOG AF KNAP --}}
                     @auth
                         <form method="POST" action="{{ route('logout') }}" class="inline">
                             @csrf
@@ -430,7 +351,6 @@
                 </div>
             </header>
 
-            {{-- MAIN PAGE CONTAINER --}}
             <main class="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
                 {{ $slot ?? $appSlot ?? '' }}
                 @yield('content')
@@ -438,206 +358,6 @@
         </div>
     </div>
 
-    <livewire:admin.quick-menu />
-
     @livewireScripts
-
-    {{-- INAKTIVITETS TIMEOUT & RE-AUTH JAVASCRIPT --}}
-    <script>
-    (function() {
-        let totalTimeout = 900; // 15 minutter i sekunder
-        let warningBefore = 30; // 30 sekunders advarsel
-
-        let warningTime = totalTimeout - warningBefore;
-        let countdownInterval;
-        let countdown = warningBefore;
-        let inactivityTimer;
-
-        function startInactivityTimer() {
-            clearTimeout(inactivityTimer);
-            clearInterval(countdownInterval);
-
-            let modal = document.getElementById('session-warning');
-            let step1 = document.getElementById('modal-step-warning');
-            let step2 = document.getElementById('modal-step-reauth');
-
-            if (modal) modal.style.display = 'none';
-            if (step1) step1.style.display = 'block';
-            if (step2) step2.style.display = 'none';
-
-            inactivityTimer = setTimeout(() => {
-                countdown = warningBefore;
-                if (modal) modal.style.display = 'flex';
-
-                countdownInterval = setInterval(() => {
-                    countdown--;
-                    let countElem = document.getElementById('countdown');
-                    if (countElem) countElem.innerText = countdown;
-
-                    if (countdown <= 0) {
-                        clearInterval(countdownInterval);
-                        if (step1) step1.style.display = 'none';
-                        if (step2) step2.style.display = 'block';
-                    }
-                }, 1000);
-
-            }, warningTime * 1000);
-        }
-
-        ['mousemove', 'keydown', 'click', 'scroll'].forEach(evt => {
-            window.addEventListener(evt, () => {
-                let modal = document.getElementById('session-warning');
-                if (!modal || modal.style.display === 'none') {
-                    startInactivityTimer();
-                }
-            });
-        });
-
-        startInactivityTimer();
-
-        document.addEventListener('livewire:init', () => {
-            Livewire.hook('request', ({ fail }) => {
-                fail(({ status, preventDefault }) => {
-                    if (status === 401 || status === 419) {
-                        preventDefault();
-
-                        let modal = document.getElementById('session-warning');
-                        let step1 = document.getElementById('modal-step-warning');
-                        let step2 = document.getElementById('modal-step-reauth');
-
-                        if (modal) modal.style.display = 'flex';
-                        if (step1) step1.style.display = 'none';
-                        if (step2) step2.style.display = 'block';
-                    }
-                });
-            });
-        });
-
-        window.extendSession = function() {
-            fetch('/keep-alive', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                }
-            }).then(res => {
-                if (res.ok) {
-                    startInactivityTimer();
-                } else {
-                    let step1 = document.getElementById('modal-step-warning');
-                    let step2 = document.getElementById('modal-step-reauth');
-                    if (step1) step1.style.display = 'none';
-                    if (step2) step2.style.display = 'block';
-                }
-            });
-        };
-
-        window.reAuthenticate = async function(event) {
-            event.preventDefault();
-
-            let passwordInput = document.getElementById('re-auth-password');
-            let errorElem = document.getElementById('re-auth-error');
-            let btn = document.getElementById('re-auth-btn');
-
-            errorElem.style.display = 'none';
-            btn.disabled = true;
-
-            try {
-                const tokenResponse = await fetch('/refresh-csrf');
-                const tokenData = await tokenResponse.json();
-                const newToken = tokenData.token;
-
-                let csrfMeta = document.querySelector('meta[name="csrf-token"]');
-                if (csrfMeta) csrfMeta.setAttribute('content', newToken);
-
-                const response = await fetch('/re-authenticate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': newToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ password: passwordInput.value })
-                });
-
-                const data = await response.json();
-                btn.disabled = false;
-
-                if (response.ok && data.success) {
-                    passwordInput.value = '';
-                    window.location.reload();
-                } else {
-                    errorElem.innerText = data.message || 'Forkert adgangskode. Prøv igen.';
-                    errorElem.style.display = 'block';
-                }
-            } catch (error) {
-                btn.disabled = false;
-                errorElem.innerText = 'Der opstod en netværksfejl. Prøv igen.';
-                errorElem.style.display = 'block';
-            }
-        };
-    })();
-    </script>
-
-    {{-- GLOBAL TOAST CONTAINER --}}
-    <div 
-        x-data="{ 
-            toasts: [],
-            add(event) {
-                let data = event.detail || event;
-                if (Array.isArray(data)) data = data[0];
-                
-                const id = Date.now();
-                const toast = {
-                    id: id,
-                    message: data.message || 'Handling gennemført',
-                    type: data.type || 'info',
-                    icon: data.icon || 'check'
-                };
-                this.toasts.push(toast);
-                setTimeout(() => this.remove(id), 5000);
-            },
-            remove(id) {
-                this.toasts = this.toasts.filter(t => t.id !== id);
-            }
-        }"
-        @toast.window="add($event)"
-        x-init="
-            @if(session()->has('toast'))
-                add({ detail: {{ json_encode(session('toast')) }} });
-            @endif
-        "
-        class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"
-    >
-        <template x-for="toast in toasts" :key="toast.id">
-            <div 
-                x-show="true"
-                x-transition:enter="transition ease-out duration-300 transform translate-y-2 opacity-0"
-                x-transition:enter-end="transform translate-y-0 opacity-100"
-                x-transition:leave="transition ease-in duration-200 transform translate-y-2 opacity-0"
-                class="pointer-events-auto p-4 rounded-2xl shadow-xl border flex items-center justify-between gap-3 text-xs font-semibold"
-                :class="{
-                    'bg-emerald-900 text-white border-emerald-800': toast.type === 'success',
-                    'bg-rose-900 text-white border-rose-800': toast.type === 'error',
-                    'bg-amber-900 text-white border-amber-800': toast.type === 'warning',
-                    'bg-slate-900 text-white border-slate-800': toast.type === 'info'
-                }"
-            >
-                <div class="flex items-center gap-2.5">
-                    <template x-if="toast.type === 'success'">
-                        <svg class="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    </template>
-                    <template x-if="toast.type === 'error'">
-                        <svg class="w-5 h-5 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </template>
-                    <span x-text="toast.message"></span>
-                </div>
-                <button @click="remove(toast.id)" class="opacity-60 hover:opacity-100">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-        </template>
-    </div>
-<livewire:admin.onboarding-wizard />
 </body>
 </html>

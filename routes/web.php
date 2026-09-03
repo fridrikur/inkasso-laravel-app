@@ -388,7 +388,8 @@ Route::middleware(['auth', 'role:Medarbejder'])
         Route::get('/dashboard', MedarbejderDashboard::class)->name('dashboard');
         Route::get('/sager', SagerIndex::class)->name('sager.index');
         Route::get('/sager/create', SagEditor::class)->name('sager.create');
-        Route::get('/sager/search', SagSearch::class)->name('sager.search');
+        // Route::get('/sager/search', SagSearch::class)->name('sager.search');
+        Route::get('/sager/search', \App\Livewire\Medarbejder\SagSearch::class)->name('sager.search');
         Route::get('/sager/{sag}/edit', SagEditor::class)->whereNumber('sag')->name('sager.edit');
 
         Route::get('/sager/{sag}/bogholderi', \App\Livewire\Sager\Bogholderi::class)->name('sager.bogholderi');
