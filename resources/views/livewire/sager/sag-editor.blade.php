@@ -229,67 +229,94 @@
 </div> {{-- Lukning af den yderste wrapper --}}
 
         @elseif($activeTab === 'breve')
-            {{-- Her kaldes brev-komponenten med den aktuelle sag --}}
-            @livewire('sager.merge-brev', ['sag' => $sag], key('merge-brev-'.$sag->id))
+            @if($sag->exists)
+                @livewire('sager.merge-brev', ['sag' => $sag], key('merge-brev-'.$sag->id))
+            @else
+                <div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl">
+                    Du skal gemme sagen som kladde, før du kan oprette breve.
+                </div>
+            @endif
 
         @elseif($activeTab === 'klientinformation')
-            @livewire('sager.klientinformation', ['sag' => $sag], key('klientinfo-'.$sag->id))
+            @if($sag->exists)
+                @livewire('sager.klientinformation', ['sag' => $sag], key('klientinfo-'.$sag->id))
+            @else
+                <div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl">
+                    Du skal gemme sagen som kladde, før du kan tilføje klientinformation.
+                </div>
+            @endif
 
         @elseif($activeTab === 'historik')
-            @livewire('sager.historik', ['sag' => $sag], key('historik-'.$sag->id))
+            @if($sag->exists)
+                @livewire('sager.historik', ['sag' => $sag], key('historik-'.$sag->id))
+            @else
+                <div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl">
+                    Historik er tilgængelig, når sagen er oprettet.
+                </div>
+            @endif
 
         @elseif($activeTab === 'bogholderi')
-            @livewire('sager.bogholderi', ['sag' => $sag], key('bogholderi-'.$sag->id))
+            @if($sag->exists)
+                @livewire('sager.bogholderi', ['sag' => $sag], key('bogholderi-'.$sag->id))
+            @else
+                <div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl">
+                    Bogholderi kan tilgås, når sagen er oprettet.
+                </div>
+            @endif
 
         @elseif($activeTab === 'dokumenter')
-            <div class="space-y-6">
-                
-                {{-- Upload Formular --}}
-                @role('Admin|Medarbejder|Kreditor')
-                <form wire:submit.prevent="uploadDokument" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <div class="flex items-center gap-4">
-                        <input type="file" wire:model="newDokument" class="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition">
-                            Upload Dokument
-                        </button>
-                    </div>
-                    @error('newDokument') <span class="text-rose-600 text-xs mt-1 block">{{ $message }}</span> @enderror
-                </form>
-                @endrole
+            @if($sag->exists)
+                <div class="space-y-6">
+                    {{-- Upload Formular --}}
+                    @role('Admin|Medarbejder|Kreditor')
+                    <form wire:submit.prevent="uploadDokument" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center gap-4">
+                            <input type="file" wire:model="newDokument" class="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition">
+                                Upload Dokument
+                            </button>
+                        </div>
+                        @error('newDokument') <span class="text-rose-600 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </form>
+                    @endrole
 
-                {{-- Liste over dokumenter --}}
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100">
-                    @forelse($sag->dokumenter()->latest()->get() as $dok)
-                        <div class="p-4 flex justify-between items-center">
-                            <div>
-                                <div class="font-bold text-slate-800 text-xs">{{ $dok->file_name }}</div>
-                                <div class="text-[11px] text-slate-400">
-                                    {{ number_format($dok->file_size / 1024, 2) }} KB
-                                    – {{ $dok->uploaded_date->format('d-m-Y H:i') }}
+                    {{-- Liste over dokumenter --}}
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+                        @forelse($sag->dokumenter()->latest()->get() as $dok)
+                            <div class="p-4 flex justify-between items-center">
+                                <div>
+                                    <div class="font-bold text-slate-800 text-xs">{{ $dok->file_name }}</div>
+                                    <div class="text-[11px] text-slate-400">
+                                        {{ number_format($dok->file_size / 1024, 2) }} KB
+                                        – {{ $dok->uploaded_date->format('d-m-Y H:i') }}
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3">
+                                    <a href="{{ route('sager.dokumenter.download', [$sag, $dok]) }}"
+                                    class="text-indigo-600 hover:underline text-xs font-bold">
+                                        Download
+                                    </a>
+
+                                    @role('Admin|Medarbejder')
+                                    <button type="button" wire:click="deleteDokument({{ $dok->id }})" class="text-rose-500 hover:text-rose-700 text-xs font-bold">
+                                        Slet
+                                    </button>
+                                    @endrole
                                 </div>
                             </div>
-
-                            <div class="flex items-center gap-3">
-                                <a href="{{ route('sager.dokumenter.download', [$sag, $dok]) }}"
-                                class="text-indigo-600 hover:underline text-xs font-bold">
-                                    Download
-                                </a>
-
-                                @role('Admin|Medarbejder')
-                                <button type="button" wire:click="deleteDokument({{ $dok->id }})" class="text-rose-500 hover:text-rose-700 text-xs font-bold">
-                                    Slet
-                                </button>
-                                @endrole
+                        @empty
+                            <div class="p-8 text-center text-slate-400 text-xs">
+                                Ingen dokumenter tilknyttet denne sag endnu.
                             </div>
-                        </div>
-                    @empty
-                        <div class="p-8 text-center text-slate-400 text-xs">
-                            Ingen dokumenter tilknyttet denne sag endnu.
-                        </div>
-                    @endforelse
+                        @endforelse
+                    </div>
                 </div>
-
-            </div>
+            @else
+                <div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl">
+                    Du skal gemme sagen som kladde, før du kan uploade dokumenter.
+                </div>
+            @endif
         @endif
     </div>
 
