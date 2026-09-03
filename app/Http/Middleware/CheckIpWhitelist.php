@@ -35,5 +35,5 @@ class CheckIpWhitelist
         }
 
         return $next($request);
-    }
+    } 
 }
