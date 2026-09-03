@@ -20,5 +20,4 @@ yarn-error.log
 /.idea
 /.vscode
 /.zed
-/storage/dialoger.sql
-storage/dialoger.sql
+/storage/dialoger.sqlstorage/dialoger.sql
