@@ -12,11 +12,57 @@
         </div>
     </div>
 
-    @if (session()->has('success'))
-        <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-medium">
-            {{ session('success') }}
+    <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs mt-6 space-y-4" 
+     @if($isImportingDialogs) wire:poll.1s="checkDialogImportStatus" @endif>
+    
+    <div>
+        <h3 class="text-xs font-bold text-slate-800 mb-1">Baggrundsimport af Dialoger (Gigantisk SQL)</h3>
+        <p class="text-[11px] text-slate-500">
+            Kør importen af den store dialog-fil fuldstændigt uafhængigt af browser-timeouts.
+        </p>
+    </div>
+
+    <div class="flex items-center gap-4">
+        <input type="text" wire:model="dialogFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" @if($isImportingDialogs) disabled @endif>
+        
+        {{-- JavaScript Advarsel Pop-up --}}
+        <button 
+            type="button" 
+            @click="if(confirm('⚠️ ADVARSEL: dialoger.sql er ca. 2.5 GB stor!\n\nEr du sikker på, at du vil hente og importere den?')) { $wire.startBackgroundDialogImport() }" 
+            @if($isImportingDialogs) disabled @endif
+            class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-2 whitespace-nowrap"
+        >
+            <span wire:loading.remove wire:target="startBackgroundDialogImport">
+                @if($isImportingDialogs) Kører i baggrunden... ⏳ @else Start Dialog-import 🚀 @endif
+            </span>
+            <span wire:loading wire:target="startBackgroundDialogImport">Starter...</span>
+        </button>
+    </div>
+
+    {{-- Visuel Progress-bar (1 til 100%) --}}
+    @if($isImportingDialogs)
+        <div class="space-y-2 pt-2">
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-700">Import progress:</span>
+                <span class="font-mono font-bold text-indigo-600">{{ $dialogImportProgress }}%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200/60 shadow-inner">
+                <div class="bg-indigo-600 h-full transition-all duration-500 ease-out rounded-full" style="width: {{ $dialogImportProgress }}%;"></div>
+            </div>
         </div>
     @endif
+
+    {{-- Levende statusbesked --}}
+    @if($isImportingDialogs || !empty($dialogImportMessage))
+        <div class="p-3.5 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center gap-3">
+            <div class="animate-spin text-indigo-600 text-base">⚙️</div>
+            <div>
+                <p class="text-xs font-bold text-indigo-950">Status fra baggrunds-proces:</p>
+                <p class="text-[11px] text-indigo-700 font-mono">{{ $dialogImportMessage }}</p>
+            </div>
+        </div>
+    @endif
+</div>
 
 {{-- ALTERNATIV: LYNFAST SYSTEM-IMPORT (DIREKTE SQL) --}}
     @if ($step == 1)
@@ -28,7 +74,7 @@
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-600 mb-1">Bruger SQL-fil</label>
                     <input type="text" wire:model="userFile" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none focus:border-indigo-500">
@@ -52,6 +98,10 @@
                 <div>
                     <label class="block text-[10px] font-bold text-slate-600 mb-1">Sager SQL-fil</label>
                     <input type="text" wire:model="sagerFile" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-600 mb-1">Dialog SQL-fil</label>
+                    <input type="text" wire:model="dialogFile" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none focus:border-indigo-500">
                 </div>
             </div>
 

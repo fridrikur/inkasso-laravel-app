@@ -61,6 +61,21 @@ return [
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
+        // const HOST = 'mysql219.curanet.dk';
+        // const DATABASE = 'd1k2g3dbcom_db';
+        // const USERNAME = 'd1k2g3dbcom';
+        // const PASSWORD = 'DZr0JfidJ9RPWp'; 
+        'mysql_source' => [
+            'driver' => 'mysql',
+            'host' => env('DB_HOST', 'mysql219.curanet.dk'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => 'd1k2g3dbcom_db',
+            'username' => env('DB_USERNAME', 'd1k2g3dbcom'),
+            'password' => env('DB_PASSWORD', 'DZr0JfidJ9RPWp'),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+        ],
 
         'mariadb' => [
             'driver' => 'mariadb',

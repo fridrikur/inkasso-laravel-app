@@ -9,6 +9,8 @@ class Dialog extends Model
 {
     use HasFactory;
 
+    protected $table = 'dialogs';
+
     protected $fillable = [
         'sag_id',
         'type', // bogholderi, historik, klientinformation

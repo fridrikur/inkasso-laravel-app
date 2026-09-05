@@ -8,8 +8,9 @@ use App\Models\ImportTemplate;
 use App\Models\Sager;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File; // 🟢 Sikrer at File facade er med til baggrundsimporten
 use Throwable;
-use Illuminate\Support\Facades\Artisan; // Husk denne import i toppen
+use Illuminate\Support\Facades\Artisan;
 use Database\Seeders\DropdownDataSeeder;
 
 class DataImporter extends Component
@@ -20,22 +21,27 @@ class DataImporter extends Component
     public string $debitorFile = 'debitors.sql';
     public string $sagerFile = 'dkgsager.sql';
     public string $kreditorFile = 'kreditorer.sql';
-    public string $konsulentFile = 'konsulenter.sql';         // 🟢 Ny property til konsulenter
+    public string $konsulentFile = 'konsulenter.sql';
     public string $sagsbehandlerFile = 'sagsbehandlere.sql';
     public string $dialogFile = 'dialoger.sql';
 
-    public string $importType = 'sager'; // Standard valg ('sager', 'kreditorer', 'debitorer')
+    public string $importType = 'sager';
     public $file;
     public array $sourceColumns = [];
-    public array $previewRows = []; // Til live eksempelskema (første 3 rækker)
+    public array $previewRows = [];
     public array $targetFields = [];
     public array $mapping = [];
     
     public ?int $selectedTemplateId = null;
     public string $templateName = '';
-    public int $step = 1; // 1: Vælg type/fil, 2: Mapping/Templates/Preview, 3: Færdig
+    public int $step = 1;
     public $importTemplateFile;
     public string $importNotes = '';
+
+    public bool $isImportingDialogs = false;
+    public string $dialogImportMessage = '';
+
+    public int $dialogImportProgress = 0; // 🟢 Ny variabel til progress-baren
 
     public function mount()
     {
@@ -72,15 +78,14 @@ class DataImporter extends Component
                 ])
                 ->toArray();
 
-            // Tilføj alle relationer / pivot-felter til sager (med gode beskrivelser)
             $targetArray['kreditor_id']      = 'Kreditor (Lotus ID)';
             $targetArray['debitor_id']       = 'Debitor (ID)';
-            $targetArray['token_id']      = 'Tokens (ID)';
-            $targetArray['status_id'] = 'Status (Forkortelse, f.eks. I, D, S)';
+            $targetArray['token_id']         = 'Tokens (ID)';
+            $targetArray['status_id']        = 'Status (Forkortelse, f.eks. I, D, S)';
             $targetArray['sagsbehandler_id'] = 'Sagsbehandler (ID)';
             $targetArray['konsulent_id']     = 'Konsulent (ID)';
-            $targetArray['ktr_id']         = 'KTR (Forkortelse, f.eks. K, E, L)';
-            $targetArray['afslutning_id']  = 'Afslutning (Forkortelse, f.eks. b, a, o)';
+            $targetArray['ktr_id']           = 'KTR (Forkortelse, f.eks. K, E, L)';
+            $targetArray['afslutning_id']    = 'Afslutning (Forkortelse, f.eks. b, a, o)';
             $targetArray['udlaeg_id']        = 'Udlæg (ID)';
             $targetArray['bemaerkning_id']   = 'Bemærkning (Forkortelse, f.eks. I, M, D)';
 
@@ -105,7 +110,7 @@ class DataImporter extends Component
     public function updatedFile()
     {
         $this->validate([
-            'file' => 'required|mimes:csv,txt|max:10240', // Fjern eventuelt xlsx medmindre du har PhpSpreadsheet installeret til at konvertere det
+            'file' => 'required|mimes:csv,txt|max:10240',
         ]);
 
         $path = $this->file->getRealPath();
@@ -122,7 +127,6 @@ class DataImporter extends Component
         $delimiter = (str_contains($firstLine, ';')) ? ';' : ',';
         $header = fgetcsv($stream, 0, $delimiter);
 
-        // Læs op til de første 3 rækker til forhåndsvisning
         $preview = [];
         $count = 0;
         while (($row = fgetcsv($stream, 0, $delimiter)) !== false && $count < 3) {
@@ -148,7 +152,7 @@ class DataImporter extends Component
             }
             $this->step = 2;
         } else {
-            session()->flash('error', 'Kunne ikke læse kolonner fra filen. Tjek at filen er adskilt af komma eller semikolon.');
+            session()->flash('error', 'Kunne ikke læse kolonner fra filen.');
         }
     }
 
@@ -204,9 +208,7 @@ class DataImporter extends Component
         }
 
         try {
-            // Brug direkte den midlertidige filsti for at undgå problemer med storage-diske
             $absolutePath = $this->file->getRealPath();
-            
             $stream = fopen($absolutePath, 'r');
             if (!$stream) {
                 session()->flash('error', 'Kunne ikke åbne den uploadede fil.');
@@ -246,11 +248,7 @@ class DataImporter extends Component
             DB::transaction(function () use ($stream, $delimiter, $header, $table, $relationRules, &$importedCount, &$globalErrors, &$rowNumber, &$lookupCache) {
                 while (($row = fgetcsv($stream, 0, $delimiter)) !== false) {
                     $rowNumber++;
-                    
-                    // Spring tomme rækker over
-                    if (empty(array_filter($row))) {
-                        continue;
-                    }
+                    if (empty(array_filter($row))) continue;
 
                     $dataToInsert = [];
                     $resolvedRelations = [];
@@ -258,12 +256,9 @@ class DataImporter extends Component
                     $rowErrors = [];
 
                     foreach ($this->mapping as $targetField => $sourceColumnName) {
-                        if (empty($sourceColumnName)) {
-                            continue;
-                        }
+                        if (empty($sourceColumnName)) continue;
 
                         $sourceIndex = array_search($sourceColumnName, $header);
-                        
                         if ($sourceIndex !== false && isset($row[$sourceIndex])) {
                             $value = trim($row[$sourceIndex]);
                             if ($value === '') continue;
@@ -273,16 +268,15 @@ class DataImporter extends Component
                                 $cacheKey = "{$rule['lookup_table']}_{$value}";
 
                                 if (!isset($lookupCache[$cacheKey])) {
-                                    $lookupCache[$cacheKey] = DB::table($rule['lookup_table']);
-                                        $lookupCache[$cacheKey] = DB::table($rule['lookup_table'])
-                                            ->where($rule['lookup_col'], $value)
-                                            ->first();
+                                    $lookupCache[$cacheKey] = DB::table($rule['lookup_table'])
+                                        ->where($rule['lookup_col'], $value)
+                                        ->first();
                                 }
 
                                 $relatedRecord = $lookupCache[$cacheKey];
 
                                 if (!$relatedRecord) {
-                                    $rowErrors[] = "Række $rowNumber: Kunne ikke finde match i '{$rule['lookup_table']}' for værdien '$value' i feltet $targetField.";
+                                    $rowErrors[] = "Række $rowNumber: Kunne ikke finde match i '{$rule['lookup_table']}' for værdien '$value'.";
                                     $rowHasError = true;
                                     continue;
                                 }
@@ -305,7 +299,6 @@ class DataImporter extends Component
                         continue; 
                     }
 
-                    // Tillad indsættelse selvom $dataToInsert er tom (hvis der f.eks. kun importeres relationer eller timestamps)
                     $sagId = DB::table($table)->insertGetId(array_merge($dataToInsert, [
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -326,18 +319,16 @@ class DataImporter extends Component
             fclose($stream);
 
             if (!empty($globalErrors)) {
-                session()->flash('error', 'Import gennemført med fejl på enkelte rækker:<br>' . implode('<br>', $globalErrors));
-                if ($importedCount > 0) {
-                    $this->step = 3;
-                }
+                session()->flash('error', 'Import gennemført med fejl:<br>' . implode('<br>', $globalErrors));
+                if ($importedCount > 0) $this->step = 3;
                 return;
             }
 
             if ($importedCount > 0) {
                 $this->step = 3;
-                session()->flash('success', "Succes! $importedCount sager blev succesfuldt importeret.");
+                session()->flash('success', "Succes! $importedCount sager blev importeret.");
             } else {
-                session()->flash('error', 'Ingen data blev importeret. Kontrollér at din fil indeholder rækker under overskrifterne.');
+                session()->flash('error', 'Ingen data blev importeret.');
             }
 
         } catch (Throwable $e) {
@@ -348,34 +339,20 @@ class DataImporter extends Component
     public function exportTemplate($id)
     {
         $template = ImportTemplate::where('id', $id)->where('user_id', auth()->id())->first();
-        
-        if (!$template) {
-            session()->flash('error', 'Skabelonen blev ikke fundet.');
-            return;
-        }
+        if (!$template) return;
 
-        $data = [
-            'name' => $template->name,
-            'import_type' => $template->import_type,
-            'mapping' => $template->mapping,
-        ];
-
+        $data = ['name' => $template->name, 'import_type' => $template->import_type, 'mapping' => $template->mapping];
         $filename = \Illuminate\Support\Str::slug($template->name) . '-template.json';
 
-        return response()->streamDownload(function () use ($data) {
-            echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        }, $filename);
+        return response()->streamDownload(fn() => print(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)), $filename);
     }
 
     public function importTemplate()
     {
-        $this->validate([
-            'importTemplateFile' => 'required|file|mimes:json,txt|max:2048',
-        ]);
+        $this->validate(['importTemplateFile' => 'required|file|mimes:json,txt|max:2048']);
 
         try {
-            $path = $this->importTemplateFile->getRealPath();
-            $content = file_get_contents($path);
+            $content = file_get_contents($this->importTemplateFile->getRealPath());
             $data = json_decode($content, true);
 
             if (!isset($data['name'], $data['import_type'], $data['mapping'])) {
@@ -391,35 +368,25 @@ class DataImporter extends Component
             ]);
 
             $this->importTemplateFile = null;
-            session()->flash('success', 'Skabelon blev succesfuldt importeret fra JSON!');
+            session()->flash('success', 'Skabelon importeret fra JSON!');
         } catch (\Exception $e) {
-            session()->flash('error', 'Fejl ved indlæsning af skabelon: ' . $e->getMessage());
+            session()->flash('error', 'Fejl: ' . $e->getMessage());
         }
     }
 
-    // Tilføj denne metode til at generere teksten baseret på mapping:
     public function generateNotes()
     {
         $activeMapping = array_filter($this->mapping);
-        $mappedCount = count($activeMapping);
-        $mappedFields = implode(', ', array_keys($activeMapping));
-        
-        $this->importNotes = "Import-konfiguration for type '{$this->importType}':\n" .
-                            "- Antal parrede kolonner: {$mappedCount}\n" .
-                            "- Parrede felter: {$mappedFields}\n" .
-                            "- Genereret den: " . now()->format('d-m-Y kl. H:i');
+        $this->importNotes = "Import-konfiguration for '{$this->importType}':\n- Parrede kolonner: " . count($activeMapping);
     }
     
     public function runSystemImport()
     {
-        \Illuminate\Support\Facades\Log::info('Import-knappen blev klikket!');
-
         try {
             $outputLog = [];
             $filesFound = false;
 
             set_time_limit(300);
-            memory_get_usage(true);
 
             $tasks = [
                 'Kreditorer'     => ['cmd' => 'import:kreditorer',     'path' => storage_path($this->kreditorFile)],
@@ -427,54 +394,86 @@ class DataImporter extends Component
                 'Sagsbehandlere' => ['cmd' => 'import:sagsbehandlere', 'path' => storage_path($this->sagsbehandlerFile)],
                 'Debitorer'      => ['cmd' => 'import:debitorer',      'path' => storage_path($this->debitorFile)],
                 'Sager'          => ['cmd' => 'import:sager',          'path' => storage_path($this->sagerFile)],
-                'Dialoger'       => ['cmd' => 'import:dialoger',       'path' => storage_path($this->dialogFile)],
             ];
 
             foreach ($tasks as $name => $task) {
                 if (file_exists($task['path'])) {
                     $filesFound = true;
-                    \Illuminate\Support\Facades\Log::info("Starter task: {$name} med fil {$task['path']}");
-
                     try {
-                        $exitCode = Artisan::call($task['cmd'], ['file' => $task['path']]);
+                        // Brug '--file' til dialoger, hvis den er med, ellers send standard argument for de andre
+                        $parameters = ($task['cmd'] === 'import:dialoger') 
+                            ? ['--file' => $task['path']] 
+                            : ['file' => $task['path']];
+
+                        $exitCode = Artisan::call($task['cmd'], $parameters);
+
+                        $exitCode = Artisan::call($task['cmd'], $parameters);
                         $output = trim(Artisan::output());
 
                         if ($exitCode === 0) {
                             $outputLog[] = "✅ {$name}: Fuldført";
-                            \Illuminate\Support\Facades\Log::info("Task {$name} fuldført med succes.");
                         } else {
                             $outputLog[] = "❌ {$name}: Fejlede (Kode: {$exitCode}) - {$output}";
-                            \Illuminate\Support\Facades\Log::error("Task {$name} fejlede med kode {$exitCode}. Output: {$output}");
                         }
                     } catch (\Throwable $subEx) {
                         $outputLog[] = "❌ {$name}: Fejl - " . $subEx->getMessage();
-                        \Illuminate\Support\Facades\Log::error("Task {$name} kaste exception: " . $subEx->getMessage());
                     }
                 } else {
                     $outputLog[] = "⚠️ {$name}: Fil ikke fundet ({$task['path']})";
-                    \Illuminate\Support\Facades\Log::warning("Task {$name} - fil ikke fundet: {$task['path']}");
                 }
             }
 
             if (!$filesFound) {
-                session()->flash('error', 'Ingen af de angivne SQL-filer blev fundet i storage-mappen.');
+                session()->flash('error', 'Ingen filer fundet i storage.');
                 return;
             }
 
+            (new DropdownDataSeeder())->run();
+            $outputLog[] = "✅ Dropdown data: Fuldført via Seeder";
+
             session()->flash('success', 'Importstatus:<br>' . implode('<br>', $outputLog));
-            
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Kritisk fejl i runSystemImport: ' . $e->getMessage() . ' på linje ' . $e->getLine());
             session()->flash('error', 'Kritisk fejl: ' . $e->getMessage());
         }
-        (new DropdownDataSeeder())->run();
-$outputLog[] = "✅ Dropdown data: Fuldført via Seeder";
+    }
+
+    public function startBackgroundDialogImport()
+    {
+        $filePath = storage_path($this->dialogFile);
+        $statusFile = storage_path('app/import_status.json');
+
+        File::put($statusFile, json_encode(['status' => 'running', 'message' => 'Starter baggrundsimport af dialoger...']));
+
+        $this->isImportingDialogs = true;
+        $this->dialogImportMessage = 'Starter import af dialoger i baggrunden...';
+
+        $cmd = sprintf('php %s artisan import:dialoger --file=%s > /dev/null 2>&1 &', base_path('artisan'), escapeshellarg($filePath));
+        exec($cmd);
+    }
+
+    // Opdater denne metode, så den fanger progress:
+    public function checkDialogImportStatus()
+    {
+        $statusFile = storage_path('app/import_status.json');
+        if (!file_exists($statusFile)) return;
+
+        $data = json_decode(file_get_contents($statusFile), true);
+        $this->dialogImportMessage = $data['message'] ?? '';
+        $this->dialogImportProgress = $data['progress'] ?? 0; // 🟢 Hent progress-tallet (1-100)
+
+        if (($data['status'] ?? '') === 'completed') {
+            $this->isImportingDialogs = false;
+            session()->flash('success', 'Dialoger blev importeret succesfuldt i baggrunden!');
+        } elseif (($data['status'] ?? '') === 'error') {
+            $this->isImportingDialogs = false;
+            session()->flash('error', 'Fejl ved baggrundsimport: ' . $this->dialogImportMessage);
+        }
     }
 
     public function render()
     {
         return view('imports.data-importer', [
             'templates' => ImportTemplate::where('import_type', $this->importType)->get()
-        ]); // eller ->layout('components.layouts.app') afhængigt af din struktur
+        ]);
     }
 }
