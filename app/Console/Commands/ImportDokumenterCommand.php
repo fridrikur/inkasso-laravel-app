@@ -11,7 +11,7 @@ use App\Models\Dokument;
 class ImportDokumenterCommand extends Command
 {
     protected $signature = 'import:dokumenter';
-    protected $description = 'Henter filer fra FTP og knytter dem til sager via sag_id vha. sagsnr';
+    protected $description = 'Henter filer fra FTP og knytter dem til sager';
 
     public function handle()
     {
@@ -29,39 +29,40 @@ class ImportDokumenterCommand extends Command
         $failCount = 0;
 
         foreach ($records as $record) {
-            $sagsnr = trim($record->pnummer); // file_records.pnummer indeholder sagsnummeret
+            $sagsnr = trim($record->pnummer);
 
-            // Find den nye sag for at få dens rigtige ID (sag_id)
+            // 1. Tjek om sagen overhovedet findes
             $sag = Sager::where('sagsnr', $sagsnr)->first();
 
             if (!$sag) {
+                if ($failCount < 3) {
+                    $this->warn("Debug: Fandt IKKE sag i databasen med sagsnr: '{$sagsnr}' (file_records.pnummer)");
+                }
                 $failCount++;
                 continue;
             }
 
-            // $sag->id er nu det korrekte sag_id, som dokumenter skal bruge
-            $sagId = $sag->id;
-
-            $fileNameEncoded = rawurlencode(trim($record->file_name));
+            $fileName = trim($record->file_name);
+            $fileNameEncoded = rawurlencode($fileName);
             $fileUrl = $ftpBasePath . $fileNameEncoded;
 
             try {
                 $fileContent = @file_get_contents($fileUrl);
 
                 if ($fileContent === false) {
-                    $fileContent = @file_get_contents($ftpBasePath . trim($record->file_name));
+                    $fileContent = @file_get_contents($ftpBasePath . $fileName);
                 }
 
                 if ($fileContent !== false) {
-                    $folder = 'dokumenter/' . $sagId;
-                    $path = $folder . '/' . trim($record->file_name);
+                    $folder = 'dokumenter/' . $sag->id;
+                    $path = $folder . '/' . $fileName;
 
                     Storage::disk('public')->put($path, $fileContent);
 
                     Dokument::firstOrCreate(
                         [
-                            'sag_id'    => $sagId, // Brug sag_id
-                            'file_name' => trim($record->file_name),
+                            'sag_id'    => $sag->id,
+                            'file_name' => $fileName,
                         ],
                         [
                             'file_path'     => $path,
@@ -72,6 +73,9 @@ class ImportDokumenterCommand extends Command
 
                     $successCount++;
                 } else {
+                    if ($failCount < 3) {
+                        $this->error("Debug: Kunne IKKE hente fil fra FTP for sagsnr {$sagsnr}: {$fileUrl}");
+                    }
                     $failCount++;
                 }
             } catch (\Exception $e) {
