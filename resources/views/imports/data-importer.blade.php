@@ -24,6 +24,7 @@
 
     <div class="flex items-center gap-4">
         <input type="text" wire:model="dialogFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" @if($isImportingDialogs) disabled @endif>
+        <input type="text" wire:model="tokenFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none">
         
         {{-- JavaScript Advarsel Pop-up --}}
         <button 
@@ -70,7 +71,7 @@
             <div>
                 <h3 class="text-xs font-bold text-slate-800 mb-1">Alternativ: Lynfast system-import (Direkte SQL)</h3>
                 <p class="text-[11px] text-slate-500">
-                    Hvis dine SQL-filer ligger i <code>storage/</code> mappen på serveren, kan du køre en komplet og lynhurtig import af alle tabeller i den korrekte rækkefølge: <strong>1. Debitorer &rarr; 2. Kreditorer &rarr; 3. Sager</strong>.
+                    Da SQL-filer ligger i <code>storage/</code> mappen på serveren, kan vi køre en komplet og lynhurtig import af alle tabeller i den korrekte rækkefølge: <strong>1. Debitorer &rarr; 2. Kreditorer &rarr; 3. Sager</strong>.
                 </p>
             </div>
 

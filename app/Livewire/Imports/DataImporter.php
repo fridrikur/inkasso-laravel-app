@@ -24,7 +24,8 @@ class DataImporter extends Component
     public string $konsulentFile = 'konsulenter.sql';
     public string $sagsbehandlerFile = 'sagsbehandlere.sql';
     public string $dialogFile = 'dialoger.sql';
-
+    public string $tokenFile = 'token.sql';
+    
     public string $importType = 'sager';
     public $file;
     public array $sourceColumns = [];
@@ -440,14 +441,23 @@ class DataImporter extends Component
     public function startBackgroundDialogImport()
     {
         $filePath = storage_path($this->dialogFile);
+        $tokenPath = storage_path($this->tokenFile); // 🟢 Tilføjet her
         $statusFile = storage_path('app/import_status.json');
 
-        File::put($statusFile, json_encode(['status' => 'running', 'message' => 'Starter baggrundsimport af dialoger...']));
+        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 0, 'message' => 'Starter baggrundsimport af token og dialoger...']));
 
         $this->isImportingDialogs = true;
         $this->dialogImportMessage = 'Starter import af dialoger i baggrunden...';
+        $this->dialogImportProgress = 0;
 
-        $cmd = sprintf('php %s artisan import:dialoger --file=%s > /dev/null 2>&1 &', base_path('artisan'), escapeshellarg($filePath));
+        // 🟢 Indsæt den opdaterede kommando her, hvor den sender --token-file med
+        $cmd = sprintf(
+            'php %s artisan import:dialoger --file=%s --token-file=%s > /dev/null 2>&1 &', 
+            base_path('artisan'), 
+            escapeshellarg($filePath), 
+            escapeshellarg($tokenPath)
+        );
+        
         exec($cmd);
     }
 
