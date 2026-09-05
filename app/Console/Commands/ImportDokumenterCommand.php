@@ -11,7 +11,7 @@ use App\Models\Dokument;
 class ImportDokumenterCommand extends Command
 {
     protected $signature = 'import:dokumenter';
-    protected $description = 'Henter filer fra FTP og knytter dem direkte til sager via sagsnr';
+    protected $description = 'Henter filer fra FTP og knytter dem til sager via sag_id vha. sagsnr';
 
     public function handle()
     {
@@ -29,15 +29,18 @@ class ImportDokumenterCommand extends Command
         $failCount = 0;
 
         foreach ($records as $record) {
-            $sagsnr = trim($record->pnummer); // Feltet indeholder sagsnummeret
+            $sagsnr = trim($record->pnummer); // file_records.pnummer indeholder sagsnummeret
 
-            // Find den nye sag direkte via sagsnr
+            // Find den nye sag for at få dens rigtige ID (sag_id)
             $sag = Sager::where('sagsnr', $sagsnr)->first();
 
             if (!$sag) {
                 $failCount++;
                 continue;
             }
+
+            // $sag->id er nu det korrekte sag_id, som dokumenter skal bruge
+            $sagId = $sag->id;
 
             $fileNameEncoded = rawurlencode(trim($record->file_name));
             $fileUrl = $ftpBasePath . $fileNameEncoded;
@@ -50,14 +53,14 @@ class ImportDokumenterCommand extends Command
                 }
 
                 if ($fileContent !== false) {
-                    $folder = 'dokumenter/' . $sag->id;
+                    $folder = 'dokumenter/' . $sagId;
                     $path = $folder . '/' . trim($record->file_name);
 
                     Storage::disk('public')->put($path, $fileContent);
 
                     Dokument::firstOrCreate(
                         [
-                            'sag_id'    => $sag->id,
+                            'sag_id'    => $sagId, // Brug sag_id
                             'file_name' => trim($record->file_name),
                         ],
                         [
