@@ -58,8 +58,7 @@
         </div>
 
         @if($uiMode === 'full')
-            {{-- 🟢 ÆNDRET TIL MEDARBEJDER ROUTE --}}
-            <a href="{{ route('medarbejder.sager.create') }}"
+            <a href="{{ auth()->user()->hasRole('Admin') ? route('sager.create') : route('medarbejder.sager.create') }}"
             class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow transition hover:bg-indigo-700 cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 <span>Opret ny sag</span>
@@ -431,7 +430,7 @@
                                 {{-- 🟢 ÆNDRET TIL MEDARBEJDER EDIT ROUTE (Alt andet beholdt intakt) --}}
                                 <x-table-actions 
                                     :id="$sag->id" 
-                                    :editUrl="route('medarbejder.sager.edit', $sag)" 
+                                    :editUrl="auth()->user()->hasRole('Admin') ? route('sager.edit', $sag) : route('medarbejder.sager.edit', $sag)" 
                                     deleteAction="confirmDeleteModal"
                                 />
                             @endif

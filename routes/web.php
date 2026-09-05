@@ -230,6 +230,11 @@ Route::middleware(['auth'])->group(function () {
 | ADMIN-ONLY ROUTES
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| ADMIN-ONLY ROUTES
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', 'verified', 'role:Admin'])
     ->group(function () {
 
@@ -240,13 +245,18 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         ->name('sager.edit')
         ->withTrashed()
         ->missing(function () {
-            // Hvis sagen ikke findes (f.eks. netop slettet permanent), send brugeren til sagslisten i stedet for at crashe
             return redirect()->route('sager.index')->with('success', 'Sagen blev slettet.');
         });
+
+        // 🟢 TILFØJET: Admin-ruter til sagsfaner (så Admin ikke skal bruge /medarbejder/)
+        Route::get('/sager/{sag}/bogholderi', \App\Livewire\Sager\Bogholderi::class)->name('sager.bogholderi');
+        Route::get('/sager/{sag}/historik', \App\Livewire\Sager\Historik::class)->name('sager.historik');
+        Route::get('/sager/{sag}/klientinformation', Klientinformation::class)->name('sager.klientinformation');
         
         Route::get('/sager/search', SagSearch::class)->name('sager.search');
         Route::get('/admin/sager/import-log', ImportLogIndex::class)->name('sager.import.log');
         
+        // ... (Resten af dine admin ruter fortsætter herufrit)        
         Route::post('/sager/import/{kreditor}/mapping', [ImportExecuteController::class, 'previewMapping'])
             ->name('sager.import.mapping');
 
