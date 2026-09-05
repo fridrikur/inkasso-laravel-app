@@ -8,7 +8,7 @@ use App\Models\ImportTemplate;
 use App\Models\Sager;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File; // 🟢 Sikrer at File facade er med til baggrundsimporten
+use Illuminate\Support\Facades\File; 
 use Throwable;
 use Illuminate\Support\Facades\Artisan;
 use Database\Seeders\DropdownDataSeeder;
@@ -32,38 +32,38 @@ class DataImporter extends Component
     public array $previewRows = [];
     public array $targetFields = [];
     public $mapping = [
-    'sagsnr'             => 'sagsnr',
-    'afsluttet'          => 'afsluttet',
-    'faktureret'         => 'faktureret',
-    'betalt'             => 'betalt',
-    'fakturadato'        => 'fakturadato',
-    'modtaget'           => 'modtaget',
-    'senesterapport'     => 'senesterapport',
-    'opgivet'            => 'opgivet',
-    'fakturanr'          => 'fakturanr',
-    'hovedstol'          => 'hovedstol',
-    'renter'             => 'renter',
-    'gebyr'              => 'gebyr',
-    'ialt'               => 'ialt',
-    'startgebyr'         => 'startgebyr',
-    'restgaeld_dkg'      => 'statistik',
-    'indbetalt'          => 'indbetalt',
-    'n_mdlydelse'        => 'n_mdlydelse',
-    'stelnr'             => 'stelnr',
-    'aktiv'              => 'aktiv',
-    'kode'               => 'kode',
-    'restgaeld_kreditor' => 'restgaeld',
-    'kreditor_id'        => 'kreditorID',
-    'debitor_id'         => 'debitorid',
-    'token_id'           => 'pnummer',
-    'status_id'          => 'status',
-    'sagsbehandler_id'   => 'sagsbehandler',
-    'konsulent_id'       => 'konsulentid',
-    'ktr_id'             => 'ktr',
-    'afslutning_id'      => 'afleveret',
-    'udlaeg_id'          => 'finanseringstypeID',
-    'bemaerkning_id'     => 'bemaerkning',
-];
+        'sagsnr'             => 'sagsnr',
+        'afsluttet'          => 'afsluttet',
+        'faktureret'         => 'faktureret',
+        'betalt'             => 'betalt',
+        'fakturadato'        => 'fakturadato',
+        'modtaget'           => 'modtaget',
+        'senesterapport'     => 'senesterapport',
+        'opgivet'            => 'opgivet',
+        'fakturanr'          => 'fakturanr',
+        'hovedstol'          => 'hovedstol',
+        'renter'             => 'renter',
+        'gebyr'              => 'gebyr',
+        'ialt'               => 'ialt',
+        'startgebyr'         => 'startgebyr',
+        'restgaeld_dkg'      => 'statistik',
+        'indbetalt'          => 'indbetalt',
+        'n_mdlydelse'        => 'n_mdlydelse',
+        'stelnr'             => 'stelnr',
+        'aktiv'              => 'aktiv',
+        'kode'               => 'kode',
+        'restgaeld_kreditor' => 'restgaeld',
+        'kreditor_id'        => 'kreditorID',
+        'debitor_id'         => 'debitorid',
+        'token_id'           => 'pnummer',
+        'status_id'          => 'status',
+        'sagsbehandler_id'   => 'sagsbehandler',
+        'konsulent_id'       => 'konsulentid',
+        'ktr_id'             => 'ktr',
+        'afslutning_id'      => 'afleveret',
+        'udlaeg_id'          => 'finanseringstypeID',
+        'bemaerkning_id'     => 'bemaerkning',
+    ];
     
     public ?int $selectedTemplateId = null;
     public string $templateName = '';
@@ -73,8 +73,7 @@ class DataImporter extends Component
 
     public bool $isImportingDialogs = false;
     public string $dialogImportMessage = '';
-
-    public int $dialogImportProgress = 0; // 🟢 Ny variabel til progress-baren
+    public int $dialogImportProgress = 0;
 
     public bool $mappingApproved = false;
 
@@ -83,7 +82,7 @@ class DataImporter extends Component
     public int $systemImportProgress = 0;
 
     public string $systemFlashMessage = '';
-    public string $systemFlashType = 'success'; // 'success' eller 'error'
+    public string $systemFlashType = 'success';
 
     public function mount()
     {
@@ -148,7 +147,6 @@ class DataImporter extends Component
                 ->toArray();
         }
 
-        // 🟢 Hårdtsat eller dynamisk hentet liste over de 43 felter fra den gamle sager-tabel
         $this->sourceColumns = [
             'id', 'sagsnr', 'kreditorID', 'debitorid', 'afsluttet', 'faktureret', 
             'betalt', 'sagsbehandler', 'hovedstol', 'renter', 'gebyr', 'ialt', 
@@ -160,16 +158,13 @@ class DataImporter extends Component
             'n_mdlydelse', 'fuldmagt', 'aktivt', 'lukket', 'status', 'bemaerkning'
         ];
 
-        // Intelligent præ-udfyldning (matcher f.eks. 'sagsnr' -> 'sagsnr', eller 'kreditorID' -> 'kreditor_id')
         if (empty($this->mapping)) {
             foreach ($this->targetFields as $targetKey => $label) {
-                // 1. Tjek for nøjagtigt match
                 if (in_array($targetKey, $this->sourceColumns)) {
                     $this->mapping[$targetKey] = $targetKey;
                     continue;
                 }
 
-                // 2. Tjek for felter der ender på _id (f.eks. kreditor_id -> kreditorID)
                 $cleanTarget = str_replace('_id', 'id', $targetKey);
                 foreach ($this->sourceColumns as $sourceCol) {
                     if (strtolower($cleanTarget) === strtolower($sourceCol)) {
@@ -232,7 +227,6 @@ class DataImporter extends Component
         }
     }
 
-    // Tilføj denne metode i din DataImporter.php, så den loader template og automatisk godkender/går videre:
     public function loadTemplate()
     {
         if (!$this->selectedTemplateId) return;
@@ -242,8 +236,6 @@ class DataImporter extends Component
             $this->mapping = $template->mapping;
             $this->importType = $template->import_type;
             $this->loadTargetFields();
-            
-            // 🟢 Automatisk godkend mapping når en skabelon vælges, så man går direkte til Step 2
             $this->mappingApproved = true;
             
             session()->flash('success', "Skabelon '{$template->name}' blev indlæst og godkendt.");
@@ -334,6 +326,7 @@ class DataImporter extends Component
 
                     $dataToInsert = [];
                     $resolvedRelations = [];
+                    $pnummerValue = null; 
                     $rowHasError = false;
                     $rowErrors = [];
 
@@ -344,6 +337,11 @@ class DataImporter extends Component
                         if ($sourceIndex !== false && isset($row[$sourceIndex])) {
                             $value = trim($row[$sourceIndex]);
                             if ($value === '') continue;
+
+                            if ($targetField === 'token_id') {
+                                $pnummerValue = $value;
+                                continue; 
+                            }
 
                             if (isset($relationRules[$targetField])) {
                                 $rule = $relationRules[$targetField];
@@ -392,6 +390,18 @@ class DataImporter extends Component
                             $rel['foreign_key'] => $rel['id'],
                             'created_at' => now(),
                         ]);
+                    }
+
+                    if ($this->importType === 'sager' && !empty($pnummerValue)) {
+                        $tokenRecord = DB::table('tokens')->where('pnummer', $pnummerValue)->first();
+                        if ($tokenRecord) {
+                            DB::table('sager_tokens')->insertIgnore([
+                                'sag_id' => $sagId,
+                                'token_id' => $tokenRecord->id,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
                     }
 
                     $importedCount++;
@@ -493,12 +503,10 @@ class DataImporter extends Component
         $tokenPath = storage_path($this->tokenFile);
         $statusFile = storage_path('app/import_status.json');
 
-        // Sørg for at mappen eksisterer
         if (!file_exists(dirname($statusFile))) {
             mkdir(dirname($statusFile), 0755, true);
         }
 
-        // Skriv start-status med det samme
         file_put_contents($statusFile, json_encode([
             'status' => 'running', 
             'progress' => 5, 
@@ -521,14 +529,12 @@ class DataImporter extends Component
         exec($cmd);
     }
 
-    // Tilføj disse to metoder i klassen:
     public function approveMapping()
     {
         $this->validate([
             'mapping' => 'required|array',
         ]);
 
-        // Tjek at mindst ét felt er parret
         if (empty(array_filter($this->mapping))) {
             session()->flash('error', 'Du skal mindst parre én kolonne, før du kan godkende mappingen.');
             return;
@@ -543,8 +549,6 @@ class DataImporter extends Component
         $this->mappingApproved = false;
     }
 
-    
-    // Opdater tjek-metoden for dialoger, så den viser toast-besked når den er færdig
     public function checkDialogImportStatus()
     {
         $statusFile = storage_path('app/import_status.json');
@@ -591,6 +595,4 @@ class DataImporter extends Component
             'templates' => ImportTemplate::where('import_type', $this->importType)->get()
         ]);
     }
-
-    
 }

@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-class ImportSagerSql extends Command
+class ImportSagersSql extends Command
 {
     protected $signature = 'import:sager {file : Stien til SQL filen}';
     protected $description = 'Importerer SQL filen direkte i DB og flytter data via SQL queries (Super hurtigt)';
@@ -140,7 +140,7 @@ class ImportSagerSql extends Command
             WHERE sager.afleveret IS NOT NULL AND sager.afleveret != '' AND sager.afleveret != 0
         ");
 
-        // 7. Bemærkning relation (rettet til 'bemaerkning')
+        // 7. Bemærkning relation
         DB::statement("
             INSERT IGNORE INTO sager_bemaerkning (sag_id, bemaerkning_id)
             SELECT sagers.id, sager.bemaerkning 
@@ -149,28 +149,38 @@ class ImportSagerSql extends Command
             WHERE sager.bemaerkning IS NOT NULL AND sager.bemaerkning != '' AND sager.bemaerkning != 0
         ");
 
-        // Knyttelse af sagsbehandlere til sager i pivot-tabellen (bruger det gamle 'sager' tabellayout fra dumpet)
+        // 8. Token / pnummer relation (sager_tokens)
+        $this->info("Udfylder sager_tokens via pnummer...");
+        DB::statement("
+            INSERT IGNORE INTO sager_tokens (sag_id, token_id, created_at, updated_at)
+            SELECT 
+                ny.id, 
+                t.id, 
+                NOW(), 
+                NOW()
+            FROM sager s
+            JOIN sagers ny ON ny.sagsnr COLLATE utf8mb4_unicode_ci = s.sagsnr COLLATE utf8mb4_unicode_ci
+            JOIN tokens t ON t.pnummer COLLATE utf8mb4_unicode_ci = s.pnummer COLLATE utf8mb4_unicode_ci
+            WHERE s.pnummer IS NOT NULL AND s.pnummer != ''
+        ");
+
+        // Knyttelse af sagsbehandlere til sager i pivot-tabellen
         $this->info("Udfylder sager_sagsbehandler (med fallback til kreditors hovedsagsbehandler)...");
         DB::statement("
             INSERT IGNORE INTO sager_sagsbehandler (sag_id, sagsbehandler_id, created_at, updated_at)
             SELECT 
                 ny.id, 
                 COALESCE(
-                    -- 1. Prøv først at finde sagsbehandleren direkte fra sagen
                     sb_direct.id, 
-                    -- 2. Hvis null/0, brug kreditorens hovedsagsbehandler som fallback
                     khs.sagsbehandler_id
                 ), 
                 NOW(), 
                 NOW()
             FROM sager s
             JOIN sagers ny ON ny.sagsnr COLLATE utf8mb4_unicode_ci = s.sagsnr COLLATE utf8mb4_unicode_ci
-            -- Find kreditor ID baseret på lotusID
             JOIN kreditors k ON k.lotusID = s.kreditorID
-            -- Forsøg at matche direkte sagsbehandler
             LEFT JOIN sagsbehandlere old_sb ON old_sb.sbID COLLATE utf8mb4_unicode_ci = s.sagsbehandler COLLATE utf8mb4_unicode_ci
             LEFT JOIN sagsbehandlers sb_direct ON sb_direct.navn COLLATE utf8mb4_unicode_ci = old_sb.sagsbehandler COLLATE utf8mb4_unicode_ci
-            -- Hent kreditors hovedsagsbehandler som fallback
             LEFT JOIN kreditor_hoved_sagsbehandler khs ON khs.kreditor_id = k.id
             WHERE (
                 (s.sagsbehandler IS NOT NULL AND s.sagsbehandler != 0)
