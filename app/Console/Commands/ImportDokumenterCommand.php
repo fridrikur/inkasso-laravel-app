@@ -28,43 +28,60 @@ class ImportDokumenterCommand extends Command
         $successCount = 0;
         $failCount = 0;
 
-        foreach ($records as $record) {
-            // 1. Slå op i den GAMLE 'sager' tabel for at finde sagsnr ud fra pnummer
-            $oldSag = DB::table('sager')->where('pnummer', $record->pnummer)->first();
+        $this->info("Antal poster i file_records: " . count($records));
 
-            if (!$oldSag || empty($oldSag->sagsnr)) {
+        foreach ($records as $record) {
+            // Trim evt. whitespace af pnummer for at undgå mismatch
+            $pnummer = trim($record->pnummer);
+
+            // 1. Slå op i den gamle 'sager' tabel
+            $oldSag = DB::table('sager')->where('pnummer', $pnummer)->first();
+
+            if (!$oldSag) {
+                // Udskriv de første par fejl for at se om pnummer overhovedet matcher
+                if ($failCount < 5) {
+                    $this->warn("Intet match i 'sager' tabellen for pnummer: '{$pnummer}'");
+                }
                 $failCount++;
                 continue;
             }
 
-            // 2. Find den NYE sag i 'sagers' tabellen ved hjælp af sagsnr
-            $sag = Sager::where('sagsnr', $oldSag->sagsnr)->first();
+            if (empty($oldSag->sagsnr)) {
+                $failCount++;
+                continue;
+            }
+
+            // 2. Find den nye sag i 'sagers' tabellen
+            $sag = Sager::where('sagsnr', trim($oldSag->sagsnr))->first();
 
             if (!$sag) {
+                if ($failCount < 5) {
+                    $this->warn("Fandt 'oldSag' med sagsnr '{$oldSag->sagsnr}', men ingen match i ny 'sagers' tabel.");
+                }
                 $failCount++;
                 continue;
             }
 
-            $fileNameEncoded = rawurlencode($record->file_name);
+            $fileNameEncoded = rawurlencode(trim($record->file_name));
             $fileUrl = $ftpBasePath . $fileNameEncoded;
 
             try {
                 $fileContent = @file_get_contents($fileUrl);
 
                 if ($fileContent === false) {
-                    $fileContent = @file_get_contents($ftpBasePath . $record->file_name);
+                    $fileContent = @file_get_contents($ftpBasePath . trim($record->file_name));
                 }
 
                 if ($fileContent !== false) {
                     $folder = 'dokumenter/' . $sag->id;
-                    $path = $folder . '/' . $record->file_name;
+                    $path = $folder . '/' . trim($record->file_name);
 
                     Storage::disk('public')->put($path, $fileContent);
 
                     Dokument::firstOrCreate(
                         [
                             'sag_id'    => $sag->id,
-                            'file_name' => $record->file_name,
+                            'file_name' => trim($record->file_name),
                         ],
                         [
                             'file_path'     => $path,
@@ -75,9 +92,15 @@ class ImportDokumenterCommand extends Command
 
                     $successCount++;
                 } else {
+                    if ($failCount < 5) {
+                        $this->error("Kunne ikke hente fil fra FTP: {$fileUrl}");
+                    }
                     $failCount++;
                 }
             } catch (\Exception $e) {
+                if ($failCount < 5) {
+                    $this->error("Fejl for fil {$record->file_name}: " . $e->getMessage());
+                }
                 $failCount++;
             }
         }
