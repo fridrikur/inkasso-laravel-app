@@ -22,7 +22,7 @@ class DataImporter extends Component
     public string $sagerFile = 'dkgsager.sql';
     public string $kreditorFile = 'kreditorer.sql';
     public string $konsulentFile = 'konsulenter.sql';
-    public string $sagsbehandlerFile = 'sagsbehandlere.sql';
+    public string $sagsbehandlerFile = 'sagsbehandlere.sql';    
     public string $dialogFile = 'dialoger.sql';
     public string $tokenFile = 'token.sql';
     
@@ -31,7 +31,39 @@ class DataImporter extends Component
     public array $sourceColumns = [];
     public array $previewRows = [];
     public array $targetFields = [];
-    public array $mapping = [];
+    public $mapping = [
+    'sagsnr'             => 'sagsnr',
+    'afsluttet'          => 'afsluttet',
+    'faktureret'         => 'faktureret',
+    'betalt'             => 'betalt',
+    'fakturadato'        => 'fakturadato',
+    'modtaget'           => 'modtaget',
+    'senesterapport'     => 'senesterapport',
+    'opgivet'            => 'opgivet',
+    'fakturanr'          => 'fakturanr',
+    'hovedstol'          => 'hovedstol',
+    'renter'             => 'renter',
+    'gebyr'              => 'gebyr',
+    'ialt'               => 'ialt',
+    'startgebyr'         => 'startgebyr',
+    'restgaeld_dkg'      => 'statistik',
+    'indbetalt'          => 'indbetalt',
+    'n_mdlydelse'        => 'n_mdlydelse',
+    'stelnr'             => 'stelnr',
+    'aktiv'              => 'aktiv',
+    'kode'               => 'kode',
+    'restgaeld_kreditor' => 'restgaeld',
+    'kreditor_id'        => 'kreditorID',
+    'debitor_id'         => 'debitorid',
+    'token_id'           => 'pnummer',
+    'status_id'          => 'status',
+    'sagsbehandler_id'   => 'sagsbehandler',
+    'konsulent_id'       => 'konsulentid',
+    'ktr_id'             => 'ktr',
+    'afslutning_id'      => 'afleveret',
+    'udlaeg_id'          => 'finanseringstypeID',
+    'bemaerkning_id'     => 'bemaerkning',
+];
     
     public ?int $selectedTemplateId = null;
     public string $templateName = '';
@@ -43,6 +75,8 @@ class DataImporter extends Component
     public string $dialogImportMessage = '';
 
     public int $dialogImportProgress = 0; // 🟢 Ny variabel til progress-baren
+
+    public bool $mappingApproved = false;
 
     public function mount()
     {
@@ -106,6 +140,40 @@ class DataImporter extends Component
                 ->mapWithKeys(fn($field) => [$field => ucfirst(str_replace('_', ' ', $field))])
                 ->toArray();
         }
+
+        // 🟢 Hårdtsat eller dynamisk hentet liste over de 43 felter fra den gamle sager-tabel
+        $this->sourceColumns = [
+            'id', 'sagsnr', 'kreditorID', 'debitorid', 'afsluttet', 'faktureret', 
+            'betalt', 'sagsbehandler', 'hovedstol', 'renter', 'gebyr', 'ialt', 
+            'fakturadato', 'fakturanr', 'modtaget', 'startgebyr', 'restgaeld', 
+            'afdragsordning', 'boligkode', 'lejemaal', 'kode', 'konsulentid', 
+            'statistik', 'senesterapport', 'indbetalt', 'finanseringstypeID', 
+            'aktiv', 'afleveret', 'pnummer', 'mdlydelse', 'ktr', 'stelnr', 
+            'bogholderi', 'historik', 'klient_info', 'restance_info', 'opgivet', 
+            'n_mdlydelse', 'fuldmagt', 'aktivt', 'lukket', 'status', 'bemaerkning'
+        ];
+
+        // Intelligent præ-udfyldning (matcher f.eks. 'sagsnr' -> 'sagsnr', eller 'kreditorID' -> 'kreditor_id')
+        if (empty($this->mapping)) {
+            foreach ($this->targetFields as $targetKey => $label) {
+                // 1. Tjek for nøjagtigt match
+                if (in_array($targetKey, $this->sourceColumns)) {
+                    $this->mapping[$targetKey] = $targetKey;
+                    continue;
+                }
+
+                // 2. Tjek for felter der ender på _id (f.eks. kreditor_id -> kreditorID)
+                $cleanTarget = str_replace('_id', 'id', $targetKey);
+                foreach ($this->sourceColumns as $sourceCol) {
+                    if (strtolower($cleanTarget) === strtolower($sourceCol)) {
+                        $this->mapping[$targetKey] = $sourceCol;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        $this->mappingApproved = false;
     }
 
     public function updatedFile()
@@ -157,6 +225,7 @@ class DataImporter extends Component
         }
     }
 
+    // Tilføj denne metode i din DataImporter.php, så den loader template og automatisk godkender/går videre:
     public function loadTemplate()
     {
         if (!$this->selectedTemplateId) return;
@@ -166,6 +235,11 @@ class DataImporter extends Component
             $this->mapping = $template->mapping;
             $this->importType = $template->import_type;
             $this->loadTargetFields();
+            
+            // 🟢 Automatisk godkend mapping når en skabelon vælges, så man går direkte til Step 2
+            $this->mappingApproved = true;
+            
+            session()->flash('success', "Skabelon '{$template->name}' blev indlæst og godkendt.");
         }
     }
 
@@ -480,10 +554,34 @@ class DataImporter extends Component
         }
     }
 
+    // Tilføj disse to metoder i klassen:
+    public function approveMapping()
+    {
+        $this->validate([
+            'mapping' => 'required|array',
+        ]);
+
+        // Tjek at mindst ét felt er parret
+        if (empty(array_filter($this->mapping))) {
+            session()->flash('error', 'Du skal mindst parre én kolonne, før du kan godkende mappingen.');
+            return;
+        }
+
+        $this->mappingApproved = true;
+        session()->flash('success', 'Mapping er godkendt! Du kan nu fortsætte til import.');
+    }
+
+    public function resetMappingApproval()
+    {
+        $this->mappingApproved = false;
+    }
+
     public function render()
     {
         return view('imports.data-importer', [
             'templates' => ImportTemplate::where('import_type', $this->importType)->get()
         ]);
     }
+
+    
 }
