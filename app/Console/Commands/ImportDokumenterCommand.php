@@ -11,7 +11,7 @@ use App\Models\Dokument;
 class ImportDokumenterCommand extends Command
 {
     protected $signature = 'import:dokumenter';
-    protected $description = 'Henter filer fra FTP og knytter dem til sager via file_records og den gamle sager-tabel pnummer';
+    protected $description = 'Henter filer fra FTP og knytter dem direkte til sager via sagsnr';
 
     public function handle()
     {
@@ -28,36 +28,13 @@ class ImportDokumenterCommand extends Command
         $successCount = 0;
         $failCount = 0;
 
-        $this->info("Antal poster i file_records: " . count($records));
-
         foreach ($records as $record) {
-            // Trim evt. whitespace af pnummer for at undgå mismatch
-            $pnummer = trim($record->pnummer);
+            $sagsnr = trim($record->pnummer); // Feltet indeholder sagsnummeret
 
-            // 1. Slå op i den gamle 'sager' tabel
-            $oldSag = DB::table('sager')->where('pnummer', $pnummer)->first();
-
-            if (!$oldSag) {
-                // Udskriv de første par fejl for at se om pnummer overhovedet matcher
-                if ($failCount < 5) {
-                    $this->warn("Intet match i 'sager' tabellen for pnummer: '{$pnummer}'");
-                }
-                $failCount++;
-                continue;
-            }
-
-            if (empty($oldSag->sagsnr)) {
-                $failCount++;
-                continue;
-            }
-
-            // 2. Find den nye sag i 'sagers' tabellen
-            $sag = Sager::where('sagsnr', trim($oldSag->sagsnr))->first();
+            // Find den nye sag direkte via sagsnr
+            $sag = Sager::where('sagsnr', $sagsnr)->first();
 
             if (!$sag) {
-                if ($failCount < 5) {
-                    $this->warn("Fandt 'oldSag' med sagsnr '{$oldSag->sagsnr}', men ingen match i ny 'sagers' tabel.");
-                }
                 $failCount++;
                 continue;
             }
@@ -92,15 +69,9 @@ class ImportDokumenterCommand extends Command
 
                     $successCount++;
                 } else {
-                    if ($failCount < 5) {
-                        $this->error("Kunne ikke hente fil fra FTP: {$fileUrl}");
-                    }
                     $failCount++;
                 }
             } catch (\Exception $e) {
-                if ($failCount < 5) {
-                    $this->error("Fejl for fil {$record->file_name}: " . $e->getMessage());
-                }
                 $failCount++;
             }
         }
