@@ -381,6 +381,19 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                     Start Dialog-import 🚀
                 </button>
             </div>
+
+            {{-- 🟢 PROGRESS-BAR OG STATUSBLOK (GENOPRETTET OG KNYTTET TIL VARIABLERNE) --}}
+            @if($isImportingDialogs)
+                <div class="mt-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl p-4 space-y-2.5 animate-pulse">
+                    <div class="flex justify-between text-xs font-bold text-indigo-950">
+                        <span>{{ $dialogImportMessage }}</span>
+                        <span>{{ $dialogImportProgress }}%</span>
+                    </div>
+                    <div class="w-full bg-indigo-200/70 rounded-full h-3 overflow-hidden p-0.5">
+                        <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: {{ $dialogImportProgress }}%"></div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
