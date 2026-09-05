@@ -514,20 +514,29 @@ class DataImporter extends Component
 
     public function startBackgroundDialogImport()
     {
+        // Sørg for at stierne er fulde og korrekte (antager filerne ligger i storage/ mappen)
         $filePath = storage_path($this->dialogFile);
-        $tokenPath = storage_path($this->tokenFile); // 🟢 Tilføjet her
+        $tokenPath = storage_path($this->tokenFile);
         $statusFile = storage_path('app/import_status.json');
 
-        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 0, 'message' => 'Starter baggrundsimport af token og dialoger...']));
+        // Nulstil status-filen før start
+        File::put($statusFile, json_encode([
+            'status' => 'running', 
+            'progress' => 0, 
+            'message' => 'Starter baggrundsimport af token og dialoger...'
+        ]));
 
         $this->isImportingDialogs = true;
         $this->dialogImportMessage = 'Starter import af dialoger i baggrunden...';
         $this->dialogImportProgress = 0;
 
-        // 🟢 Indsæt den opdaterede kommando her, hvor den sender --token-file med
+        // Byg kommandoen sikkert med fulde stier
+        $artisanPath = base_path('artisan');
+        
+        // Vi sender de fulde stier med som argumenter/options, så Artisan-kommandoen kan finde dem
         $cmd = sprintf(
-            'php %s artisan import:dialoger --file=%s --token-file=%s > /dev/null 2>&1 &', 
-            base_path('artisan'), 
+            'php %s import:dialoger --file=%s --token-file=%s > /dev/null 2>&1 &', 
+            escapeshellarg($artisanPath), 
             escapeshellarg($filePath), 
             escapeshellarg($tokenPath)
         );

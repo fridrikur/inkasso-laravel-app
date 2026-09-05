@@ -17,8 +17,14 @@ class ImportDialogsCommand extends Command
         $statusFile = storage_path('app/import_status.json');
         $dbConfig = config('database.connections.' . config('database.default'));
         
+        // Hent stierne og tjek om de er relative (fra terminalen) eller absolutte (fra Livewire)
+        $tokenOpt = $this->option('token-file');
+        $fileOpt = $this->option('file');
+
+        $tokenFilePath = str_starts_with($tokenOpt, '/') ? $tokenOpt : base_path($tokenOpt);
+        $filePath = str_starts_with($fileOpt, '/') ? $fileOpt : base_path($fileOpt);
+
         // 1. Importér token.sql først (hvis filen findes)
-        $tokenFilePath = base_path($this->option('token-file'));
         if (file_exists($tokenFilePath)) {
             File::put($statusFile, json_encode(['status' => 'running', 'progress' => 10, 'message' => 'Indlæser token.sql...']));
             DB::statement('DROP TABLE IF EXISTS token;');
@@ -48,11 +54,10 @@ class ImportDialogsCommand extends Command
         }
 
         if (!$hasRawData) {
-            File::put($statusFile, json_encode(['status' => 'running', 'progress' => 30, 'message' => 'Indlæser 2.5 GB dialoger.sql-fil...']));
+            File::put($statusFile, json_encode(['status' => 'running', 'progress' => 30, 'message' => 'Indlæser dialoger.sql-fil...']));
 
-            $filePath = base_path($this->option('file'));
             if (!file_exists($filePath)) {
-                File::put($statusFile, json_encode(['status' => 'error', 'progress' => 0, 'message' => 'dialoger.sql blev ikke fundet.']));
+                File::put($statusFile, json_encode(['status' => 'error', 'progress' => 0, 'message' => 'dialoger.sql blev ikke fundet på stien: ' . $filePath]));
                 return 1;
             }
             
@@ -87,7 +92,6 @@ class ImportDialogsCommand extends Command
 
         File::put($statusFile, json_encode(['status' => 'running', 'progress' => 70, 'message' => 'Opretter hoved-dialoger (filtrerer ugyldige fra)...']));
         
-        // 🟢 FILTERING: Kræver at t.brugerID ikke er tom/null
         DB::statement("
             INSERT INTO dialogs (id, sag_id, type, created_at, updated_at)
             SELECT 
@@ -110,7 +114,6 @@ class ImportDialogsCommand extends Command
 
         File::put($statusFile, json_encode(['status' => 'running', 'progress' => 85, 'message' => 'Overfører relaterede dialog-beskeder...']));
         
-        // 🟢 Sørg for kun at tage beskeder med, hvis hoved-dialogen rent faktisk blev oprettet
         DB::statement("
             INSERT INTO dialog_messages (dialog_id, sender_id, tekst, dato, created_at, updated_at)
             SELECT 
