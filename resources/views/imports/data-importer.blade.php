@@ -12,18 +12,6 @@
         </div>
     </div>
 
-    @if (session()->has('success'))
-        <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-medium">
-            {!! session('success') !!}
-        </div>
-    @endif
-
-    @if (session()->has('error'))
-        <div class="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-xs font-medium">
-            {!! session('error') !!}
-        </div>
-    @endif
-
     {{-- 🟢 STEP 1: FIL-UPLOAD, MAPPING, SKABELONER OG FORHÅNDSVISNING --}}
     @if ($step == 1)
         <div class="space-y-6">
@@ -367,6 +355,8 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
 
     {{-- EKSTRA SEKTION: LYNFAST SYSTEM-IMPORT & BAGGRUNDSIMPORT (SQL) --}}
     <div class="space-y-6 pt-6 border-t border-slate-200">
+        
+        {{-- 1. BAGGRUNDSIMPORT AF DIALOGER --}}
         <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4" 
              @if($isImportingDialogs) wire:poll.1s="checkDialogImportStatus" @endif>
             <div>
@@ -382,7 +372,6 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                 </button>
             </div>
 
-            {{-- 🟢 PROGRESS-BAR OG STATUSBLOK (GENOPRETTET OG KNYTTET TIL VARIABLERNE) --}}
             @if($isImportingDialogs)
                 <div class="mt-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl p-4 space-y-2.5 animate-pulse">
                     <div class="flex justify-between text-xs font-bold text-indigo-950">
@@ -396,7 +385,9 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
             @endif
         </div>
 
-        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+        {{-- 2. KOMPLET SYSTEM-IMPORT (MED PROGRESS BAR) --}}
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4"
+             @if($isImportingSystem) wire:poll.1s="checkSystemImportStatus" @endif>
             <div>
                 <h3 class="text-xs font-bold text-slate-800 mb-1">Alternativ: Lynfast system-import (Direkte SQL)</h3>
                 <p class="text-[11px] text-slate-500">Kør komplet system-import direkte fra serverens <code>storage/</code> mappe.</p>
@@ -405,35 +396,66 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-600 mb-1">Bruger SQL</label>
-                    <input type="text" wire:model="userFile" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
+                    <input type="text" wire:model="userFile" @if($isImportingSystem) disabled @endif class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-600 mb-1">Kreditor SQL</label>
-                    <input type="text" wire:model="kreditorFile" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
+                    <input type="text" wire:model="kreditorFile" @if($isImportingSystem) disabled @endif class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-600 mb-1">Konsulent SQL</label>
-                    <input type="text" wire:model="konsulentFile" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
+                    <input type="text" wire:model="konsulentFile" @if($isImportingSystem) disabled @endif class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-600 mb-1">Sagsbehandler SQL</label>
-                    <input type="text" wire:model="sagsbehandlerFile" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
+                    <input type="text" wire:model="sagsbehandlerFile" @if($isImportingSystem) disabled @endif class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-600 mb-1">Debitor SQL</label>
-                    <input type="text" wire:model="debitorFile" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
+                    <input type="text" wire:model="debitorFile" @if($isImportingSystem) disabled @endif class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-600 mb-1">Sager SQL</label>
-                    <input type="text" wire:model="sagerFile" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
+                    <input type="text" wire:model="sagerFile" @if($isImportingSystem) disabled @endif class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
                 </div>
             </div>
 
             <div class="pt-2 flex justify-end">
-                <button type="button" wire:click="runSystemImport" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer">
-                    Start komplet system-import 🚀
+                <button type="button" wire:click="runSystemImport" @if($isImportingSystem) disabled @endif class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50">
+                    <span @if($isImportingSystem) style="display:none;" @endif>Start komplet system-import 🚀</span>
+                    <span @unless($isImportingSystem) style="display:none;" @endunless>Importerer data i baggrunden... ⏳</span>
                 </button>
             </div>
+
+            {{-- 🟢 PROGRESS BAR TIL SYSTEM-IMPORT --}}
+            @if($isImportingSystem)
+                <div class="mt-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl p-4 space-y-2.5 animate-pulse">
+                    <div class="flex justify-between text-xs font-bold text-emerald-950">
+                        <span>{{ $systemImportMessage }}</span>
+                        <span>{{ $systemImportProgress }}%</span>
+                    </div>
+                    <div class="w-full bg-emerald-200/70 rounded-full h-3 overflow-hidden p-0.5">
+                        <div class="bg-emerald-600 h-2 rounded-full transition-all duration-500" style="width: {{ $systemImportProgress }}%"></div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
+    @if (session()->has('success'))
+        <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-medium">
+            {!! session('success') !!}
+        </div>
+    @endif
+
+    @if (!empty($systemFlashMessage))
+        <div class="p-4 {{ $systemFlashType === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800' }} border rounded-2xl text-xs font-medium">
+            {!! $systemFlashMessage !!}
+        </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-xs font-medium">
+            {!! session('error') !!}
+        </div>
+    @endif
 </div>

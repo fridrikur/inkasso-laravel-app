@@ -78,6 +78,13 @@ class DataImporter extends Component
 
     public bool $mappingApproved = false;
 
+    public bool $isImportingSystem = false;
+    public string $systemImportMessage = '';
+    public int $systemImportProgress = 0;
+
+    public string $systemFlashMessage = '';
+    public string $systemFlashType = 'success'; // 'success' eller 'error'
+
     public function mount()
     {
         $this->loadTargetFields();
@@ -457,59 +464,27 @@ class DataImporter extends Component
     
     public function runSystemImport()
     {
-        try {
-            $outputLog = [];
-            $filesFound = false;
+        $statusFile = storage_path('app/system_import_status.json');
+        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 5, 'message' => 'Starter system-import...']));
 
-            set_time_limit(300);
+        $this->isImportingSystem = true;
+        $this->systemImportMessage = 'Starter system-import...';
+        $this->systemImportProgress = 5;
 
-            $tasks = [
-                'Kreditorer'     => ['cmd' => 'import:kreditorer',     'path' => storage_path($this->kreditorFile)],
-                'Brugere'        => ['cmd' => 'import:users',         'path' => storage_path($this->userFile)],
-                'Sagsbehandlere' => ['cmd' => 'import:sagsbehandlere', 'path' => storage_path($this->sagsbehandlerFile)],
-                'Debitorer'      => ['cmd' => 'import:debitorer',      'path' => storage_path($this->debitorFile)],
-                'Sager'          => ['cmd' => 'import:sager',          'path' => storage_path($this->sagerFile)],
-            ];
+        $artisanPath = base_path('artisan');
+        
+        $cmd = sprintf(
+            'php %s import:system --user=%s --kreditor=%s --konsulent=%s --sagsbehandler=%s --debitor=%s --sager=%s > /dev/null 2>&1 &',
+            escapeshellarg($artisanPath),
+            escapeshellarg($this->userFile),
+            escapeshellarg($this->kreditorFile),
+            escapeshellarg($this->konsulentFile),
+            escapeshellarg($this->sagsbehandlerFile),
+            escapeshellarg($this->debitorFile),
+            escapeshellarg($this->sagerFile)
+        );
 
-            foreach ($tasks as $name => $task) {
-                if (file_exists($task['path'])) {
-                    $filesFound = true;
-                    try {
-                        // Brug '--file' til dialoger, hvis den er med, ellers send standard argument for de andre
-                        $parameters = ($task['cmd'] === 'import:dialoger') 
-                            ? ['--file' => $task['path']] 
-                            : ['file' => $task['path']];
-
-                        $exitCode = Artisan::call($task['cmd'], $parameters);
-
-                        $exitCode = Artisan::call($task['cmd'], $parameters);
-                        $output = trim(Artisan::output());
-
-                        if ($exitCode === 0) {
-                            $outputLog[] = "✅ {$name}: Fuldført";
-                        } else {
-                            $outputLog[] = "❌ {$name}: Fejlede (Kode: {$exitCode}) - {$output}";
-                        }
-                    } catch (\Throwable $subEx) {
-                        $outputLog[] = "❌ {$name}: Fejl - " . $subEx->getMessage();
-                    }
-                } else {
-                    $outputLog[] = "⚠️ {$name}: Fil ikke fundet ({$task['path']})";
-                }
-            }
-
-            if (!$filesFound) {
-                session()->flash('error', 'Ingen filer fundet i storage.');
-                return;
-            }
-
-            (new DropdownDataSeeder())->run();
-            $outputLog[] = "✅ Dropdown data: Fuldført via Seeder";
-
-            session()->flash('success', 'Importstatus:<br>' . implode('<br>', $outputLog));
-        } catch (\Throwable $e) {
-            session()->flash('error', 'Kritisk fejl: ' . $e->getMessage());
-        }
+        exec($cmd);
     }
 
     public function startBackgroundDialogImport()
@@ -546,25 +521,6 @@ class DataImporter extends Component
         exec($cmd);
     }
 
-    // Opdater denne metode, så den fanger progress:
-    public function checkDialogImportStatus()
-    {
-        $statusFile = storage_path('app/import_status.json');
-        if (!file_exists($statusFile)) return;
-
-        $data = json_decode(file_get_contents($statusFile), true);
-        $this->dialogImportMessage = $data['message'] ?? '';
-        $this->dialogImportProgress = $data['progress'] ?? 0; // 🟢 Hent progress-tallet (1-100)
-
-        if (($data['status'] ?? '') === 'completed') {
-            $this->isImportingDialogs = false;
-            session()->flash('success', 'Dialoger blev importeret succesfuldt i baggrunden!');
-        } elseif (($data['status'] ?? '') === 'error') {
-            $this->isImportingDialogs = false;
-            session()->flash('error', 'Fejl ved baggrundsimport: ' . $this->dialogImportMessage);
-        }
-    }
-
     // Tilføj disse to metoder i klassen:
     public function approveMapping()
     {
@@ -587,6 +543,48 @@ class DataImporter extends Component
         $this->mappingApproved = false;
     }
 
+    
+    // Opdater tjek-metoden for dialoger, så den viser toast-besked når den er færdig
+    public function checkDialogImportStatus()
+    {
+        $statusFile = storage_path('app/import_status.json');
+        if (!file_exists($statusFile)) return;
+
+        $data = json_decode(file_get_contents($statusFile), true);
+        $this->dialogImportMessage = $data['message'] ?? '';
+        $this->dialogImportProgress = $data['progress'] ?? 0;
+
+        if (($data['status'] ?? '') === 'completed') {
+            $this->isImportingDialogs = false;
+            session()->flash('success', '🎉 Dialoger og tokens blev importeret succesfuldt!');
+        } elseif (($data['status'] ?? '') === 'error') {
+            $this->isImportingDialogs = false;
+            session()->flash('error', 'Fejl ved baggrundsimport: ' . $this->dialogImportMessage);
+        }
+    }
+
+    public function checkSystemImportStatus()
+    {
+        $statusFile = storage_path('app/system_import_status.json');
+        if (!file_exists($statusFile)) return;
+
+        $data = json_decode(file_get_contents($statusFile), true);
+        $this->systemImportMessage = $data['message'] ?? '';
+        $this->systemImportProgress = $data['progress'] ?? 0;
+
+        if (($data['status'] ?? '') === 'completed') {
+            $this->isImportingSystem = false;
+            $this->systemFlashMessage = '🎉 Komplet system-import fuldført!';
+            $this->systemFlashType = 'success';
+            $this->dispatch('$refresh');
+        } elseif (($data['status'] ?? '') === 'error') {
+            $this->isImportingSystem = false;
+            $this->systemFlashMessage = 'Fejl ved system-import: ' . $this->systemImportMessage;
+            $this->systemFlashType = 'error';
+            $this->dispatch('$refresh');
+        }
+    }
+    
     public function render()
     {
         return view('imports.data-importer', [
