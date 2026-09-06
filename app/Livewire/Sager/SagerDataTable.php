@@ -408,6 +408,46 @@ class SagerDataTable extends Component
         $this->selectedKreditor = $kreditorNavn;
         $this->resetPage(); // Nulstil paginering ved filterskift
     }
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="space-y-6 relative min-h-[60vh] animate-pulse">
+            {{-- Loader Besked Banner --}}
+            <div class="flex items-center gap-3 rounded-2xl bg-indigo-50/80 border border-indigo-100 p-4 text-indigo-900 shadow-sm">
+                <div class="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent shrink-0"></div>
+                <div>
+                    <p class="text-sm font-bold">Henter sagsarkiv og portefølje...</p>
+                    <p class="text-xs text-indigo-700/80">Analyserer relationer, kreditorer og igangværende sager.</p>
+                </div>
+            </div>
 
-    
+            {{-- Header Skeleton --}}
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div class="space-y-2">
+                    <div class="h-8 w-64 bg-slate-200 rounded-xl"></div>
+                    <div class="h-4 w-96 bg-slate-100 rounded-lg"></div>
+                </div>
+                <div class="h-11 w-32 bg-slate-200 rounded-xl"></div>
+            </div>
+
+            {{-- Tabs Skeleton --}}
+            <div class="flex gap-2 border-b border-slate-200 pb-3">
+                <div class="h-9 w-24 bg-slate-200 rounded-xl"></div>
+                <div class="h-9 w-28 bg-slate-200 rounded-xl"></div>
+                <div class="h-9 w-28 bg-slate-200 rounded-xl"></div>
+            </div>
+
+            {{-- Table Skeleton --}}
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-6 space-y-4">
+                <div class="h-10 w-full bg-slate-100 rounded-xl"></div>
+                <div class="space-y-3">
+                    <div class="h-12 w-full bg-slate-100 rounded-lg"></div>
+                    <div class="h-12 w-full bg-slate-100 rounded-lg"></div>
+                    <div class="h-12 w-full bg-slate-100 rounded-lg"></div>
+                    <div class="h-12 w-full bg-slate-100 rounded-lg"></div>
+                </div>
+            </div>
+        </div>
+        HTML;
+    }
 }

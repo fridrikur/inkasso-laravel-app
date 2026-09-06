@@ -1,5 +1,13 @@
-<div class="space-y-6">
+<div class="space-y-6 relative min-h-[60vh]">
 
+    {{-- FULDSKÆRMS LOADER KØRER VED ALLE LIVEWIRE AKTIONER (Søgning, faneskift, paginering) --}}
+    <div wire:loading.delay class="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-sm w-full text-center">
+            <div class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-indigo-500/20 border-t-indigo-500"></div>
+            <h2 class="text-base font-bold text-slate-900 tracking-tight">Arbejder...</h2>
+            <p class="mt-1 text-xs text-slate-500">Henter sager og opdaterer data...</p>
+        </div>
+    </div>
 
     {{-- LIVEWIRE INITIAL / GLOBAL LOADER --}}
     <div wire:loading.delay wire:target="search, filterByKreditor, sortBy, gotoPage, nextPage, previousPage" class="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">

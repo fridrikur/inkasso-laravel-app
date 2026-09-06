@@ -188,15 +188,15 @@ class AdminDashboard extends Component
         // 1. Start med en ren forespørgsel på Sager (ingen tunge joins)
         $query = Sager::query()->select('sagers.*');
 
-        // 2. Hvis der søges, bruges 'whereHas' i stedet for join (tager millisekunder)
+        // 2. Hvis der søges, bruges 'whereHas' i stedet for join
         if (!empty($this->search)) {
             $search = $this->search;
             $query->where(function ($q) use ($search) {
                 $q->where('sagers.sagsnr', 'like', '%' . $search . '%')
-                  ->orWhereHas('debitors', function ($sub) use ($search) {
+                  ->orWhereHas('sagerdebitor', function ($sub) use ($search) {
                       $sub->where('navn', 'like', '%' . $search . '%');
                   })
-                  ->orWhereHas('kreditors', function ($sub) use ($search) {
+                  ->orWhereHas('sagerkreditor', function ($sub) use ($search) {
                       $sub->where('navn', 'like', '%' . $search . '%');
                   });
             });
@@ -205,7 +205,7 @@ class AdminDashboard extends Component
         // 3. Filtrering på valgt kreditor via relation
         if (!empty($this->selectedKreditor)) {
             $kreditorNavn = $this->selectedKreditor;
-            $query->whereHas('kreditors', function ($sub) use ($kreditorNavn) {
+            $query->whereHas('sagerkreditor', function ($sub) use ($kreditorNavn) {
                 $sub->where('navn', $kreditorNavn);
             });
         }
@@ -216,7 +216,8 @@ class AdminDashboard extends Component
 
         return view('livewire.admin.dashboard', [
             'sagers' => $sagers,
-            'kreditors' => Kreditorer::withCount('sager')->get(),
+            // 🟢 Hent kreditorer let uden tucht/withCount i render for at undgå 504 Time-out
+            'kreditors' => Kreditorer::select('id', 'navn')->get(),
             'totalSager' => Sager::count(),
             'totalKreditorer' => Kreditorer::count(),
             'userStats' => $this->userStats,

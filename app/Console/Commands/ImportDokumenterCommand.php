@@ -7,11 +7,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Sager;
 use App\Models\Dokument;
+use Illuminate\Support\Facades\Schema;
 
 class ImportDokumenterCommand extends Command
 {
     protected $signature = 'import:dokumenter';
-    protected $description = 'Henter filer fra FTP og knytter dem til sager';
+    protected $description = 'Henter filer fra FTP og scanner efter sagsnr i databasen';
 
     public function handle()
     {
@@ -27,17 +28,27 @@ class ImportDokumenterCommand extends Command
         $ftpBasePath = 'ftp://linux22.curanet.dk/www/dkg-root/upload/';
         $successCount = 0;
         $failCount = 0;
+        $missingInNew = 0;
+        $missingInBoth = 0;
 
         foreach ($records as $record) {
             $sagsnr = trim($record->pnummer);
 
-            // 1. Tjek om sagen overhovedet findes
+            // 1. Scan om sagsnr findes i den nye 'sagers' tabel
             $sag = Sager::where('sagsnr', $sagsnr)->first();
+            $sagId = $sag ? $sag->id : null;
 
-            if (!$sag) {
-                if ($failCount < 3) {
-                    $this->warn("Debug: Fandt IKKE sag i databasen med sagsnr: '{$sagsnr}' (file_records.pnummer)");
+            // 2. Hvis ikke den findes i den nye tabel, tjek om den findes i den gamle 'sager' tabel (hvis den findes)
+            if (!$sagId && Schema::hasTable('sager')) {
+                $oldSag = DB::table('sager')->where('sagsnr', $sagsnr)->orWhere('pnummer', $sagsnr)->first();
+                if ($oldSag) {
+                    // Hvis den findes i gammel, men ikke ny, kan vi evt. oprette den eller slå op via sagsnr i ny
+                    $sag = Sager::where('sagsnr', $oldSag->sagsnr)->first();
+                    $sagId = $sag ? $sag->id : null;
                 }
+            }
+
+            if (!$sagId) {
                 $failCount++;
                 continue;
             }
@@ -54,14 +65,14 @@ class ImportDokumenterCommand extends Command
                 }
 
                 if ($fileContent !== false) {
-                    $folder = 'dokumenter/' . $sag->id;
+                    $folder = 'dokumenter/' . $sagId;
                     $path = $folder . '/' . $fileName;
 
                     Storage::disk('public')->put($path, $fileContent);
 
                     Dokument::firstOrCreate(
                         [
-                            'sag_id'    => $sag->id,
+                            'sag_id'    => $sagId,
                             'file_name' => $fileName,
                         ],
                         [
@@ -73,9 +84,6 @@ class ImportDokumenterCommand extends Command
 
                     $successCount++;
                 } else {
-                    if ($failCount < 3) {
-                        $this->error("Debug: Kunne IKKE hente fil fra FTP for sagsnr {$sagsnr}: {$fileUrl}");
-                    }
                     $failCount++;
                 }
             } catch (\Exception $e) {

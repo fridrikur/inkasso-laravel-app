@@ -20,6 +20,11 @@ class ManageKreditorer extends Component
     protected KreditorTransferService $transfer;
     protected KreditorManagementService $management;
 
+    public bool $readyToLoad = false;
+
+    public string $navn = '';
+    public ?string $lotusID = null;
+
     public function boot(
         KreditorTransferService $transfer,
         KreditorManagementService $management
@@ -27,9 +32,6 @@ class ManageKreditorer extends Component
         $this->transfer = $transfer;
         $this->management = $management;
     }
-
-    public string $navn = '';
-    public ?string $lotusID = null;
 
     /*
     |--------------------------------------------------------------------------
@@ -147,10 +149,8 @@ class ManageKreditorer extends Component
 
         $this->management->delete($this->kreditorToDelete);
 
-        // Luk modalen og genstart/nulstil variablerne
         $this->closeModals();
 
-        // Vis toast-besked i stedet for redirect
         $this->dispatch('toast', [
             'type' => 'success',
             'message' => 'Kreditoren blev slettet succesfuldt.',
@@ -167,12 +167,7 @@ class ManageKreditorer extends Component
 
     public function render()
     {
-        $query = Kreditorer::query()
-            ->withCount([
-                'sager',
-                'users',
-                'sagsbehandlere',
-            ]);
+        $query = Kreditorer::query();
 
         if ($this->search !== '') {
             $search = trim($this->search);
@@ -203,7 +198,6 @@ class ManageKreditorer extends Component
         $udenSagerCount = Kreditorer::doesntHave('sager')->count();
         $medBrugereCount = Kreditorer::has('users')->count();
 
-        // Modtager-lister til dropdown i modalen (alle undtagen den der slettes)
         $transferTargets = $this->kreditorToDelete
             ? Kreditorer::whereKeyNot($this->kreditorToDelete->id)->orderBy('navn')->get()
             : collect();
@@ -244,7 +238,11 @@ class ManageKreditorer extends Component
 
     public function editKreditor(int $id): void
     {
-        // Sender ID'et direkte til KreditorFormModal komponenten
         $this->dispatch('open-edit-modal', id: $id)->to('kreditor.kreditor-form-modal');
+    }
+
+    public function loadKreditorer()
+    {
+        $this->readyToLoad = true;
     }
 }

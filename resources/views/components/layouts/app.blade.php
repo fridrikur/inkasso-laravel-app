@@ -212,11 +212,13 @@
                         <div class="space-y-1">
                             <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Parter</div>
                             <a href="{{ route('kreditorer.index') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditorer*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                            wire:navigate
+                            class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditorer*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                 <span>🏢</span> Kreditorer
                             </a>
                             <a href="{{ route('konsulenter.manage-konsulenter') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('manage-konsulenter') || request()->routeIs('konsulenter*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                            wire:navigate
+                            class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('manage-konsulenter') || request()->routeIs('konsulenter*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                 <span>💼</span> Konsulenter
                             </a>
                         </div>

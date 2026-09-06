@@ -82,6 +82,14 @@ class ImportDialogsCommand extends Command
             File::put($statusFile, json_encode(['status' => 'running', 'progress' => 30, 'message' => 'Rå dialog-tabel findes allerede. Springer fil-indlæsning over...']));
         }
 
+        // 🟢 TRIN 2.5: Tilføj indekser her, så join-handlinger og forespørgsler kører på millisekunder!
+        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 40, 'message' => 'Opretter indekser for lynhurtig behandling...']));
+        DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_token (token(50))');
+        DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_dialogid (dialogID)');
+        if (Schema::hasTable('token')) {
+            DB::statement('ALTER TABLE token ADD INDEX idx_token_token (token(50))');
+        }
+
         // 3. Konvertering til nye tabeller
         File::put($statusFile, json_encode(['status' => 'running', 'progress' => 50, 'message' => 'Nulstiller tabeller...']));
         
