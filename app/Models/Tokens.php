@@ -12,8 +12,8 @@ class Tokens extends Model
         'token',
     ];
       
-    public function sagertokens()
+    public function sagers()
     {
-        return $this->belongsToMany(Tokens::class, 'sager_tokens', 'sag_id', 'token_id');
+        return $this->belongsToMany(Sager::class, 'sager_tokens', 'token_id', 'sag_id');
     }
 }

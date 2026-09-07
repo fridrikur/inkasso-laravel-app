@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
 class ImportDialogsCommand extends Command
 {
     protected $signature = 'import:dialoger {--file=storage/dialoger.sql} {--token-file=storage/token.sql}';
-    protected $description = 'Importerer token og dialoger, og filtrerer ugyldige sags-koblinger fra';
+    protected $description = 'Importerer token og dialoger, og sikrer korrekt relation via sager_tokens og sagers.id';
 
     public function handle()
     {
@@ -82,12 +82,34 @@ class ImportDialogsCommand extends Command
             File::put($statusFile, json_encode(['status' => 'running', 'progress' => 30, 'message' => 'Rå dialog-tabel findes allerede. Springer fil-indlæsning over...']));
         }
 
-        // 🟢 TRIN 2.5: Tilføj indekser her, så join-handlinger og forespørgsler kører på millisekunder!
+        // 🟢 TRIN 2.5: Opret indekser for lynhurtig behandling
         File::put($statusFile, json_encode(['status' => 'running', 'progress' => 40, 'message' => 'Opretter indekser for lynhurtig behandling...']));
         DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_token (token(50))');
         DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_dialogid (dialogID)');
         if (Schema::hasTable('token')) {
             DB::statement('ALTER TABLE token ADD INDEX idx_token_token (token(50))');
+        }
+
+        // 🟢 TRIN 2.8: Synkroniser tokens og sager_tokens til produktionstabellerne
+        if (Schema::hasTable('token')) {
+            File::put($statusFile, json_encode(['status' => 'running', 'progress' => 45, 'message' => 'Synkroniserer tokens og sager_tokens...']));
+            
+            // Indsæt selve tokens i den rigtige 'tokens'-tabel
+            DB::statement("
+                INSERT IGNORE INTO tokens (token, created_at, updated_at)
+                SELECT DISTINCT token, NOW(), NOW()
+                FROM token
+                WHERE token IS NOT NULL AND TRIM(token) != '';
+            ");
+
+            // Opret relaterede rækker i 'sager_tokens' ved at matche token.brugerID mod sagers.id
+            DB::statement("
+                INSERT IGNORE INTO sager_tokens (sag_id, token_id, created_at, updated_at)
+                SELECT DISTINCT t.brugerID AS sag_id, tk.id AS token_id, NOW(), NOW()
+                FROM token t
+                INNER JOIN tokens tk ON tk.token = t.token
+                WHERE t.brugerID IS NOT NULL;
+            ");
         }
 
         // 3. Konvertering til nye tabeller
@@ -98,13 +120,14 @@ class ImportDialogsCommand extends Command
         DB::table('dialog_messages')->truncate();
         DB::table('dialogs')->delete();
 
-        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 70, 'message' => 'Opretter hoved-dialoger (filtrerer ugyldige fra)...']));
+        // 🟢 TRIN 4: Opret hoved-dialoger via den sikre sager_tokens bro (sikrer match mod sagers.id)
+        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 70, 'message' => 'Opretter hoved-dialoger via sagertokens...']));
         
         DB::statement("
             INSERT INTO dialogs (id, sag_id, type, created_at, updated_at)
             SELECT 
                 DISTINCT d.dialogID AS id, 
-                t.brugerID AS sag_id, 
+                st.sag_id AS sag_id, 
                 CASE d.typeID 
                     WHEN 1 THEN 'bogholderi' 
                     WHEN 2 THEN 'historik' 
@@ -113,11 +136,10 @@ class ImportDialogsCommand extends Command
                 NOW(),
                 NOW()
             FROM dialog d
-            INNER JOIN token t ON t.token = d.token
+            INNER JOIN tokens tk ON tk.token = d.token
+            INNER JOIN sager_tokens st ON st.token_id = tk.id
             WHERE d.dialogID IS NOT NULL 
-              AND t.brugerID IS NOT NULL 
-              AND TRIM(t.brugerID) != '' 
-              AND t.brugerID != '';
+              AND st.sag_id IS NOT NULL;
         ");
 
         File::put($statusFile, json_encode(['status' => 'running', 'progress' => 85, 'message' => 'Overfører relaterede dialog-beskeder...']));
