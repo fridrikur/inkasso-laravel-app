@@ -82,12 +82,27 @@ class ImportDialogsCommand extends Command
             File::put($statusFile, json_encode(['status' => 'running', 'progress' => 30, 'message' => 'Rå dialog-tabel findes allerede. Springer fil-indlæsning over...']));
         }
 
-        // 🟢 TRIN 2.5: Opret indekser for lynhurtig behandling
+        // 🟢 TRIN 2.5: Opret indekser sikkert (uden at fejle hvis de allerede findes)
         File::put($statusFile, json_encode(['status' => 'running', 'progress' => 40, 'message' => 'Opretter indekser for lynhurtig behandling...']));
-        DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_token (token(50))');
-        DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_dialogid (dialogID)');
+        
+        try {
+            DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_token (token(50))');
+        } catch (\Exception $e) {
+            // Ignorer hvis indekset allerede findes
+        }
+
+        try {
+            DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_dialogid (dialogID)');
+        } catch (\Exception $e) {
+            // Ignorer hvis indekset allerede findes
+        }
+
         if (Schema::hasTable('token')) {
-            DB::statement('ALTER TABLE token ADD INDEX idx_token_token (token(50))');
+            try {
+                DB::statement('ALTER TABLE token ADD INDEX idx_token_token (token(50))');
+            } catch (\Exception $e) {
+                // Ignorer hvis indekset allerede findes
+            }
         }
 
         // 🟢 TRIN 2.8: Synkroniser tokens og sager_tokens til produktionstabellerne
