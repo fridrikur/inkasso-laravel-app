@@ -10,11 +10,14 @@ use Illuminate\Support\Facades\Schema;
 class ImportDialogsCommand extends Command
 {
     protected $signature = 'import:dialoger {--file=storage/dialoger.sql} {--token-file=storage/token.sql}';
-    protected $description = 'Importerer token og dialoger sikkert via PHP, og sikrer korrekt relation via sager_tokens og sagers.id';
+    protected $description = 'Importerer token og dialoger sikkert, og sikrer korrekt relation via sager_tokens og sagers.id';
 
     public function handle()
     {
+        $this->info('Starter dialog-import kommando...');
+
         $statusFile = storage_path('app/import_status.json');
+        $dbConfig = config('database.connections.' . config('database.default'));
         
         $tokenOpt = $this->option('token-file');
         $fileOpt = $this->option('file');
@@ -22,22 +25,19 @@ class ImportDialogsCommand extends Command
         $tokenFilePath = str_starts_with($tokenOpt, '/') ? $tokenOpt : base_path($tokenOpt);
         $filePath = str_starts_with($fileOpt, '/') ? $fileOpt : base_path($fileOpt);
 
-        // 1. Importér token.sql via PHP
+        // 1. Importér token.sql
         if (file_exists($tokenFilePath)) {
+            $this->info('Finder og importerer token.sql...');
             File::put($statusFile, json_encode(['status' => 'running', 'progress' => 10, 'message' => 'Indlæser token.sql...']));
             DB::statement('DROP TABLE IF EXISTS token;');
             
-            $sql = file_get_contents($tokenFilePath);
-            // Udskift evt. tabelfavn eller kør statements opdelt
-            foreach (array_filter(array_map('trim', explode(';', $sql))) as $statement) {
-                if (!empty($statement)) {
-                    try {
-                        DB::statement($statement);
-                    } catch (\Exception $e) {
-                        // Ignorer mindre sql-fejl ved oprettelse hvis tabellen findes
-                    }
-                }
-            }
+            // Brug en midlertidig konfigurationsfil til mysql for at undgå password-advarsler og fastlåsning
+            $cnfFile = storage_path('app/mysql_temp.cnf');
+            File::put($cnfFile, "[client]\nhost=\"{$dbConfig['host']}\"\nuser=\"{$dbConfig['username']}\"\npassword=\"{$dbConfig['password']}\"\ndatabase=\"{$dbConfig['database']}\"");
+            
+            $tokenCmd = sprintf('mysql --defaults-file=%s < %s 2>&1', escapeshellarg($cnfFile), escapeshellarg($tokenFilePath));
+            system($tokenCmd);
+            @unlink($cnfFile);
         }
 
         // 2. Tjek om den rå 'dialog'-tabel findes med data
@@ -51,48 +51,37 @@ class ImportDialogsCommand extends Command
         }
 
         if (!$hasRawData) {
+            $this->info('Importerer gigantisk dialoger.sql fil (dette kan tage et øjeblik)...');
             File::put($statusFile, json_encode(['status' => 'running', 'progress' => 30, 'message' => 'Indlæser dialoger.sql-fil...']));
 
             if (!file_exists($filePath)) {
-                File::put($statusFile, json_encode(['status' => 'error', 'progress' => 0, 'message' => 'dialoger.sql blev ikke fundet på stien: ' . $filePath]));
+                $this->error('dialoger.sql blev ikke fundet på stien: ' . $filePath);
+                File::put($statusFile, json_encode(['status' => 'error', 'progress' => 0, 'message' => 'dialoger.sql blev ikke fundet.']));
                 return 1;
             }
             
             DB::statement('DROP TABLE IF EXISTS dialog;');
 
-            // Da dialoger.sql kan være stor, læser vi den linje for linje eller udfører den sikkert
-            $handle = fopen($filePath, "r");
-            if ($handle) {
-                $query = "";
-                DB::statement('SET foreign_key_checks = 0;');
-                while (($line = fgets($handle)) !== false) {
-                    if (str_starts_with(trim($line), '--') || str_starts_with(trim($line), '/*')) {
-                        continue;
-                    }
-                    $query .= $line;
-                    if (str_ends_with(trim($line), ';')) {
-                        try {
-                            DB::statement($query);
-                        } catch (\Exception $e) {
-                            // Fortsæt selvom enkelte linjer fejler
-                        }
-                        $query = "";
-                    }
-                }
-                fclose($handle);
-                DB::statement('SET foreign_key_checks = 1;');
-            }
+            // Brug den lynhurtige system-import via sikker cnf-fil i stedet for sløv PHP-parser
+            $cnfFile = storage_path('app/mysql_temp.cnf');
+            File::put($cnfFile, "[client]\nhost=\"{$dbConfig['host']}\"\nuser=\"{$dbConfig['username']}\"\npassword=\"{$dbConfig['password']}\"\ndatabase=\"{$dbConfig['database']}\"");
+            
+            $command = sprintf('mysql --defaults-file=%s < %s 2>&1', escapeshellarg($cnfFile), escapeshellarg($filePath));
+            system($command);
+            @unlink($cnfFile);
 
             if (!Schema::hasTable('dialog') || DB::table('dialog')->count() === 0) {
-                File::put($statusFile, json_encode(['status' => 'error', 'progress' => 0, 'message' => 'Fejl under import: dialog-tabellen er tom eller blev ikke oprettet.']));
+                $this->error('Fejl under import: dialog-tabellen er tom eller blev ikke oprettet.');
+                File::put($statusFile, json_encode(['status' => 'error', 'progress' => 0, 'message' => 'Fejl under import: tabellen er tom.']));
                 return 1;
             }
         } else {
-            File::put($statusFile, json_encode(['status' => 'running', 'progress' => 30, 'message' => 'Rå dialog-tabel findes allerede. Springer fil-indlæsning over...']));
+            $this->info('Rå dialog-tabel findes allerede. Springer fil-indlæsning over...');
         }
 
         // 🟢 TRIN 2.5: Opret indekser sikkert
-        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 40, 'message' => 'Opretter indekser for lynhurtig behandling...']));
+        $this->info('Opretter indekser...');
+        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 40, 'message' => 'Opretter indekser...']));
         
         try { DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_token (token(50))'); } catch (\Exception $e) {}
         try { DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_dialogid (dialogID)'); } catch (\Exception $e) {}
@@ -102,6 +91,7 @@ class ImportDialogsCommand extends Command
 
         // 🟢 TRIN 2.8: Synkroniser tokens og sager_tokens med COLLATE
         if (Schema::hasTable('token')) {
+            $this->info('Synkroniserer tokens og sager_tokens...');
             File::put($statusFile, json_encode(['status' => 'running', 'progress' => 45, 'message' => 'Synkroniserer tokens og sager_tokens...']));
             
             DB::statement("
@@ -121,6 +111,7 @@ class ImportDialogsCommand extends Command
         }
 
         // 3. Konvertering til nye tabeller
+        $this->info('Nulstiller tabeller og konverterer data...');
         File::put($statusFile, json_encode(['status' => 'running', 'progress' => 50, 'message' => 'Nulstiller tabeller...']));
         
         DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
@@ -129,7 +120,8 @@ class ImportDialogsCommand extends Command
         DB::table('dialogs')->delete();
 
         // 🟢 TRIN 4: Opret hoved-dialoger med COLLATE
-        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 70, 'message' => 'Opretter hoved-dialoger via sagertokens...']));
+        $this->info('Opretter hoved-dialoger via sagertokens...');
+        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 70, 'message' => 'Opretter hoved-dialoger...']));
         
         DB::statement("
             INSERT INTO dialogs (id, sag_id, type, created_at, updated_at)
@@ -150,7 +142,8 @@ class ImportDialogsCommand extends Command
               AND st.sag_id IS NOT NULL;
         ");
 
-        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 85, 'message' => 'Overfører relaterede dialog-beskeder...']));
+        $this->info('Overfører relaterede dialog-beskeder...');
+        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 85, 'message' => 'Overfører beskedindhold...']));
         
         DB::statement("
             INSERT INTO dialog_messages (dialog_id, sender_id, tekst, dato, created_at, updated_at)
@@ -166,7 +159,8 @@ class ImportDialogsCommand extends Command
             WHERE d.tekst IS NOT NULL AND TRIM(d.tekst) != '';
         ");
 
-        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 95, 'message' => 'Opretter dialog_participants...']));
+        $this->info('Opretter dialog_participants...');
+        File::put($statusFile, json_encode(['status' => 'running', 'progress' => 95, 'message' => 'Opretter deltagere...']));
         
         DB::statement("
             INSERT IGNORE INTO dialog_participants (dialog_id, user_type, user_id, created_at, updated_at)
@@ -188,6 +182,7 @@ class ImportDialogsCommand extends Command
 
         DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
 
+        $this->info('Import fuldført succesfuldt!');
         File::put($statusFile, json_encode(['status' => 'completed', 'progress' => 100, 'message' => 'Dialoger og tokens blev importeret succesfuldt!']));
         return 0;
     }
