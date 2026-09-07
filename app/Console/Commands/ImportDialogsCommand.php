@@ -135,7 +135,7 @@ class ImportDialogsCommand extends Command
         DB::table('dialog_messages')->truncate();
         DB::table('dialogs')->delete();
 
-        // 🟢 TRIN 4: Opret hoved-dialoger via den sikre sager_tokens bro (sikrer match mod sagers.id)
+        // 🟢 TRIN 4: Opret hoved-dialoger med COLLATE for at undgå kollations-fejl
         File::put($statusFile, json_encode(['status' => 'running', 'progress' => 70, 'message' => 'Opretter hoved-dialoger via sagertokens...']));
         
         DB::statement("
@@ -151,7 +151,7 @@ class ImportDialogsCommand extends Command
                 NOW(),
                 NOW()
             FROM dialog d
-            INNER JOIN tokens tk ON tk.token = d.token
+            INNER JOIN tokens tk ON tk.token COLLATE utf8mb4_unicode_ci = d.token COLLATE utf8mb4_unicode_ci
             INNER JOIN sager_tokens st ON st.token_id = tk.id
             WHERE d.dialogID IS NOT NULL 
               AND st.sag_id IS NOT NULL;
