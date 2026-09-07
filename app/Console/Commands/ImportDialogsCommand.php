@@ -10,37 +10,37 @@ use Illuminate\Support\Facades\Schema;
 class ImportDialogsCommand extends Command
 {
     protected $signature = 'import:dialoger {--file=storage/dialoger.sql} {--token-file=storage/token.sql}';
-    protected $description = 'Importerer token og dialoger, og sikrer korrekt relation via sager_tokens og sagers.id';
+    protected $description = 'Importerer token og dialoger sikkert via PHP, og sikrer korrekt relation via sager_tokens og sagers.id';
 
     public function handle()
     {
         $statusFile = storage_path('app/import_status.json');
-        $dbConfig = config('database.connections.' . config('database.default'));
         
-        // Hent stierne og tjek om de er relative (fra terminalen) eller absolutte (fra Livewire)
         $tokenOpt = $this->option('token-file');
         $fileOpt = $this->option('file');
 
         $tokenFilePath = str_starts_with($tokenOpt, '/') ? $tokenOpt : base_path($tokenOpt);
         $filePath = str_starts_with($fileOpt, '/') ? $fileOpt : base_path($fileOpt);
 
-        // 1. Importér token.sql først (hvis filen findes)
+        // 1. Importér token.sql via PHP
         if (file_exists($tokenFilePath)) {
             File::put($statusFile, json_encode(['status' => 'running', 'progress' => 10, 'message' => 'Indlæser token.sql...']));
             DB::statement('DROP TABLE IF EXISTS token;');
             
-            $tokenCmd = sprintf(
-                'mysql -h %s -u %s %s %s < %s 2>&1',
-                escapeshellarg($dbConfig['host']),
-                escapeshellarg($dbConfig['username']),
-                $dbConfig['password'] ? '-p' . escapeshellarg($dbConfig['password']) : '',
-                escapeshellarg($dbConfig['database']),
-                escapeshellarg($tokenFilePath)
-            );
-            system($tokenCmd); // Ignorer returkode for at undgå at password-advarsel stopper processen
+            $sql = file_get_contents($tokenFilePath);
+            // Udskift evt. tabelfavn eller kør statements opdelt
+            foreach (array_filter(array_map('trim', explode(';', $sql))) as $statement) {
+                if (!empty($statement)) {
+                    try {
+                        DB::statement($statement);
+                    } catch (\Exception $e) {
+                        // Ignorer mindre sql-fejl ved oprettelse hvis tabellen findes
+                    }
+                }
+            }
         }
 
-        // 2. Tjek om den rå 'dialog'-tabel findes
+        // 2. Tjek om den rå 'dialog'-tabel findes med data
         $hasRawData = false;
         try {
             if (Schema::hasTable('dialog') && DB::table('dialog')->count() > 0) {
@@ -59,19 +59,30 @@ class ImportDialogsCommand extends Command
             }
             
             DB::statement('DROP TABLE IF EXISTS dialog;');
-            
-            $command = sprintf(
-                'mysql -h %s -u %s %s %s < %s 2>&1',
-                escapeshellarg($dbConfig['host']),
-                escapeshellarg($dbConfig['username']),
-                $dbConfig['password'] ? '-p' . escapeshellarg($dbConfig['password']) : '',
-                escapeshellarg($dbConfig['database']),
-                escapeshellarg($filePath)
-            );
 
-            system($command); // Kør uden at tjekke returkode
+            // Da dialoger.sql kan være stor, læser vi den linje for linje eller udfører den sikkert
+            $handle = fopen($filePath, "r");
+            if ($handle) {
+                $query = "";
+                DB::statement('SET foreign_key_checks = 0;');
+                while (($line = fgets($handle)) !== false) {
+                    if (str_starts_with(trim($line), '--') || str_starts_with(trim($line), '/*')) {
+                        continue;
+                    }
+                    $query .= $line;
+                    if (str_ends_with(trim($line), ';')) {
+                        try {
+                            DB::statement($query);
+                        } catch (\Exception $e) {
+                            // Fortsæt selvom enkelte linjer fejler
+                        }
+                        $query = "";
+                    }
+                }
+                fclose($handle);
+                DB::statement('SET foreign_key_checks = 1;');
+            }
 
-            // Tjek om tabellen rent faktisk blev oprettet og indeholder data
             if (!Schema::hasTable('dialog') || DB::table('dialog')->count() === 0) {
                 File::put($statusFile, json_encode(['status' => 'error', 'progress' => 0, 'message' => 'Fejl under import: dialog-tabellen er tom eller blev ikke oprettet.']));
                 return 1;
@@ -80,21 +91,13 @@ class ImportDialogsCommand extends Command
             File::put($statusFile, json_encode(['status' => 'running', 'progress' => 30, 'message' => 'Rå dialog-tabel findes allerede. Springer fil-indlæsning over...']));
         }
 
-        // 🟢 TRIN 2.5: Opret indekser sikkert (uden at fejle hvis de allerede findes)
+        // 🟢 TRIN 2.5: Opret indekser sikkert
         File::put($statusFile, json_encode(['status' => 'running', 'progress' => 40, 'message' => 'Opretter indekser for lynhurtig behandling...']));
         
-        try {
-            DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_token (token(50))');
-        } catch (\Exception $e) {}
-
-        try {
-            DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_dialogid (dialogID)');
-        } catch (\Exception $e) {}
-
+        try { DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_token (token(50))'); } catch (\Exception $e) {}
+        try { DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_dialogid (dialogID)'); } catch (\Exception $e) {}
         if (Schema::hasTable('token')) {
-            try {
-                DB::statement('ALTER TABLE token ADD INDEX idx_token_token (token(50))');
-            } catch (\Exception $e) {}
+            try { DB::statement('ALTER TABLE token ADD INDEX idx_token_token (token(50))'); } catch (\Exception $e) {}
         }
 
         // 🟢 TRIN 2.8: Synkroniser tokens og sager_tokens med COLLATE
