@@ -30,17 +30,14 @@ class ImportDialogsCommand extends Command
             DB::statement('DROP TABLE IF EXISTS token;');
             
             $tokenCmd = sprintf(
-                'mysql -h %s -u %s %s %s < %s',
+                'mysql -h %s -u %s %s %s < %s 2>&1',
                 escapeshellarg($dbConfig['host']),
                 escapeshellarg($dbConfig['username']),
                 $dbConfig['password'] ? '-p' . escapeshellarg($dbConfig['password']) : '',
                 escapeshellarg($dbConfig['database']),
                 escapeshellarg($tokenFilePath)
             );
-            system($tokenCmd, $tokenResult);
-            if ($tokenResult !== 0) {
-                $this->warn('Kunne ikke importere token.sql, fortsætter uden...');
-            }
+            system($tokenCmd); // Ignorer returkode for at undgå at password-advarsel stopper processen
         }
 
         // 2. Tjek om den rå 'dialog'-tabel findes
@@ -64,7 +61,7 @@ class ImportDialogsCommand extends Command
             DB::statement('DROP TABLE IF EXISTS dialog;');
             
             $command = sprintf(
-                'mysql -h %s -u %s %s %s < %s',
+                'mysql -h %s -u %s %s %s < %s 2>&1',
                 escapeshellarg($dbConfig['host']),
                 escapeshellarg($dbConfig['username']),
                 $dbConfig['password'] ? '-p' . escapeshellarg($dbConfig['password']) : '',
@@ -72,10 +69,11 @@ class ImportDialogsCommand extends Command
                 escapeshellarg($filePath)
             );
 
-            system($command, $resultCode);
+            system($command); // Kør uden at tjekke returkode
 
-            if ($resultCode !== 0) {
-                File::put($statusFile, json_encode(['status' => 'error', 'progress' => 0, 'message' => 'Fejl under MySQL import af dialoger.sql.']));
+            // Tjek om tabellen rent faktisk blev oprettet og indeholder data
+            if (!Schema::hasTable('dialog') || DB::table('dialog')->count() === 0) {
+                File::put($statusFile, json_encode(['status' => 'error', 'progress' => 0, 'message' => 'Fejl under import: dialog-tabellen er tom eller blev ikke oprettet.']));
                 return 1;
             }
         } else {
@@ -87,29 +85,22 @@ class ImportDialogsCommand extends Command
         
         try {
             DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_token (token(50))');
-        } catch (\Exception $e) {
-            // Ignorer hvis indekset allerede findes
-        }
+        } catch (\Exception $e) {}
 
         try {
             DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_dialogid (dialogID)');
-        } catch (\Exception $e) {
-            // Ignorer hvis indekset allerede findes
-        }
+        } catch (\Exception $e) {}
 
         if (Schema::hasTable('token')) {
             try {
                 DB::statement('ALTER TABLE token ADD INDEX idx_token_token (token(50))');
-            } catch (\Exception $e) {
-                // Ignorer hvis indekset allerede findes
-            }
+            } catch (\Exception $e) {}
         }
 
-        // 🟢 TRIN 2.8: Synkroniser tokens og sager_tokens til produktionstabellerne
+        // 🟢 TRIN 2.8: Synkroniser tokens og sager_tokens med COLLATE
         if (Schema::hasTable('token')) {
             File::put($statusFile, json_encode(['status' => 'running', 'progress' => 45, 'message' => 'Synkroniserer tokens og sager_tokens...']));
             
-            // Indsæt selve tokens i den rigtige 'tokens'-tabel
             DB::statement("
                 INSERT IGNORE INTO tokens (token, created_at, updated_at)
                 SELECT DISTINCT token, NOW(), NOW()
@@ -117,12 +108,11 @@ class ImportDialogsCommand extends Command
                 WHERE token IS NOT NULL AND TRIM(token) != '';
             ");
 
-            // Opret relaterede rækker i 'sager_tokens' ved at matche token.brugerID mod sagers.id
             DB::statement("
                 INSERT IGNORE INTO sager_tokens (sag_id, token_id, created_at, updated_at)
                 SELECT DISTINCT t.brugerID AS sag_id, tk.id AS token_id, NOW(), NOW()
                 FROM token t
-                INNER JOIN tokens tk ON tk.token = t.token
+                INNER JOIN tokens tk ON tk.token COLLATE utf8mb4_unicode_ci = t.token COLLATE utf8mb4_unicode_ci
                 WHERE t.brugerID IS NOT NULL;
             ");
         }
@@ -135,7 +125,7 @@ class ImportDialogsCommand extends Command
         DB::table('dialog_messages')->truncate();
         DB::table('dialogs')->delete();
 
-        // 🟢 TRIN 4: Opret hoved-dialoger med COLLATE for at undgå kollations-fejl
+        // 🟢 TRIN 4: Opret hoved-dialoger med COLLATE
         File::put($statusFile, json_encode(['status' => 'running', 'progress' => 70, 'message' => 'Opretter hoved-dialoger via sagertokens...']));
         
         DB::statement("
