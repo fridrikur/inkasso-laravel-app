@@ -314,9 +314,9 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                         Gem skabelon
                     </button>
                     
-                    <button type="button" wire:click="executeImport" wire:loading.attr="disabled" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition cursor-pointer">
-                        <span wire:loading.remove>Start Importér &rarr;</span>
-                        <span wire:loading>Importerer...</span>
+                    <button type="button" @click="showConfirmModal = false; $wire.runDialogImportDirectly()" wire:loading.attr="disabled" class="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">
+                        <span wire:loading.remove>Ja, start import 🚀</span>
+                        <span wire:loading>Importerer data... ⏳</span>
                     </button>
                 </div>
             </div>
