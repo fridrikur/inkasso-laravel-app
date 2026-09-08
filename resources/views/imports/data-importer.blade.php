@@ -78,7 +78,6 @@
                         </p>
                     @endif
 
-                    {{-- 🟢 REDIGERBAR TEXTAREA MED FORKLARING OM PIVOT-TABELLER OG UDGÅEDE FELTER --}}
                     <div x-show="showExplanation" x-transition class="pt-4 border-t border-amber-200/60 space-y-2">
                         <label class="block text-xs font-bold text-amber-900">Teknisk forklaring på de uparrede og omstrukturerede felter (redigerbar):</label>
                         <textarea rows="10" class="w-full bg-white border border-amber-300 rounded-2xl p-3.5 text-xs font-mono text-slate-700 outline-none focus:border-indigo-500 resize-y leading-relaxed">1. HISTORIK, BOGHOLDERI & KLIENTINFO:
@@ -101,7 +100,7 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                 </div>
             @endif
 
-            {{-- 📊 VISUEL PARRINGSOVERSIGT (FORSVINDER NÅR MAN KLIKKER PÅ REDIGÉR MAPPING) --}}
+            {{-- 📊 VISUEL PARRINGSOVERSIGT --}}
             <div x-show="!showFieldMapping" x-transition class="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
                 <details class="group">
                     <summary class="flex items-center justify-between p-6 cursor-pointer select-none bg-slate-50/50 hover:bg-slate-100/60 transition">
@@ -118,18 +117,12 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                     </summary>
 
                     <div class="p-6 border-t border-slate-100 bg-white space-y-6">
-                        
-                        {{-- 🎛️ KNAP TIL AT ÅBNE FELT-MAPPING OG SKJULE DENNE OVERSIGT --}}
                         <div class="flex items-center justify-between bg-indigo-50/60 border border-indigo-100 rounded-2xl p-4">
                             <div>
                                 <h4 class="font-bold text-indigo-950 text-xs">Vil du ændre felt-parringen?</h4>
                                 <p class="text-[11px] text-indigo-700">Skift til fuld redigering for at koble gamle kolonner til de nye databasefelter.</p>
                             </div>
-                            <button 
-                                type="button" 
-                                @click="showFieldMapping = true" 
-                                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-xs whitespace-nowrap"
-                            >
+                            <button type="button" @click="showFieldMapping = true" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-xs whitespace-nowrap">
                                 Redigér mapping af felter 🛠️
                             </button>
                         </div>
@@ -207,7 +200,7 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                     <div class="p-6 border-t border-slate-100 space-y-6 bg-white">
                         @if(!empty($templates) && count($templates) > 0)
                             @foreach($templates as $tpl)
-                                <div x-data="{ editing: false, tempName: '{{ $tpl->name }}' }" class="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+                                <div class="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-4">
                                     <div class="flex items-center justify-between gap-4 flex-wrap">
                                         <div>
                                             <h4 class="font-bold text-slate-900 text-sm flex items-center gap-2">
@@ -264,12 +257,12 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                 </div>
             @endif
 
-            {{-- KOBLE KOLONNER MED PIVOT- OG RELATIONS-MARKERING (VISES KUN NÅR MAN KLIKKER PÅ REDIGÉR MAPPING) --}}
+            {{-- KOBLE KOLONNER --}}
             <div x-show="showFieldMapping" x-transition class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
                 <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
                     <div>
                         <h3 class="text-sm font-bold uppercase tracking-wider text-slate-900">Koble gamle kolonner til nye databasefelter</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Vælg hvilken kolonne fra filen der svarer til systemfelterne. Felter markeret med <span class="text-purple-700 font-bold">Relation (Pivot)</span> slåes automatisk op via ID.</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Vælg hvilken kolonne fra filen der svarer til systemfelterne.</p>
                     </div>
                     <button type="button" @click="showFieldMapping = false" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-xl transition cursor-pointer">✕ Luk & Tilbage</button>
                 </div>
@@ -283,11 +276,10 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                             ]);
                         @endphp
 
-                        <div id="map-field-{{ $targetKey }}" class="flex items-center justify-between bg-slate-50/50 p-3.5 rounded-2xl border {{ $isPivotRelation ? 'border-purple-200 bg-purple-50/20' : 'border-slate-200/80' }} scroll-mt-6">
+                        <div class="flex items-center justify-between bg-slate-50/50 p-3.5 rounded-2xl border {{ $isPivotRelation ? 'border-purple-200 bg-purple-50/20' : 'border-slate-200/80' }}">
                             <span class="text-xs font-bold text-slate-800 w-1/3">
                                 {{ $targetLabel }} 
                                 <span class="text-[10px] text-slate-400 font-mono font-normal block mt-0.5">DB: {{ $targetKey }}</span>
-                                
                                 @if($isPivotRelation)
                                     <span class="inline-flex items-center px-2 py-0.5 mt-1 text-[9px] font-bold uppercase tracking-wider rounded-md bg-purple-100 text-purple-700 border border-purple-200">
                                         🔗 Relation (Pivot-tabel)
@@ -304,19 +296,13 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                                         <option value="{{ $source }}">{{ $source }}</option>
                                     @endforeach
                                 </select>
-                                
-                                @if($isPivotRelation)
-                                    <p class="text-[10px] text-purple-600 italic px-1">
-                                        * Systemet slår ID op og opretter automatisk relationen i pivot-tabellen.
-                                    </p>
-                                @endif
                             </div>
                         </div>
                     @endforeach
                 </div>
             </div>
 
-            {{-- GEM SKABELON & START IMPORT (KUN ÉN KLAR START-KNAP) --}}
+            {{-- GEM SKABELON & START IMPORT --}}
             <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div class="w-full sm:flex-1">
                     <label class="block text-xs font-bold text-slate-700 mb-1">Gem denne mapping som en ny skabelon</label>
@@ -353,43 +339,26 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
         </div>
     @endif
 
-    {{-- EKSTRA SEKTION: LYNFAST SYSTEM-IMPORT & BAGGRUNDSIMPORT (SQL) --}}
+    {{-- EKSTRA SEKTION: DIREKTE DIALOG-IMPORT & SYSTEM-IMPORT --}}
     <div class="space-y-6 pt-6 border-t border-slate-200">
         
-        {{-- BAGGRUNDSIMPORT AF DIALOGER MED BEKRÆFTELSES-MODAL --}}
-        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4" 
-            x-data="{ showConfirmModal: false }"
-            @if($isImportingDialogs) wire:poll.1s="checkDialogImportStatus" @endif>
-            
+        {{-- DIREKTE IMPORT AF DIALOGER MED BEKRÆFTELSES-MODAL --}}
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4" x-data="{ showConfirmModal: false }">
             <div>
-                <h3 class="text-xs font-bold text-slate-800 mb-1">Baggrundsimport af Dialoger & Tokens (Gigantisk SQL)</h3>
-                <p class="text-[11px] text-slate-500">Kør importen af store SQL-filer uafhængigt af browser-timeouts.</p>
+                <h3 class="text-xs font-bold text-slate-800 mb-1">Import af Dialoger & Tokens (Direkte kørsel)</h3>
+                <p class="text-[11px] text-slate-500">Kør importen direkte fra serveren. Tager under et minut.</p>
             </div>
 
             <div class="flex items-center gap-4 flex-wrap">
-                <input type="text" wire:model="dialogFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" @if($isImportingDialogs) disabled @endif placeholder="Dialog fil">
-                <input type="text" wire:model="tokenFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" @if($isImportingDialogs) disabled @endif placeholder="Token fil">
+                <input type="text" wire:model="dialogFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="Dialog fil">
+                <input type="text" wire:model="tokenFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="Token fil">
                 
-                {{-- ÅBNER MODALEN I STEDET FOR STANDARD BROWSER CONFIRM --}}
-                <button type="button" @click="showConfirmModal = true" @if($isImportingDialogs) disabled @endif class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50">
+                <button type="button" @click="showConfirmModal = true" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer">
                     Start Dialog-import 🚀
                 </button>
             </div>
 
-            {{-- PROGRESS BAR --}}
-            @if($isImportingDialogs)
-                <div class="mt-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl p-4 space-y-2.5 animate-pulse">
-                    <div class="flex justify-between text-xs font-bold text-indigo-950">
-                        <span>{{ $dialogImportMessage }}</span>
-                        <span>{{ $dialogImportProgress }}%</span>
-                    </div>
-                    <div class="w-full bg-indigo-200/70 rounded-full h-3 overflow-hidden p-0.5">
-                        <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: {{ $dialogImportProgress }}%"></div>
-                    </div>
-                </div>
-            @endif
-
-            {{-- 🟢 FLOT BEKRÆFTELSES-MODAL --}}
+            {{-- 🟢 BEKRÆFTELSES-MODAL --}}
             <div x-show="showConfirmModal" 
                 x-cloak
                 class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
@@ -400,9 +369,7 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0">
                 
-                <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-5"
-                    @click.outside="showConfirmModal = false">
-                    
+                <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-5" @click.outside="showConfirmModal = false">
                     <button type="button" @click="showConfirmModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">&times;</button>
                     
                     <div class="flex items-center gap-3.5">
@@ -413,7 +380,7 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                         </div>
                         <div>
                             <h3 class="text-base font-bold text-slate-900">Bekræft dialog-import</h3>
-                            <p class="text-xs text-slate-500">Er du sikker på, at du vil starte importen af store SQL-filer?</p>
+                            <p class="text-xs text-slate-500">Er du sikker på, at du vil starte importen?</p>
                         </div>
                     </div>
 
@@ -433,16 +400,17 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                             Annuller
                         </button>
                         
-                        <button type="button" @click="showConfirmModal = false; $wire.startBackgroundDialogImport()" class="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">
-                            Ja, start import 🚀
+                        <button type="button" @click="showConfirmModal = false; $wire.runDialogImportDirectly()" wire:loading.attr="disabled" class="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">
+                            <span wire:loading.remove>Ja, start import 🚀</span>
+                            <span wire:loading>Importerer data... ⏳</span>
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-        {{-- 2. KOMPLET SYSTEM-IMPORT (MED PROGRESS BAR) --}}
-        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4"
-             @if($isImportingSystem) wire:poll.1s="checkSystemImportStatus" @endif>
+
+        {{-- 2. KOMPLET SYSTEM-IMPORT --}}
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4" @if($isImportingSystem) wire:poll.1s="checkSystemImportStatus" @endif>
             <div>
                 <h3 class="text-xs font-bold text-slate-800 mb-1">Alternativ: Lynfast system-import (Direkte SQL)</h3>
                 <p class="text-[11px] text-slate-500">Kør komplet system-import direkte fra serverens <code>storage/</code> mappe.</p>
@@ -482,7 +450,6 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                 </button>
             </div>
 
-            {{-- 🟢 PROGRESS BAR TIL SYSTEM-IMPORT --}}
             @if($isImportingSystem)
                 <div class="mt-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl p-4 space-y-2.5 animate-pulse">
                     <div class="flex justify-between text-xs font-bold text-emerald-950">
@@ -496,6 +463,7 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
             @endif
         </div>
     </div>
+
     @if (session()->has('success'))
         <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-medium">
             {!! session('success') !!}

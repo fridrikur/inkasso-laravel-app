@@ -601,6 +601,32 @@ class DataImporter extends Component
         }
     }
     
+    public function runDialogImportDirectly()
+    {
+        // Sørg for at PHP har nok tid (da det tager under et minut)
+        set_time_limit(120);
+
+        $filePath = storage_path('app/' . $this->dialogFile);
+        if (!file_exists($filePath)) {
+            $filePath = storage_path($this->dialogFile);
+        }
+
+        try {
+            // Kør kommandoen direkte i samme proces
+            $exitCode = Artisan::call('import:dialoger', [
+                '--file' => $filePath
+            ]);
+
+            if ($exitCode === 0) {
+                session()->flash('success', '🎉 Dialoger og tokens blev importeret succesfuldt!');
+            } else {
+                session()->flash('error', 'Fejl under import af dialoger.');
+            }
+        } catch (\Throwable $e) {
+            session()->flash('error', 'Fejl under kørsel: ' . $e->getMessage());
+        }
+    }
+    
     public function render()
     {
         return view('imports.data-importer', [
