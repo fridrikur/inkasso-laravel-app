@@ -602,7 +602,7 @@ class DataImporter extends Component
     
     public function runDialogImportDirectly()
     {
-        // Sørg for at PHP har nok tid (da det tager under et minut)
+        // Giv scriptet nok tid (da det tager under et minut)
         set_time_limit(120);
 
         $filePath = storage_path('app/' . $this->dialogFile);
@@ -610,10 +610,15 @@ class DataImporter extends Component
             $filePath = storage_path($this->dialogFile);
         }
 
+        $tokenPath = storage_path('app/' . $this->tokenFile);
+        if (!file_exists($tokenPath)) {
+            $tokenPath = storage_path($this->tokenFile);
+        }
+
         try {
-            // Kør kommandoen direkte i samme proces
             $exitCode = Artisan::call('import:dialoger', [
-                '--file' => $filePath
+                '--file' => $filePath,
+                '--token-file' => $tokenPath,
             ]);
 
             if ($exitCode === 0) {
@@ -622,7 +627,7 @@ class DataImporter extends Component
                 session()->flash('error', 'Fejl under import af dialoger.');
             }
         } catch (\Throwable $e) {
-            session()->flash('error', 'Fejl under kørsel: ' . $e->getMessage());
+            session()->flash('error', 'Databasefejl under import: ' . $e->getMessage());
         }
     }
 
