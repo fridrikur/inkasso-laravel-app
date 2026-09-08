@@ -606,6 +606,7 @@ class DataImporter extends Component
     public function runDialogImportDirectly()
     {
         set_time_limit(120);
+        $this->isDirectImporting = true;
 
         $filePath = storage_path('app/' . $this->dialogFile);
         if (!file_exists($filePath)) {
@@ -630,6 +631,8 @@ class DataImporter extends Component
             }
         } catch (\Throwable $e) {
             session()->flash('error', 'Databasefejl under import: ' . $e->getMessage());
+        } finally {
+            $this->isDirectImporting = false;
         }
     }
 
