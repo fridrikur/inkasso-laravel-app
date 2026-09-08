@@ -315,9 +315,9 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                     </button>
                     
                     <button type="button" @click="showConfirmModal = false; $wire.runDialogImportDirectly()" wire:loading.attr="disabled" class="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">
-                        <span wire:loading.remove>Ja, start import 🚀</span>
-                        <span wire:loading>Importerer data... ⏳</span>
-                    </button>
+                    <span wire:loading.remove>Ja, start import 🚀</span>
+                    <span wire:loading>Importerer data... ⏳</span>
+                </button>
                 </div>
             </div>
         </div>
