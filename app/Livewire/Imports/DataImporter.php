@@ -482,9 +482,11 @@ class DataImporter extends Component
         $this->systemImportProgress = 5;
 
         $artisanPath = base_path('artisan');
+        $phpPath = PHP_BINARY; // Bruger den præcise PHP-binærfil, som serveren kører med nu
         
         $cmd = sprintf(
-            'php %s import:system --user=%s --kreditor=%s --konsulent=%s --sagsbehandler=%s --debitor=%s --sager=%s > /dev/null 2>&1 &',
+            '%s %s import:system --user=%s --kreditor=%s --konsulent=%s --sagsbehandler=%s --debitor=%s --sager=%s > /dev/null 2>&1 &',
+            escapeshellarg($phpPath),
             escapeshellarg($artisanPath),
             escapeshellarg($this->userFile),
             escapeshellarg($this->kreditorFile),
@@ -499,8 +501,17 @@ class DataImporter extends Component
 
     public function startBackgroundDialogImport()
     {
-        $filePath = storage_path($this->dialogFile);
-        $tokenPath = storage_path($this->tokenFile);
+        // Sikr at filerne peger korrekt på storage-mappen (f.eks. storage_path('app/...') hvis de ligger der)
+        $filePath = storage_path('app/' . $this->dialogFile);
+        if (!file_exists($filePath)) {
+            $filePath = storage_path($this->dialogFile); // Fallback til standard storage
+        }
+
+        $tokenPath = storage_path('app/' . $this->tokenFile);
+        if (!file_exists($tokenPath)) {
+            $tokenPath = storage_path($this->tokenFile);
+        }
+
         $statusFile = storage_path('app/import_status.json');
 
         if (!file_exists(dirname($statusFile))) {
@@ -518,9 +529,11 @@ class DataImporter extends Component
         $this->dialogImportProgress = 5;
 
         $artisanPath = base_path('artisan');
+        $phpPath = PHP_BINARY; // Sikrer præcis samme PHP-miljø som webserveren kører
         
         $cmd = sprintf(
-            'php %s import:dialoger --file=%s --token-file=%s > /dev/null 2>&1 &', 
+            '%s %s import:dialoger --file=%s --token-file=%s > /dev/null 2>&1 &', 
+            escapeshellarg($phpPath),
             escapeshellarg($artisanPath), 
             escapeshellarg($filePath), 
             escapeshellarg($tokenPath)
@@ -528,7 +541,6 @@ class DataImporter extends Component
         
         exec($cmd);
     }
-
     public function approveMapping()
     {
         $this->validate([
