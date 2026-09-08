@@ -602,7 +602,6 @@ class DataImporter extends Component
     
     public function runDialogImportDirectly()
     {
-        // Giv scriptet nok tid (da det tager under et minut)
         set_time_limit(120);
 
         $filePath = storage_path('app/' . $this->dialogFile);
@@ -610,15 +609,10 @@ class DataImporter extends Component
             $filePath = storage_path($this->dialogFile);
         }
 
-        $tokenPath = storage_path('app/' . $this->tokenFile);
-        if (!file_exists($tokenPath)) {
-            $tokenPath = storage_path($this->tokenFile);
-        }
-
         try {
+            // Vi sender filen som parameter, præcis som kommandoklassen forventer det
             $exitCode = Artisan::call('import:dialoger', [
                 '--file' => $filePath,
-                '--token-file' => $tokenPath,
             ]);
 
             if ($exitCode === 0) {
