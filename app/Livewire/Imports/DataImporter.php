@@ -501,10 +501,9 @@ class DataImporter extends Component
 
     public function startBackgroundDialogImport()
     {
-        // Sikr at filerne peger korrekt på storage-mappen (f.eks. storage_path('app/...') hvis de ligger der)
         $filePath = storage_path('app/' . $this->dialogFile);
         if (!file_exists($filePath)) {
-            $filePath = storage_path($this->dialogFile); // Fallback til standard storage
+            $filePath = storage_path($this->dialogFile);
         }
 
         $tokenPath = storage_path('app/' . $this->tokenFile);
@@ -529,7 +528,7 @@ class DataImporter extends Component
         $this->dialogImportProgress = 5;
 
         $artisanPath = base_path('artisan');
-        $phpPath = PHP_BINARY; // Sikrer præcis samme PHP-miljø som webserveren kører
+        $phpPath = PHP_BINARY;
         
         $cmd = sprintf(
             '%s %s import:dialoger --file=%s --token-file=%s > /dev/null 2>&1 &', 
@@ -540,6 +539,24 @@ class DataImporter extends Component
         );
         
         exec($cmd);
+    }
+
+    public function checkDialogImportStatus()
+    {
+        $statusFile = storage_path('app/import_status.json');
+        if (!file_exists($statusFile)) return;
+
+        $data = json_decode(file_get_contents($statusFile), true);
+        $this->dialogImportMessage = $data['message'] ?? '';
+        $this->dialogImportProgress = $data['progress'] ?? 0;
+
+        if (($data['status'] ?? '') === 'completed') {
+            $this->isImportingDialogs = false;
+            session()->flash('success', '🎉 Dialoger og tokens blev importeret succesfuldt!');
+        } elseif (($data['status'] ?? '') === 'error') {
+            $this->isImportingDialogs = false;
+            session()->flash('error', 'Fejl ved baggrundsimport: ' . $this->dialogImportMessage);
+        }
     }
     public function approveMapping()
     {
@@ -559,24 +576,6 @@ class DataImporter extends Component
     public function resetMappingApproval()
     {
         $this->mappingApproved = false;
-    }
-
-    public function checkDialogImportStatus()
-    {
-        $statusFile = storage_path('app/import_status.json');
-        if (!file_exists($statusFile)) return;
-
-        $data = json_decode(file_get_contents($statusFile), true);
-        $this->dialogImportMessage = $data['message'] ?? '';
-        $this->dialogImportProgress = $data['progress'] ?? 0;
-
-        if (($data['status'] ?? '') === 'completed') {
-            $this->isImportingDialogs = false;
-            session()->flash('success', '🎉 Dialoger og tokens blev importeret succesfuldt!');
-        } elseif (($data['status'] ?? '') === 'error') {
-            $this->isImportingDialogs = false;
-            session()->flash('error', 'Fejl ved baggrundsimport: ' . $this->dialogImportMessage);
-        }
     }
 
     public function checkSystemImportStatus()
