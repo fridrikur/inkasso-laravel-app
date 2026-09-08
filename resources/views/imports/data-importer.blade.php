@@ -350,10 +350,10 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
             </div>
 
             <div class="flex items-center gap-4 flex-wrap">
-                <input type="text" wire:model="dialogFile" @if($isDirectImporting) disabled @endif class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="Dialog fil">
-                <input type="text" wire:model="tokenFile" @if($isDirectImporting) disabled @endif class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="Token fil">
+                <input type="text" wire:model="dialogFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="Dialog fil">
+                <input type="text" wire:model="tokenFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="Token fil">
                 
-                <button type="button" wire:click="runDialogImportDirectly" wire:loading.attr="disabled" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50 flex items-center gap-2">
+                <button type="button" wire:click="runDialogImportDirectly" wire:loading.attr="disabled" wire:target="runDialogImportDirectly" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50 flex items-center gap-2">
                     <span wire:loading.remove wire:target="runDialogImportDirectly">Start Dialog-import 🚀</span>
                     <span wire:loading wire:target="runDialogImportDirectly" class="flex items-center gap-2">
                         <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
