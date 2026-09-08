@@ -340,8 +340,7 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
     @endif
 
     {{-- DIREKTE IMPORT AF DIALOGER MED BEKRÆFTELSES-MODAL --}}
-        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4" 
-            x-data="{ showConfirmModal: false }">
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             
             <div>
                 <h3 class="text-xs font-bold text-slate-800 mb-1">Import af Dialoger & Tokens (Direkte kørsel)</h3>
@@ -352,14 +351,14 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                 <input type="text" wire:model="dialogFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="Dialog fil">
                 <input type="text" wire:model="tokenFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="Token fil">
                 
-                {{-- ÅBNER MODALEN --}}
-                <button type="button" @click="showConfirmModal = true" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer">
+                {{-- ÅBNER MODALEN VIA LIVEWIRE --}}
+                <button type="button" wire:click="confirmImport" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer">
                     Start Dialog-import 🚀
                 </button>
             </div>
 
-            {{-- 🟢 BEKRÆFTELSES-MODAL --}}
-            <div x-show="showConfirmModal" 
+            {{-- 🟢 BEKRÆFTELSES-MODAL STYRET AF LIVEWIRE --}}
+            <div x-show="$wire.showConfirmModal" 
                 x-cloak
                 class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
                 x-transition:enter="transition ease-out duration-200"
@@ -370,9 +369,9 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                 x-transition:leave-end="opacity-0">
                 
                 <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-5"
-                    @click.outside="showConfirmModal = false">
+                    @click.outside="$wire.set('showConfirmModal', false)">
                     
-                    <button type="button" @click="showConfirmModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">&times;</button>
+                    <button type="button" wire:click="$set('showConfirmModal', false)" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">&times;</button>
                     
                     <div class="flex items-center gap-3.5">
                         <div class="p-3.5 bg-indigo-50 rounded-2xl text-indigo-600 shrink-0">
@@ -398,14 +397,14 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                     </div>
 
                     <div class="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
-                        <button type="button" @click="showConfirmModal = false" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">
+                        <button type="button" wire:click="$set('showConfirmModal', false)" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">
                             Annuller
                         </button>
                         
-                        {{-- LUKKER MODALEN OG KALDER DEN SYNKRONE METODE --}}
-                        <button type="button" wire:click="runDialogImportDirectly" @click="showConfirmModal = false" wire:loading.attr="disabled" class="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">
-                            <span wire:loading.remove>Ja, start import 🚀</span>
-                            <span wire:loading>Importerer data... ⏳</span>
+                        {{-- UDLØSER IMPORTEN VED FØRSTE KLIK --}}
+                        <button type="button" wire:click="runDialogImportDirectly" wire:loading.attr="disabled" class="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">
+                            <span wire:loading.remove wire:target="runDialogImportDirectly">Ja, start import 🚀</span>
+                            <span wire:loading wire:target="runDialogImportDirectly">Importerer data... ⏳</span>
                         </button>
                     </div>
                 </div>

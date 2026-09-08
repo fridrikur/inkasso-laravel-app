@@ -84,10 +84,18 @@ class DataImporter extends Component
     public string $systemFlashMessage = '';
     public string $systemFlashType = 'success';
 
+    public bool $showConfirmModal = false;
+
     public function mount()
     {
         $this->loadTargetFields();
     }
+
+    public function confirmImport()
+    {
+        $this->showConfirmModal = true;
+    }
+
 
     public function updatedImportType()
     {
@@ -602,6 +610,7 @@ class DataImporter extends Component
     
     public function runDialogImportDirectly()
     {
+        $this->showConfirmModal = false;
         set_time_limit(120);
 
         $filePath = storage_path('app/' . $this->dialogFile);
@@ -610,7 +619,6 @@ class DataImporter extends Component
         }
 
         try {
-            // Vi sender filen som parameter, præcis som kommandoklassen forventer det
             $exitCode = Artisan::call('import:dialoger', [
                 '--file' => $filePath,
             ]);
