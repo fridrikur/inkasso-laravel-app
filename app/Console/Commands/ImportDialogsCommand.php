@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
 class ImportDialogsCommand extends Command
 {
     protected $signature = 'import:dialoger {--file=storage/dialoger.sql}';
-    protected $description = 'Importerer rå dialoger og mapper dem direkte til sagers.id via sagers.pnummer = dialog.token';
+    protected $description = 'Importerer rå dialoger og mapper dem direkte til sager.id via sager.pnummer = dialog.token';
 
     public function handle()
     {
@@ -68,8 +68,8 @@ class ImportDialogsCommand extends Command
         try { DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_token (token(50))'); } catch (\Exception $e) {}
         try { DB::statement('ALTER TABLE dialog ADD INDEX idx_dialog_dialogid (dialogID)'); } catch (\Exception $e) {}
 
-        // Sørg for at pnummer i sagers har et indeks for maksimal hastighed
-        try { DB::statement('ALTER TABLE sagers ADD INDEX idx_sagers_pnummer (pnummer(50))'); } catch (\Exception $e) {}
+        // Sørg for at pnummer i sager-tabellen har et indeks for maksimal hastighed
+        try { DB::statement('ALTER TABLE sager ADD INDEX idx_sager_pnummer (pnummer(50))'); } catch (\Exception $e) {}
 
         // 3. Nulstil produktionstabeller
         $this->info('Nulstiller eksisterende dialog-tabeller...');
@@ -80,8 +80,8 @@ class ImportDialogsCommand extends Command
         DB::table('dialog_messages')->truncate();
         DB::table('dialogs')->delete();
 
-        // 4. Opret hoved-dialoger ved at mappe dialog.token direkte til sagers.pnummer
-        $this->info('Opretter hoved-dialoger via sagers.pnummer = dialog.token...');
+        // 4. Opret hoved-dialoger ved at mappe dialog.token direkte til sager.pnummer
+        $this->info('Opretter hoved-dialoger via sager.pnummer = dialog.token...');
         File::put($statusFile, json_encode(['status' => 'running', 'progress' => 70, 'message' => 'Opretter hoved-dialoger...']));
         
         DB::statement("
@@ -97,7 +97,7 @@ class ImportDialogsCommand extends Command
                 NOW(),
                 NOW()
             FROM dialog d
-            INNER JOIN sagers s ON s.pnummer COLLATE utf8mb4_unicode_ci = d.token COLLATE utf8mb4_unicode_ci
+            INNER JOIN sager s ON s.pnummer COLLATE utf8mb4_unicode_ci = d.token COLLATE utf8mb4_unicode_ci
             WHERE d.dialogID IS NOT NULL;
         ");
 
@@ -143,8 +143,8 @@ class ImportDialogsCommand extends Command
 
         DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
 
-        $this->info('Dialoger blev importeret og mappet succesfuldt via pnummer!');
-        File::put($statusFile, json_encode(['status' => 'completed', 'progress' => 100, 'message' => 'Dialoger blev importeret succesfuldt via pnummer!']));
+        $this->info('Dialoger blev importeret og mappet succesfuldt via sager.pnummer!');
+        File::put($statusFile, json_encode(['status' => 'completed', 'progress' => 100, 'message' => 'Dialoger blev importeret succesfuldt via sager.pnummer!']));
         return 0;
     }
 }
