@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class DialogParticipant extends Model
 {
-    use HasFactory;
+    use HasFactory; //dialogParticipant
 
     protected $fillable = [
         'dialog_id',
