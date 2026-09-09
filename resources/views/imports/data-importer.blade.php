@@ -343,13 +343,12 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
         <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             
             <div>
-                <h3 class="text-xs font-bold text-slate-800 mb-1">Import af Dialoger & Tokens (Direkte kørsel)</h3>
+                <h3 class="text-xs font-bold text-slate-800 mb-1">Import af Dialoger (Direkte kørsel)</h3>
                 <p class="text-[11px] text-slate-500">Kør importen direkte. Tager under et minut.</p>
             </div>
 
             <div class="flex items-center gap-4 flex-wrap">
                 <input type="text" wire:model="dialogFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="Dialog fil">
-                <input type="text" wire:model="tokenFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="Token fil">
                 
                 {{-- ÅBNER MODALEN VIA LIVEWIRE --}}
                 <button type="button" wire:click="confirmImport" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer">
@@ -389,10 +388,6 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                         <div class="flex justify-between">
                             <span class="text-slate-400">Dialog-fil:</span>
                             <span class="font-bold text-slate-800" x-text="$wire.dialogFile"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Token-fil:</span>
-                            <span class="font-bold text-slate-800" x-text="$wire.tokenFile"></span>
                         </div>
                     </div>
 

@@ -24,7 +24,6 @@ class DataImporter extends Component
     public string $konsulentFile = 'konsulenter.sql';
     public string $sagsbehandlerFile = 'sagsbehandlere.sql';    
     public string $dialogFile = 'dialoger.sql';
-    public string $tokenFile = 'token.sql';
     
     public string $importType = 'sager';
     public $file;
@@ -95,7 +94,6 @@ class DataImporter extends Component
     {
         $this->showConfirmModal = true;
     }
-
 
     public function updatedImportType()
     {
@@ -334,7 +332,6 @@ class DataImporter extends Component
 
                     $dataToInsert = [];
                     $resolvedRelations = [];
-                    $pnummerValue = null; 
                     $rowHasError = false;
                     $rowErrors = [];
 
@@ -347,7 +344,7 @@ class DataImporter extends Component
                             if ($value === '') continue;
 
                             if ($targetField === 'token_id') {
-                                $pnummerValue = $value;
+                                // Token håndteres nu direkte via dialoger-importen
                                 continue; 
                             }
 
@@ -398,18 +395,6 @@ class DataImporter extends Component
                             $rel['foreign_key'] => $rel['id'],
                             'created_at' => now(),
                         ]);
-                    }
-
-                    if ($this->importType === 'sager' && !empty($pnummerValue)) {
-                        $tokenRecord = DB::table('tokens')->where('pnummer', $pnummerValue)->first();
-                        if ($tokenRecord) {
-                            DB::table('sager_tokens')->insertIgnore([
-                                'sag_id' => $sagId,
-                                'token_id' => $tokenRecord->id,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
                     }
 
                     $importedCount++;
@@ -490,7 +475,7 @@ class DataImporter extends Component
         $this->systemImportProgress = 5;
 
         $artisanPath = base_path('artisan');
-        $phpPath = PHP_BINARY; // Bruger den præcise PHP-binærfil, som serveren kører med nu
+        $phpPath = PHP_BINARY; 
         
         $cmd = sprintf(
             '%s %s import:system --user=%s --kreditor=%s --konsulent=%s --sagsbehandler=%s --debitor=%s --sager=%s > /dev/null 2>&1 &',
@@ -514,11 +499,6 @@ class DataImporter extends Component
             $filePath = storage_path($this->dialogFile);
         }
 
-        $tokenPath = storage_path('app/' . $this->tokenFile);
-        if (!file_exists($tokenPath)) {
-            $tokenPath = storage_path($this->tokenFile);
-        }
-
         $statusFile = storage_path('app/import_status.json');
 
         if (!file_exists(dirname($statusFile))) {
@@ -539,11 +519,10 @@ class DataImporter extends Component
         $phpPath = PHP_BINARY;
         
         $cmd = sprintf(
-            '%s %s import:dialoger --file=%s --token-file=%s > /dev/null 2>&1 &', 
+            '%s %s import:dialoger --file=%s > /dev/null 2>&1 &', 
             escapeshellarg($phpPath),
             escapeshellarg($artisanPath), 
-            escapeshellarg($filePath), 
-            escapeshellarg($tokenPath)
+            escapeshellarg($filePath)
         );
         
         exec($cmd);
@@ -560,12 +539,13 @@ class DataImporter extends Component
 
         if (($data['status'] ?? '') === 'completed') {
             $this->isImportingDialogs = false;
-            session()->flash('success', '🎉 Dialoger og tokens blev importeret succesfuldt!');
+            session()->flash('success', '🎉 Dialoger blev importeret succesfuldt!');
         } elseif (($data['status'] ?? '') === 'error') {
             $this->isImportingDialogs = false;
             session()->flash('error', 'Fejl ved baggrundsimport: ' . $this->dialogImportMessage);
         }
     }
+
     public function approveMapping()
     {
         $this->validate([
@@ -624,7 +604,7 @@ class DataImporter extends Component
             ]);
 
             if ($exitCode === 0) {
-                session()->flash('success', '🎉 Dialoger og tokens blev importeret succesfuldt!');
+                session()->flash('success', '🎉 Dialoger blev importeret succesfuldt!');
             } else {
                 session()->flash('error', 'Fejl under import af dialoger.');
             }
