@@ -350,12 +350,6 @@ class SagerDataTable extends Component
         $query = app(SagerSearchService::class)->apply($query, $this->filters);
 
         $sagers = $query
-            ->withExists(['dialogs as has_unread_messages' => function ($q) {
-                $q->whereHas('messages', function ($m) {
-                    $m->whereNull('read_at')
-                      ->whereHas('sender.roles', fn($r) => $r->where('name', 'Kreditor'));
-                });
-            }])
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
