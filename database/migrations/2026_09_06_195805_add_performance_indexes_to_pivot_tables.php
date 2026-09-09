@@ -6,33 +6,43 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::table('sager_kreditor', function (Blueprint $table) {
-            $table->index(['kreditor_id', 'sag_id'], 'idx_kreditor_sag');
+        Schema::table('dialogs', function (Blueprint $table) {
+            $table->index('sag_id', 'dialogs_sag_id_index');
         });
 
-        Schema::table('kreditor_user', function (Blueprint $table) {
-            $table->index(['kreditor_id', 'user_id'], 'idx_kreditor_user');
+        Schema::table('dialog_messages', function (Blueprint $table) {
+            $table->index('dialog_id', 'dialog_messages_dialog_id_index');
+            $table->index('sender_id', 'dialog_messages_sender_id_index');
+            $table->index('read_at', 'dialog_messages_read_at_index');
         });
 
-        Schema::table('kreditor_sagsbehandler', function (Blueprint $table) {
-            $table->index(['kreditor_id', 'sagsbehandler_id'], 'idx_kreditor_sb');
+        Schema::table('sagers', function (Blueprint $table) {
+            $table->index('deleted_at', 'sagers_deleted_at_index');
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::table('sager_kreditor', function (Blueprint $table) {
-            $table->dropIndex('idx_kreditor_sag');
+        Schema::table('dialogs', function (Blueprint $table) {
+            $table->dropIndex('dialogs_sag_id_index');
         });
 
-        Schema::table('kreditor_user', function (Blueprint $table) {
-            $table->dropIndex('idx_kreditor_user');
+        Schema::table('dialog_messages', function (Blueprint $table) {
+            $table->dropIndex('dialog_messages_dialog_id_index');
+            $table->dropIndex('dialog_messages_sender_id_index');
+            $table->dropIndex('dialog_messages_read_at_index');
         });
 
-        Schema::table('kreditor_sagsbehandler', function (Blueprint $table) {
-            $table->dropIndex('idx_kreditor_sb');
+        Schema::table('sagers', function (Blueprint $table) {
+            $table->dropIndex('sagers_deleted_at_index');
         });
     }
 };
