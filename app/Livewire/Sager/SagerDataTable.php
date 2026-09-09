@@ -12,6 +12,7 @@ use App\Services\Search\SagerSearchService;
 use App\Traits\BuildsSagerQuery;
 use App\Traits\HasCrudModal; // 🟢 1. Tilføj trait
 use Livewire\Attributes\Url; 
+use Illuminate\Support\Facades\Log;
 
 class SagerDataTable extends Component
 {
@@ -345,34 +346,61 @@ class SagerDataTable extends Component
     {
         $start = microtime(true);
 
+        // 1. Base query
+        $t = microtime(true);
+
         $baseModeQuery = $this->applyMode($this->baseQuery());
+
+        $baseQueryTime = (microtime(true) - $t) * 1000;
+
+        // 2. Count
+        $t = microtime(true);
+
         $totalInMode = (clone $baseModeQuery)->count();
+
+        $countTime = (microtime(true) - $t) * 1000;
+
+        // 3. Filters
+        $t = microtime(true);
 
         $query = $this->applyFilters($baseModeQuery);
         $query = app(SagerSearchService::class)->apply($query, $this->filters);
 
+        $filterTime = (microtime(true) - $t) * 1000;
+
+        // 4. Pagination + eager loading
+        $t = microtime(true);
+
         $sagers = $query
+            ->with([
+                'sagerdebitor',
+                'sagerkreditor',
+            ])
             ->withExists([
                 'dialogs as has_unread_messages' => function ($q) {
                     $q->whereHas('messages', function ($m) {
                         $m->whereNull('read_at')
-                            ->whereHas('sender.roles', fn($r) =>
-                                $r->where('name', 'Kreditor')
-                            );
+                        ->whereHas(
+                            'sender.roles',
+                            fn ($r) => $r->where('name', 'Kreditor')
+                        );
                     });
-                }
+                },
             ])
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
-        $time = round((microtime(true) - $start) * 1000, 2);
+        $queryTime = (microtime(true) - $t) * 1000;
 
-        logger()->info('SagerDataTable render time', [
-            'time_ms' => $time,
-            'mode' => $this->mode,
-            'search' => $this->search,
-            'filters' => $this->filters,
-            'total' => $sagers->total(),
+        // Total
+        $totalTime = (microtime(true) - $start) * 1000;
+
+        logger()->info('SagerDataTable timing', [
+            'base_query' => round($baseQueryTime, 2) . ' ms',
+            'count'      => round($countTime, 2) . ' ms',
+            'filters'    => round($filterTime, 2) . ' ms',
+            'pagination' => round($queryTime, 2) . ' ms',
+            'total'      => round($totalTime, 2) . ' ms',
         ]);
 
         return view(
@@ -381,7 +409,6 @@ class SagerDataTable extends Component
                 'sagers' => $sagers,
                 'modeCount' => $totalInMode,
                 'totalRecords' => $sagers->total(),
-                'renderTime' => $time,
             ]
         );
     }   
