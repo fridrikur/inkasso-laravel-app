@@ -10,7 +10,6 @@
             
             this.timer = setInterval(() => {
                 if (this.progress < 95) {
-                    // Kør hurtigt i starten, derefter lidt langsommere
                     let increment = Math.floor(Math.random() * 15) + 10;
                     this.progress = Math.min(this.progress + increment, 95);
                     
@@ -26,7 +25,7 @@
         }
     }"
     x-init="startProgress()"
-    {{ $attributes->merge(['class' => 'w-full max-w-md mx-auto p-6 bg-white rounded-3xl border border-slate-100 shadow-2xl space-y-5']) }}
+    {{ $attributes->merge(['class' => 'w-full max-w-md p-6 bg-white rounded-3xl border border-slate-100 shadow-2xl space-y-5 my-12 mx-auto']) }}
 >
     
     {{-- TOP: IKON & TILE --}}
@@ -55,7 +54,7 @@
         </div>
     </div>
 
-    {{-- MIDTEN: PROGRESS BAR DER KØRER REELT TIL 100% --}}
+    {{-- MIDTEN: PROGRESS BAR --}}
     <div class="space-y-2">
         <div class="flex justify-between items-center text-xs font-bold text-slate-600">
             <span class="flex items-center gap-1.5" x-show="progress < 100">
@@ -69,7 +68,6 @@
             <span class="font-mono text-indigo-600" x-text="progress + '%'"></span>
         </div>
 
-        {{-- BREEZE PROGRESS TRACK --}}
         <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden relative p-0.5">
             <div 
                 class="h-full rounded-full transition-all duration-200 ease-out shadow-sm"
@@ -79,31 +77,16 @@
         </div>
     </div>
 
-    {{-- BUNDEN: MIKRO-STEPS DER TÆNDER ÉN AF GANGEN --}}
+    {{-- BUNDEN: MIKRO-STEPS --}}
     <div class="grid grid-cols-3 gap-2 pt-1 text-[11px] font-semibold">
-        {{-- STEP 1 --}}
-        <div 
-            class="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl border transition-all"
-            :class="step >= 1 ? 'text-indigo-700 bg-indigo-50/80 border-indigo-200' : 'text-slate-400 bg-slate-50 border-transparent'"
-        >
+        <div class="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl border transition-all" :class="step >= 1 ? 'text-indigo-700 bg-indigo-50/80 border-indigo-200' : 'text-slate-400 bg-slate-50 border-transparent'">
             <span x-text="step >= 1 ? '✓' : '•'"></span> Henter
         </div>
-
-        {{-- STEP 2 --}}
-        <div 
-            class="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl border transition-all"
-            :class="step >= 2 ? 'text-indigo-700 bg-indigo-50/80 border-indigo-200' : 'text-slate-400 bg-slate-50 border-transparent'"
-        >
+        <div class="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl border transition-all" :class="step >= 2 ? 'text-indigo-700 bg-indigo-50/80 border-indigo-200' : 'text-slate-400 bg-slate-50 border-transparent'">
             <span x-text="step >= 2 ? '✓' : '•'"></span> Parter
         </div>
-
-        {{-- STEP 3 --}}
-        <div 
-            class="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl border transition-all"
-            :class="step >= 3 ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-400 bg-slate-50 border-transparent'"
-        >
+        <div class="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl border transition-all" :class="step >= 3 ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-400 bg-slate-50 border-transparent'">
             <span x-text="step >= 3 ? '✓' : '•'"></span> Klargør
         </div>
     </div>
-
 </div>

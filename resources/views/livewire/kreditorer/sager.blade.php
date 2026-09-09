@@ -14,6 +14,7 @@
                 </p>
             </div>
         </div>
+        <p>....</p>
         
             <livewire:sager.sager-data-table
                 mode="kreditor"

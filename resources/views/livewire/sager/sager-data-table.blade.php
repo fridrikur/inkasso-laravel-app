@@ -1,21 +1,8 @@
 <div class="space-y-6 relative min-h-[60vh]">
-    @if(app()->environment('local'))
-    <div class="text-xs text-gray-400 mb-2">
-        Server render: {{ $renderTime ?? '—' }} ms
-    </div>
-@endif
-    {{-- FULDSKÆRMS LOADER KØRER VED ALLE LIVEWIRE AKTIONER (Søgning, faneskift, paginering) --}}
-    <div wire:loading.delay class="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-sm w-full text-center">
-            <div class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-indigo-500/20 border-t-indigo-500"></div>
-            <h2 class="text-base font-bold text-slate-900 tracking-tight">Arbejder...</h2>
-            <p class="mt-1 text-xs text-slate-500">Henter sager og opdaterer data...</p>
-        </div>
-    </div>
-
-    {{-- LIVEWIRE INITIAL / GLOBAL LOADER --}}
-    <div wire:loading.delay wire:target="search, filterByKreditor, sortBy, gotoPage, nextPage, previousPage" class="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-sm w-full">
+    
+    {{-- 🟢 FULDSKÆRMS CENTRERING AF MODALEN MIDT PÅ SKÆRMEN --}}
+    <div wire:loading.delay wire:target="setMode, filterByKreditor" class="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-md mx-auto">
             <x-ui-loader type="sager" :count="$modeCount" />
         </div>
     </div>
@@ -259,7 +246,7 @@
                 wire:click="setMode('full')"
                 class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm cursor-pointer hover:border-slate-400 transition group"
             >
-                <p class="text-sm font-medium text-slate-500 group-hover:text-slate-800 transition">Viser i denne fane</p>
+                <p class="text-sm font-medium text-slate-500 group-hover:text-slate-800 transition">Sager</p>
                 <p class="mt-2 text-3xl font-bold text-slate-900">{{ $sagers->total() }}</p>
             </div>
 
@@ -267,7 +254,7 @@
                 wire:click="setMode('active')"
                 class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm cursor-pointer hover:border-indigo-300 transition group"
             >
-                <p class="text-sm font-medium text-slate-500 group-hover:text-indigo-600 transition">Totalt antal i tilstand</p>
+                <p class="text-sm font-medium text-slate-500 group-hover:text-indigo-600 transition">Totalt antal sager i denne tilstand</p>
                 <p class="mt-2 text-3xl font-bold text-indigo-600">{{ $modeCount }}</p>
             </div>
 

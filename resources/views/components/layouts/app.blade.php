@@ -326,6 +326,22 @@
                                 </span>
                             </div>
                         </div>
+                        <div class="flex items-center gap-3">
+                    <div x-data="{ 
+                        seconds: {{ $sessionSeconds ?? 0 }},
+                        formatTime(sec) {
+                            let h = String(Math.floor(sec / 3600)).padStart(2, '0');
+                            let m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+                            let s = String(sec % 60).padStart(2, '0');
+                            return `${h}:${m}:${s}`;
+                        }
+                    }" 
+                    x-init="setInterval(() => seconds++, 1000)"
+                    class="hidden rounded-xl bg-slate-100 px-3.5 py-2 text-sm text-slate-600 sm:block">
+                        Session:
+                        <span x-text="formatTime(seconds)" class="font-mono font-bold text-slate-900">00:00:00</span>
+                    </div>
+                </div>
                     @endauth
 
                     @role('Admin')
@@ -364,7 +380,7 @@
             </main>
         </div>
     </div>
-
+    <livewire:admin.quick-menu />
     @livewireScripts
 </body>
 </html>
