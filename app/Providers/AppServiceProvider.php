@@ -6,6 +6,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,6 +36,13 @@ class AppServiceProvider extends ServiceProvider
                 'last_login_browser' => request()->userAgent(),
                 'login_count' => ($user->login_count ?? 0) + 1,
             ])->save();
+        });
+        DB::listen(function ($query) {
+            Log::info('SQL', [
+                'time' => $query->time . ' ms',
+                'sql' => $query->sql,
+                'bindings' => $query->bindings,
+            ]);
         });
     }
 }
