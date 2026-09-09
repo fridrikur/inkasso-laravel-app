@@ -8,6 +8,7 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\PerformanceMonitor;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -16,14 +17,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(PerformanceMonitor::class, function ($app) {
+            return new PerformanceMonitor();
+        });
     }
 
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+    public function boot(PerformanceMonitor $monitor): void
     {
+        $monitor->start();
+        
         Paginator::useTailwind();
 
         Event::listen(Login::class, function ($event) {

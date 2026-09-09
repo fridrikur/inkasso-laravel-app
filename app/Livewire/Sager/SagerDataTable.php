@@ -346,30 +346,32 @@ class SagerDataTable extends Component
     {
         $start = microtime(true);
 
-        // 1. Base query
-        $t = microtime(true);
+        /*
+        |--------------------------------------------------------------------------
+        | Base query + mode
+        |--------------------------------------------------------------------------
+        */
 
-        $baseModeQuery = $this->applyMode($this->baseQuery());
+        $baseModeQuery = $this->applyMode(
+            $this->baseQuery()
+        );
 
-        $baseQueryTime = (microtime(true) - $t) * 1000;
-
-        // 2. Count
-        $t = microtime(true);
-
-        $totalInMode = (clone $baseModeQuery)->count();
-
-        $countTime = (microtime(true) - $t) * 1000;
-
-        // 3. Filters
-        $t = microtime(true);
+        /*
+        |--------------------------------------------------------------------------
+        | Filters
+        |--------------------------------------------------------------------------
+        */
 
         $query = $this->applyFilters($baseModeQuery);
-        $query = app(SagerSearchService::class)->apply($query, $this->filters);
 
-        $filterTime = (microtime(true) - $t) * 1000;
+        $query = app(SagerSearchService::class)
+            ->apply($query, $this->filters);
 
-        // 4. Pagination + eager loading
-        $t = microtime(true);
+        /*
+        |--------------------------------------------------------------------------
+        | Sager data
+        |--------------------------------------------------------------------------
+        */
 
         $sagers = $query
             ->with([
@@ -380,35 +382,40 @@ class SagerDataTable extends Component
                 'dialogs as has_unread_messages' => function ($q) {
                     $q->whereHas('messages', function ($m) {
                         $m->whereNull('read_at')
-                        ->whereHas(
-                            'sender.roles',
-                            fn ($r) => $r->where('name', 'Kreditor')
-                        );
+                            ->whereHas(
+                                'sender.roles',
+                                fn ($r) => $r->where('name', 'Kreditor')
+                            );
                     });
                 },
             ])
-            ->orderBy($this->sortField, $this->sortDirection)
+            ->orderBy(
+                $this->sortField,
+                $this->sortDirection
+            )
             ->paginate($this->perPage);
 
-        $queryTime = (microtime(true) - $t) * 1000;
+        /*
+        |--------------------------------------------------------------------------
+        | Debug timing
+        |--------------------------------------------------------------------------
+        */
 
-        // Total
-        $totalTime = (microtime(true) - $start) * 1000;
+        $time = round((microtime(true) - $start) * 1000, 2);
 
-        logger()->info('SagerDataTable timing', [
-            'base_query' => round($baseQueryTime, 2) . ' ms',
-            'count'      => round($countTime, 2) . ' ms',
-            'filters'    => round($filterTime, 2) . ' ms',
-            'pagination' => round($queryTime, 2) . ' ms',
-            'total'      => round($totalTime, 2) . ' ms',
+        logger()->info('SagerDataTable render time', [
+            'time_ms' => $time,
+            'mode' => $this->mode,
+            'search' => $this->search,
+            'filters' => $this->filters,
+            'total' => $sagers->total(),
         ]);
 
         return view(
             'livewire.sager.sager-data-table',
             [
                 'sagers' => $sagers,
-                'modeCount' => $totalInMode,
-                'totalRecords' => $sagers->total(),
+                'modeCount' => $sagers->total(),
             ]
         );
     }   
@@ -416,25 +423,44 @@ class SagerDataTable extends Component
     /**
      * Genberegner tællerne for kreditor-fanebrikkerne
      */
-    public function loadKreditorStats()
+    public function loadKreditorStats(): void
     {
         if ($this->uiMode === 'table') {
             return;
         }
 
-        $this->kreditors = Kreditorer::all();
+        $this->kreditors = Kreditorer::query()
+            ->select('id', 'navn')
+            ->orderBy('navn')
+            ->get();
 
-        $this->recordsByKreditor = $this->kreditors->mapWithKeys(function ($kreditor) {
-            return [
-                $kreditor->navn => $this->applyMode(
-                    $this->baseQuery()->whereHas('sagerkreditor', function ($q) use ($kreditor) {
-                        $q->where('kreditors.id', $kreditor->id);
-                    })
-                )->count()
-            ];
-        })->toArray();
+        // Start with the same base query used by the table.
+        $query = $this->baseQuery();
 
-        $this->modeCount = $this->applyMode($this->baseQuery())->count();
+        // Apply the current mode, except "kreditor".
+        $query = $this->applyMode($query);
+
+        // One grouped query instead of one COUNT per kreditor.
+        $counts = $this->applyMode($this->baseQuery())
+        ->join('sager_kreditor', 'sagers.id', '=', 'sager_kreditor.sag_id')
+        ->reorder()
+        ->select('sager_kreditor.kreditor_id')
+        ->selectRaw('COUNT(DISTINCT sagers.id) as total')
+        ->groupBy('sager_kreditor.kreditor_id')
+        ->pluck('total', 'kreditor_id');
+
+        $this->recordsByKreditor = $this->kreditors
+            ->mapWithKeys(function ($kreditor) use ($counts) {
+                return [
+                    $kreditor->navn => (int) ($counts[$kreditor->id] ?? 0),
+                ];
+            })
+            ->toArray();
+
+        // Overall count.
+        $this->modeCount = $this->applyMode(
+            $this->baseQuery()
+        )->count();
     }
 
     public function setMode(string $mode): void
