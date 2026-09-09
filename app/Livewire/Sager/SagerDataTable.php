@@ -343,6 +343,8 @@ class SagerDataTable extends Component
 
     public function render()
     {
+        $start = microtime(true);
+
         $baseModeQuery = $this->applyMode($this->baseQuery());
         $totalInMode = (clone $baseModeQuery)->count();
 
@@ -350,8 +352,28 @@ class SagerDataTable extends Component
         $query = app(SagerSearchService::class)->apply($query, $this->filters);
 
         $sagers = $query
+            ->withExists([
+                'dialogs as has_unread_messages' => function ($q) {
+                    $q->whereHas('messages', function ($m) {
+                        $m->whereNull('read_at')
+                            ->whereHas('sender.roles', fn($r) =>
+                                $r->where('name', 'Kreditor')
+                            );
+                    });
+                }
+            ])
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
+
+        $time = round((microtime(true) - $start) * 1000, 2);
+
+        logger()->info('SagerDataTable render time', [
+            'time_ms' => $time,
+            'mode' => $this->mode,
+            'search' => $this->search,
+            'filters' => $this->filters,
+            'total' => $sagers->total(),
+        ]);
 
         return view(
             'livewire.sager.sager-data-table',
@@ -359,6 +381,7 @@ class SagerDataTable extends Component
                 'sagers' => $sagers,
                 'modeCount' => $totalInMode,
                 'totalRecords' => $sagers->total(),
+                'renderTime' => $time,
             ]
         );
     }   

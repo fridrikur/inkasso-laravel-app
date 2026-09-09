@@ -1,5 +1,9 @@
 <div class="space-y-6 relative min-h-[60vh]">
-
+    @if(app()->environment('local'))
+    <div class="text-xs text-gray-400 mb-2">
+        Server render: {{ $renderTime ?? '—' }} ms
+    </div>
+@endif
     {{-- FULDSKÆRMS LOADER KØRER VED ALLE LIVEWIRE AKTIONER (Søgning, faneskift, paginering) --}}
     <div wire:loading.delay class="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-sm w-full text-center">
