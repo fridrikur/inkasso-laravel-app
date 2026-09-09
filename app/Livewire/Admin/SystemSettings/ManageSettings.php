@@ -14,6 +14,15 @@ use Illuminate\Support\Facades\Hash;
 
 class ManageSettings extends Component
 {
+    public bool $showDbInfo = false;
+    public string $dbUnlockInput = '';
+    public string $dbUnlockError = '';
+    
+    public string $dbName = '';
+    public string $dbHost = '';
+    public string $dbDriver = '';
+    public string $dbUser = '';
+    
     //låse kode
     public string $unlock_code = '';
     public string $unlock_code_confirmation = '';
@@ -70,6 +79,15 @@ class ManageSettings extends Component
 
     public function mount(): void
     {
+        // Hent database connection information
+        $connectionName = config('database.default');
+        $connectionConfig = config("database.connections.{$connectionName}");
+        
+        $this->dbName   = $connectionConfig['database'] ?? 'Ukendt';
+        $this->dbHost   = $connectionConfig['host'] ?? 'Ukendt';
+        $this->dbDriver = $connectionConfig['driver'] ?? 'mysql';
+        $this->dbUser   = $connectionConfig['username'] ?? 'Ukendt';
+
         $settings = app(SettingsService::class);
         $currentRequestUrl = request()->getSchemeAndHttpHost();
 
@@ -276,6 +294,26 @@ class ManageSettings extends Component
         return redirect()->route('dashboard');
     }
 
+    public function unlockDbInfo(): void
+    {
+        $setting = SystemSetting::where('key', 'global_unlock_code')->first();
+
+        if (!$setting || !Hash::check($this->dbUnlockInput, $setting->value)) {
+            $this->dbUnlockError = 'Forkert unlock kode.';
+            return;
+        }
+
+        $this->dbUnlockError = '';
+        $this->showDbInfo = true;
+        $this->reset('dbUnlockInput');
+    }
+
+    public function lockDbInfo(): void
+    {
+        $this->showDbInfo = false;
+        $this->reset(['dbUnlockInput', 'dbUnlockError']);
+    }
+    
     public function render()
     {
         return view('livewire.admin.system-settings.manage-settings', [
