@@ -6,7 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Sager;
 use App\Services\Search\SagerSearchService;
-use App\Models\Afslutning;
+use App\Models\afslutning;
 
 class Search extends Component
 {
@@ -35,7 +35,7 @@ class Search extends Component
         $this->filter = request('filter', 'all');
         $this->afslutningId = request('afslutning_id');
 
-        $this->afslutninger = Afslutning::orderBy('tekst')->get();
+        $this->afslutninger = afslutning::orderBy('tekst')->get();
 
         $this->search = request()->string('search')->toString();
     }
