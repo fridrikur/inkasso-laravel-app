@@ -216,7 +216,7 @@
 
     @endforeach
 
-</div>$
+</div>
 
 
     </div>
