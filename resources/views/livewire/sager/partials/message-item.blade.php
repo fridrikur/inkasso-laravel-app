@@ -54,7 +54,7 @@
         </div>
     @else
         <p class="text-slate-800 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100">
-            {{ $msg->tekst }}
+            {!! $msg->tekst !!}
         </p>
     @endif
 </div>

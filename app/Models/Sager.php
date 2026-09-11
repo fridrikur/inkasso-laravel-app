@@ -53,6 +53,7 @@ class Sager extends Model
         'senesterapport' => 'datetime',
         'opgivet' => 'datetime',
         'dato' => 'datetime',
+        'hovedstol' => 'decimal:2',
     ];
 
     protected static ?\Illuminate\Support\Collection $fieldSettingsCache = null;

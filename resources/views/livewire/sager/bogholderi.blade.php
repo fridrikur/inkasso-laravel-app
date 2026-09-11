@@ -108,7 +108,7 @@
                         </div>
                     </div>
                 @else
-                    <p class="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{{ $message->tekst }}</p>
+                    <p class="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{!! $message->tekst !!}</p>
                 @endif
             </div>
         @empty
