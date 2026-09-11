@@ -53,7 +53,6 @@ class Sager extends Model
         'senesterapport' => 'datetime',
         'opgivet' => 'datetime',
         'dato' => 'datetime',
-        'hovedstol' => 'decimal:2',
     ];
 
     protected static ?\Illuminate\Support\Collection $fieldSettingsCache = null;
@@ -408,5 +407,22 @@ class Sager extends Model
         }
 
         return $query;
+    }
+
+    public function getHovedstolAttribute($value)
+    {
+        if (empty($value)) {
+            return 0.0;
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        // Rens dansk format (fjern tusindtals-punktum og skift komma til punktum)
+        $clean = str_replace('.', '', $value);
+        $clean = str_replace(',', '.', $clean);
+
+        return (float) $clean;
     }
 }
