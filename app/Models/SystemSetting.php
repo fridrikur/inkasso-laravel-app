@@ -22,4 +22,10 @@ class SystemSetting extends Model
     {
         return static::get('two_factor_provider', 'totp'); // 'totp' eller 'twilio'
     }
+    
+    public static function get(string $key, mixed $default = null): mixed
+    {
+        $setting = static::find($key);
+        return $setting ? $setting->value : $default;
+    }
 }

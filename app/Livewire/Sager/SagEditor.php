@@ -931,6 +931,13 @@ class SagEditor extends Component
     {
         SagEditRequest::where('id', $requestId)
             ->update(['status' => 'rejected']);
+
+        // Nulstil/fjern øjeblikkeligt fra listen lokalt for at undgå UI-låsning
+        $this->pendingRequests = $this->pendingRequests->reject(fn($r) => $r->id === $requestId);
+
+        if ($this->pendingRequests->isEmpty()) {
+            $this->showTakeoverModal = false;
+        }
     }
 
     #[On('currentsagLockActivated')]
