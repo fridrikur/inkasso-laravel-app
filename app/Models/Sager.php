@@ -425,4 +425,9 @@ class Sager extends Model
 
         return (float) $clean;
     }
+
+    public function getStatusAttribute()
+    {
+        return $this->sagerStatus()->first();
+    }
 }

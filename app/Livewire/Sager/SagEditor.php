@@ -1133,7 +1133,6 @@ class SagEditor extends Component
             return;
         }
 
-        // Hent KUN anmodninger fra ANDRE brugere (frafiltrerer dig selv)
         $newRequests = SagEditRequest::where('sag_id', $this->sag->id)
             ->where('requested_by', '!=', auth()->id())
             ->where('status', 'pending')
@@ -1141,22 +1140,28 @@ class SagEditor extends Component
             ->latest()
             ->get();
 
-        // Åbn modalen ELLER opdatér listen HVIS der er nye anmodninger
+        // Hvis der er kommet NYE anmodninger, og modalen IKKE allerede er åben
         if ($newRequests->isNotEmpty()) {
+            if ($this->pendingRequests->isEmpty() && !$this->showTakeoverModal) {
+                $this->dispatch('play-knock-sound');
+            }
             $this->pendingRequests = $newRequests;
             if (!$this->showTakeoverModal) {
                 $this->showTakeoverModal = true;
             }
         } else {
-            // Nulstil hvis der ikke er nogen ventende
             $this->pendingRequests = collect();
+            if ($this->showTakeoverModal && $this->pendingRequests->isEmpty()) {
+                $this->showTakeoverModal = false;
+            }
         }
 
-        // Tjek om din egen anmodning blev accepteret af den anden bruger
+        // Tjek om din egen anmodning blev accepteret
         if ($this->myTakeoverRequest?->status === 'pending') {
             $this->loadMyTakeoverRequest();
             if ($this->myTakeoverRequest?->status === 'accepted') {
                 $this->syncLockState();
+                $this->dispatch('play-success-sound');
             }
         }
     }
