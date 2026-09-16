@@ -166,8 +166,8 @@ class DynamicFormRenderer extends Component
         if (!$this->record || !isset($this->form)) return;
 
         // Fill kreditor data
-        if (method_exists($this->record, 'sagerkreditor') && $this->record->sagerkreditor->isNotEmpty()) {
-            $kreditor = $this->record->sagerkreditor->first();
+        if (method_exists($this->record, 'kreditor') && $this->record->kreditor->isNotEmpty()) {
+            $kreditor = $this->record->kreditor->first();
             
             if (property_exists($this->form, 'kreditor')) {
                 $this->form->kreditor = $kreditor->id;
@@ -487,8 +487,8 @@ class DynamicFormRenderer extends Component
         if (!$this->record || $this->layout->model_type !== 'Sager' || !isset($this->form)) return;
 
         // Only sync if methods exist and form has the property
-        if (method_exists($this->record, 'sagerStatus') && property_exists($this->form, 'status') && $this->form->status) {
-            $this->record->sagerStatus()->sync([$this->form->status]);
+        if (method_exists($this->record, 'status') && property_exists($this->form, 'status') && $this->form->status) {
+            $this->record->status()->sync([$this->form->status]);
         }
 
         if (method_exists($this->record, 'sagerbemaerkning') && property_exists($this->form, 'bemaerkning') && $this->form->bemaerkning) {
@@ -499,16 +499,16 @@ class DynamicFormRenderer extends Component
             $this->record->sagerKTR()->sync([$this->form->ktr]);
         }
 
-        if (method_exists($this->record, 'sagerafslutning') && property_exists($this->form, 'afslutning') && $this->form->afslutning) {
-            $this->record->sagerafslutning()->sync([$this->form->afslutning]);
+        if (method_exists($this->record, 'afslutning') && property_exists($this->form, 'afslutning') && $this->form->afslutning) {
+            $this->record->afslutning()->sync([$this->form->afslutning]);
         }
 
-        if (method_exists($this->record, 'sagerkonsulent') && property_exists($this->form, 'konsulent') && $this->form->konsulent) {
-            $this->record->sagerkonsulent()->sync([$this->form->konsulent]);
+        if (method_exists($this->record, 'konsulent') && property_exists($this->form, 'konsulent') && $this->form->konsulent) {
+            $this->record->konsulent()->sync([$this->form->konsulent]);
         }
 
-        if (method_exists($this->record, 'sagersagsbehandler') && property_exists($this->form, 'sagsbehandler') && $this->form->sagsbehandler) {
-            $this->record->sagersagsbehandler()->sync([$this->form->sagsbehandler]);
+        if (method_exists($this->record, 'sagsbehandler') && property_exists($this->form, 'sagsbehandler') && $this->form->sagsbehandler) {
+            $this->record->sagsbehandler()->sync([$this->form->sagsbehandler]);
         }
     }
 
@@ -528,8 +528,8 @@ class DynamicFormRenderer extends Component
                         ['navn' => $debitorData['navn']],
                         $debitorData
                     );
-                    if (method_exists($this->record, 'sagerdebitor')) {
-                        $this->record->sagerdebitor()->sync([$debitor->id]);
+                    if (method_exists($this->record, 'debitor')) {
+                        $this->record->debitor()->sync([$debitor->id]);
                     }
                 }
             } catch (\Exception $e) {
@@ -547,8 +547,8 @@ class DynamicFormRenderer extends Component
                         ['lotusID' => $kreditorData['lotusID']],
                         $kreditorData
                     );
-                    if (method_exists($this->record, 'sagerkreditor')) {
-                        $this->record->sagerkreditor()->sync([$kreditor->id]);
+                    if (method_exists($this->record, 'kreditor')) {
+                        $this->record->kreditor()->sync([$kreditor->id]);
                     }
                 }
             } catch (\Exception $e) {

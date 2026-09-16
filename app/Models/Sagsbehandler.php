@@ -27,7 +27,7 @@ class Sagsbehandler extends Model
             'kreditor_id'
         );
     }
-  public function sagersagsbehandler(): BelongsToMany
+  public function sager(): BelongsToMany
   {
       return $this->belongsToMany(Sager::class, 'sager_sagsbehandler', 'sagsbehandler_id', 'sag_id');
   }

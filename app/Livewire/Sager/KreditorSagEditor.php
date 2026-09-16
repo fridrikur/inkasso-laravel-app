@@ -192,25 +192,25 @@ class KreditorSagEditor extends Component
                 // Kreditor pivot
                 $kreditorId = $this->form->UpdateKreditor($this->sag);
                 if ($kreditorId) {
-                    $this->sag->sagerkreditor()->sync([$kreditorId]);
+                    $this->sag->kreditor()->sync([$kreditorId]);
                 } else {
-                    $this->sag->sagerkreditor()->detach();
+                    $this->sag->kreditor()->detach();
                 }
 
                 // Sagsbehandler pivot
                 $sagsbehandlerId = $this->form->UpdateSagsbehandler();
                 if ($sagsbehandlerId) {
-                    $this->sag->sagersagsbehandler()->sync([$sagsbehandlerId]);
+                    $this->sag->sagsbehandler()->sync([$sagsbehandlerId]);
                 } else {
-                    $this->sag->sagersagsbehandler()->detach();
+                    $this->sag->sagsbehandler()->detach();
                 }
 
                 // Debitor pivot
                 $debitorId = $this->form->UpdateDebitor($this->sag);
                 if ($debitorId) {
-                    $this->sag->sagerdebitor()->sync([$debitorId]);
+                    $this->sag->debitor()->sync([$debitorId]);
                 } else {
-                    $this->sag->sagerdebitor()->detach();
+                    $this->sag->debitor()->detach();
                 }
 
                 // Øvrige pivot-relationer

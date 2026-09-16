@@ -45,11 +45,11 @@ class SagRepairService
             ];
 
             // TRIN 2: STATUS TJEK
-            $statusCount = $sag->sagerStatus()->count();
+            $statusCount = $sag->status()->count();
             if ($statusCount === 0) {
                 $defaultStatus = Status::first();
                 if ($defaultStatus) {
-                    $sag->sagerStatus()->attach($defaultStatus->id);
+                    $sag->status()->attach($defaultStatus->id);
                 }
                 $steps[] = [
                     'step' => 'status',
@@ -58,9 +58,9 @@ class SagRepairService
                     'detail' => "Tilknyttede standardstatus: '{$defaultStatus?->navn}'"
                 ];
             } elseif ($statusCount > 1) {
-                $latestStatus = $sag->sagerStatus()->orderBy('sager_status.id', 'desc')->first();
+                $latestStatus = $sag->status()->orderBy('sager_status.id', 'desc')->first();
                 if ($latestStatus) {
-                    $sag->sagerStatus()->sync([$latestStatus->id]);
+                    $sag->status()->sync([$latestStatus->id]);
                 }
                 $steps[] = [
                     'step' => 'status',
@@ -79,18 +79,18 @@ class SagRepairService
 
             // TRIN 3: SAGSBEHANDLER OG KONSULENT
             $handlerRepaired = false;
-            if ($sag->sagersagsbehandler()->count() === 0) {
+            if ($sag->sagsbehandler()->count() === 0) {
                 $defaultSagsbehandler = Sagsbehandler::first();
                 if ($defaultSagsbehandler) {
-                    $sag->sagersagsbehandler()->attach($defaultSagsbehandler->id);
+                    $sag->sagsbehandler()->attach($defaultSagsbehandler->id);
                     $handlerRepaired = true;
                 }
             }
 
-            if ($sag->sagerkonsulent()->count() === 0) {
+            if ($sag->konsulent()->count() === 0) {
                 $defaultKonsulent = Konsulenter::first();
                 if ($defaultKonsulent) {
-                    $sag->sagerkonsulent()->attach($defaultKonsulent->id);
+                    $sag->konsulent()->attach($defaultKonsulent->id);
                     $handlerRepaired = true;
                 }
             }
@@ -105,10 +105,10 @@ class SagRepairService
             ];
 
             // TRIN 4: AFSLUTNINGSÅRSAG
-            if ($sag->afsluttet && $sag->sagerAfslutning()->count() === 0) {
+            if ($sag->afsluttet && $sag->afslutning()->count() === 0) {
                 $defaultAfslutning = afslutning::first();
                 if ($defaultAfslutning) {
-                    $sag->sagerAfslutning()->attach($defaultAfslutning->id);
+                    $sag->afslutning()->attach($defaultAfslutning->id);
                 }
                 $steps[] = [
                     'step' => 'closure',

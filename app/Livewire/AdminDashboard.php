@@ -193,10 +193,10 @@ class AdminDashboard extends Component
             $search = $this->search;
             $query->where(function ($q) use ($search) {
                 $q->where('sagers.sagsnr', 'like', '%' . $search . '%')
-                  ->orWhereHas('sagerdebitor', function ($sub) use ($search) {
+                  ->orWhereHas('debitor', function ($sub) use ($search) {
                       $sub->where('navn', 'like', '%' . $search . '%');
                   })
-                  ->orWhereHas('sagerkreditor', function ($sub) use ($search) {
+                  ->orWhereHas('kreditor', function ($sub) use ($search) {
                       $sub->where('navn', 'like', '%' . $search . '%');
                   });
             });
@@ -205,7 +205,7 @@ class AdminDashboard extends Component
         // 3. Filtrering på valgt kreditor via relation
         if (!empty($this->selectedKreditor)) {
             $kreditorNavn = $this->selectedKreditor;
-            $query->whereHas('sagerkreditor', function ($sub) use ($kreditorNavn) {
+            $query->whereHas('kreditor', function ($sub) use ($kreditorNavn) {
                 $sub->where('navn', $kreditorNavn);
             });
         }
@@ -255,11 +255,15 @@ class AdminDashboard extends Component
             ->pluck('sager_count', 'navn')
             ->toArray();
 
-        $this->sagsbehandlerStats = Sagsbehandler::withCount('sagersagsbehandler')
-            ->orderByDesc('sagersagsbehandler_count')
+        $this->sagsbehandlerStats = Sagsbehandler::withCount('sager')
+            ->orderByDesc('sager_count')
             ->take(5)
-            ->pluck('sagersagsbehandler_count', 'navn')
+            ->pluck('sager_count', 'navn')
             ->toArray();
+        
+        // 🟢 Udregn max-værdierne så progress-bars bliver relative
+        $this->maxKonsulentSager = max(array_values($this->konsulentStats ?: [1]));
+        $this->maxSagsbehandlerSager = max(array_values($this->sagsbehandlerStats ?: [1]));
     }
 
     private function loadSystemWarnings()

@@ -185,19 +185,19 @@ class DemoDataSeeder extends Seeder
             ]);
 
             // Tilknyt tilfældige demo-relationer for at skabe variation
-            $sag->sagerkreditor()->attach($kreditorer->random()->id);
-            $sag->sagerdebitor()->attach($debitorer->random()->id);
-            $sag->sagersagsbehandler()->attach($sagsbehandlere->random()->id);
-            $sag->sagerkonsulent()->attach($konsulent->id);
-            $sag->sagerStatus()->attach($statuser->random()->id);
-            $sag->sagerKtr()->attach($ktrListe->random()->id);
-            $sag->sagerBemaerkning()->attach($bemaerkninger->random()->id);
+            $sag->kreditor()->attach($kreditorer->random()->id);
+            $sag->debitor()->attach($debitorer->random()->id);
+            $sag->sagsbehandler()->attach($sagsbehandlere->random()->id);
+            $sag->konsulent()->attach($konsulent->id);
+            $sag->status()->attach($statuser->random()->id);
+            $sag->ktr()->attach($ktrListe->random()->id);
+            $sag->bemaerkning()->attach($bemaerkninger->random()->id);
             
             if ($isAfsluttet) {
-                $sag->sagerAfslutning()->attach($afslutninger->random()->id);
+                $sag->afslutning()->attach($afslutninger->random()->id);
             }
             
-            $sag->sagerUdlaeg()->attach($udlaegListe->random()->id);
+            $sag->udlaeg()->attach($udlaegListe->random()->id);
         }
     }
 }

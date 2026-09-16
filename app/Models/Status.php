@@ -13,9 +13,8 @@ class Status extends Model
     
     protected $fillable = ['tekst', 'forkortelse'];
 
-    public function sagerStatus()
+    public function sager(): BelongsToMany
     {
-        return $this->belongsToMany(Sager::class, 'sager_status', 'status_id','sag_id');
+        return $this->belongsToMany(Sager::class, 'sager_status', 'status_id', 'sag_id');
     }
-
 }

@@ -11,8 +11,8 @@ class ImportSessionController extends Controller
 {
     public function show($id)
     {
-        // Indlæs kreditor og sager med tilhørende sagerdebitor-relation
-        $session = ImportSession::with(['kreditor', 'sager.sagerdebitor'])->findOrFail($id);
+        // Indlæs kreditor og sager med tilhørende debitor-relation
+        $session = ImportSession::with(['kreditor', 'sager.debitor'])->findOrFail($id);
 
         return view('sager.import.show', [
             'session'    => $session,
@@ -35,11 +35,11 @@ class ImportSessionController extends Controller
         try {
             // Hent og slet tilknyttede sager samt deres pivot-relationer
             foreach ($importSession->sager as $sag) {
-                if (method_exists($sag, 'sagerdebitor')) {
-                    $sag->sagerdebitor()->detach();
+                if (method_exists($sag, 'debitor')) {
+                    $sag->debitor()->detach();
                 }
-                if (method_exists($sag, 'sagerkreditor')) {
-                    $sag->sagerkreditor()->detach();
+                if (method_exists($sag, 'kreditor')) {
+                    $sag->kreditor()->detach();
                 }
                 if (method_exists($sag, 'importSessions')) {
                     $sag->importSessions()->detach();

@@ -200,8 +200,8 @@ class ImportExecuteController extends Controller
                 if (!$sag) {
                     $sag = Sager::create($sagData);
 
-                    if (method_exists($sag, 'sagerkreditor')) {
-                        $sag->sagerkreditor()->syncWithoutDetaching([$kreditor->id]);
+                    if (method_exists($sag, 'kreditor')) {
+                        $sag->kreditor()->syncWithoutDetaching([$kreditor->id]);
                     }
 
                     if (method_exists($sag, 'importSessions')) {
@@ -346,12 +346,12 @@ class ImportExecuteController extends Controller
                 $debitor = Debitorer::create($debitorData);
             }
 
-            if ($debitor && method_exists($sag, 'sagerdebitor')) {
+            if ($debitor && method_exists($sag, 'debitor')) {
                 $pivotData = [];
                 if (Schema::hasColumn('sager_debitor', 'rolle')) {
                     $pivotData['rolle'] = $rolle;
                 }
-                $sag->sagerdebitor()->syncWithoutDetaching([$debitor->id => $pivotData]);
+                $sag->debitor()->syncWithoutDetaching([$debitor->id => $pivotData]);
             }
         } catch (\Exception $e) {
             Log::error("Fejl i handleDebitorImport ({$prefix}) for sag #{$sag->sagsnr}: " . $e->getMessage());
@@ -477,14 +477,14 @@ class ImportExecuteController extends Controller
                 $sager = $session->sager;
 
                 foreach ($sager as $sag) {
-                    if (method_exists($sag, 'sagerkreditor')) {
-                        $sag->sagerkreditor()->detach();
+                    if (method_exists($sag, 'kreditor')) {
+                        $sag->kreditor()->detach();
                     }
                     if (method_exists($sag, 'importSessions')) {
                         $sag->importSessions()->detach();
                     }
-                    if (method_exists($sag, 'sagerdebitor')) {
-                        $sag->sagerdebitor()->detach();
+                    if (method_exists($sag, 'debitor')) {
+                        $sag->debitor()->detach();
                     }
 
                     $sag->delete();
@@ -605,9 +605,9 @@ class ImportExecuteController extends Controller
                 ]);
             }
 
-            // 4. Tilknyt til sagen via pivot-relationen sagerKtr()
-            if ($ktr && method_exists($sag, 'sagerKtr')) {
-                $sag->sagerKtr()->syncWithoutDetaching([$ktr->id]);
+            // 4. Tilknyt til sagen via pivot-relationen ktr()
+            if ($ktr && method_exists($sag, 'ktr')) {
+                $sag->ktr()->syncWithoutDetaching([$ktr->id]);
             }
         } catch (\Exception $e) {
             Log::error("Fejl i handleKtrImport for sag #{$sag->sagsnr}: " . $e->getMessage());

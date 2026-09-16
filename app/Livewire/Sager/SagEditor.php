@@ -276,9 +276,9 @@ class SagEditor extends Component
         }
 
         $this->sag->load([
-            'sagerkreditor',
-            'sagersagsbehandler',
-            'sagerdebitor'
+            'kreditor',
+            'sagsbehandler',
+            'debitor'
         ]);
 
         $this->isEditMode = $this->sag->exists;
@@ -302,7 +302,7 @@ class SagEditor extends Component
                 $this->isLockedByOther = false;
             }
 
-            $kreditor = $this->sag->sagerkreditor->first();
+            $kreditor = $this->sag->kreditor->first();
             if ($kreditor) {
                 $this->hydrateFromKreditor($kreditor);
                 $this->selectOptions['sagsbehandler'] = \App\Models\Sagsbehandler::forKreditor($kreditor->id) ?? [];
@@ -479,7 +479,7 @@ class SagEditor extends Component
                     'token' => bin2hex(random_bytes(16)),
                     'created_at' => now(),
                 ]);
-                $this->sag->sagertokens()->sync([$token->id]);
+                $this->sag->tokens()->sync([$token->id]);
             }
 
             if ($this->sag && $this->sag->exists) {
@@ -489,20 +489,20 @@ class SagEditor extends Component
                 }
 
                 $debitorId = $this->form->UpdateDebitor($this->sag);
-                if ($debitorId) $this->sag->sagerdebitor()->sync([$debitorId]);
+                if ($debitorId) $this->sag->debitor()->sync([$debitorId]);
 
                 $kreditorId = $this->form->UpdateKreditor($this->sag);
                 if ($kreditorId) {
-                    $this->sag->sagerkreditor()->sync([$kreditorId]);
+                    $this->sag->kreditor()->sync([$kreditorId]);
                 } else {
-                    $this->sag->sagerkreditor()->detach();
+                    $this->sag->kreditor()->detach();
                 }
 
                 $sagsbehandlerId = $this->form->UpdateSagsbehandler();
                 if ($sagsbehandlerId) {
-                    $this->sag->sagersagsbehandler()->sync([$sagsbehandlerId]);
+                    $this->sag->sagsbehandler()->sync([$sagsbehandlerId]);
                 } else {
-                    $this->sag->sagersagsbehandler()->detach();
+                    $this->sag->sagsbehandler()->detach();
                 }
             }
 
@@ -600,7 +600,7 @@ class SagEditor extends Component
 
         $this->selectOptions['sagsbehandler'] = Sagsbehandler::forKreditor($kreditor->id) ?? [];
 
-        $saved = $this->sag?->sagersagsbehandler->first()?->id;
+        $saved = $this->sag?->sagsbehandler->first()?->id;
 
         $this->form->sagsbehandler =
             ($saved && isset($this->selectOptions['sagsbehandler'][$saved]))
@@ -1379,17 +1379,17 @@ class SagEditor extends Component
                     SagEditRequest::where('sag_id', $sagId)->delete();
                 }
 
-                $sag->sagerdebitor()->detach();
-                $sag->sagerkreditor()->detach();
-                $sag->sagersagsbehandler()->detach();
-                $sag->sagerkonsulent()?->detach();
-                $sag->sagertokens()->detach();
+                $sag->debitor()->detach();
+                $sag->kreditor()->detach();
+                $sag->sagsbehandler()->detach();
+                $sag->konsulent()?->detach();
+                $sag->tokens()->detach();
 
-                $sag->sagerStatus()->detach();
-                $sag->sagerKtr()->detach();
-                $sag->sagerBemaerkning()->detach();
-                $sag->sagerAfslutning()->detach();
-                $sag->sagerUdlaeg()->detach();
+                $sag->status()->detach();
+                $sag->ktr()->detach();
+                $sag->bemaerkning()->detach();
+                $sag->afslutning()->detach();
+                $sag->udlaeg()->detach();
 
                 $sag->dialogs()->delete();
                 $sag->dokumenter()->delete();
@@ -1479,7 +1479,7 @@ class SagEditor extends Component
         $this->form->updateRelation('status', $this->sag->id);
         
         // Genindlæs relationen på sagen, så headeren opdaterer sig med det samme
-        $this->sag->load('sagerStatus');
+        $this->sag->load('status');
 
         $this->dispatch('toast', message: 'Status blev opdateret.', type: 'success');
     }

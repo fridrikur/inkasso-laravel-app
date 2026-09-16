@@ -108,7 +108,7 @@
                                 {{ $sag->afsluttet?->format('d-m-Y') ?? '-' }}
                             </td>
                             <td class="p-3">
-                                {{ $sag->sagerdebitor->first()?->navn ?? '-' }}
+                                {{ $sag->debitor->first()?->navn ?? '-' }}
                             </td>
                             <td class="p-3">
                                 <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-{{ $sag->gdpr_status['color'] }}-50 text-{{ $sag->gdpr_status['color'] }}-700 ring-1 ring-inset ring-{{ $sag->gdpr_status['color'] }}-600/20">

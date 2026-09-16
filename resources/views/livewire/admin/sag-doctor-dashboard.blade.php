@@ -224,7 +224,7 @@
                     <div class="p-4 flex items-center justify-between hover:bg-slate-50/50 transition">
                         <div>
                             <div class="font-bold text-slate-900 text-sm">Sagsnr: {{ $sag->sagsnr }} <span class="text-xs text-slate-400 font-normal">(Sag #{{ $sag->id }})</span></div>
-                            <div class="text-xs text-slate-500">Debitor: {{ $sag->sagerdebitor->first()?->navn ?? 'Ingen tilknyttet' }}</div>
+                            <div class="text-xs text-slate-500">Debitor: {{ $sag->debitor->first()?->navn ?? 'Ingen tilknyttet' }}</div>
                         </div>
                         <a href="{{ route('sager.edit', $sag->id) }}" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
                             Åbn sag

@@ -162,9 +162,9 @@
                                         {{ $sag->sagsnr }}
                                     </td>
                                     <td class="py-3 px-4 font-semibold text-slate-800">
-                                        @if($sag->sagerdebitor && $sag->sagerdebitor->count() > 0)
+                                        @if($sag->debitor && $sag->debitor->count() > 0)
                                             <div class="space-y-0.5">
-                                                @foreach($sag->sagerdebitor as $deb)
+                                                @foreach($sag->debitor as $deb)
                                                     <div class="flex items-center gap-1.5">
                                                         <span class="text-slate-900 font-bold">{{ $deb->navn ?? 'Uden navn' }}</span>
                                                         @if(!empty($deb->pnr))
@@ -202,7 +202,7 @@
                                                 'stelnr' => $sag->stelnr ?? '-',
                                                 'fakturanr' => $sag->fakturanr ?? '-',
                                                 'created_at' => $sag->created_at?->format('d/m-Y H:i') ?? '-',
-                                                'debitorer' => $sag->sagerdebitor->map(fn($d) => [
+                                                'debitorer' => $sag->debitor->map(fn($d) => [
                                                     'navn' => $d->navn,
                                                     'pnr' => $d->pnr,
                                                     'adresse' => $d->adresse,

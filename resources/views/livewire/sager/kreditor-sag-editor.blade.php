@@ -239,128 +239,86 @@ SUCCESS MODAL
     wire:click.self="$set('showSuccessModal', false)"
 >
 
-    <div class="modal-box" id="successModal">
-<div class="stamp-container">
+    {{-- 🟢 Vi bruger Alpine.js (x-data) direkte her, så timeren starter sekunder efter modalen renderes --}}
+    <div 
+        class="modal-box" 
+        id="successModal"
+        x-data="{
+            seconds: 30,
+            isPaused: false,
+            timer: null,
+            init() {
+                this.timer = setInterval(() => {
+                    if (this.isPaused) return;
+                    
+                    if (this.seconds > 0) {
+                        this.seconds--;
+                    } else {
+                        clearInterval(this.timer);
+                        window.location.href = '{{ route('kreditor.sager.index') }}?created=1&sag_id={{ $this->sag?->id ?? '' }}';
+                    }
+                }, 1000);
+            },
+            destroy() {
+                clearInterval(this.timer);
+            }
+        }"
+        @mouseenter="isPaused = true"
+        @mouseleave="isPaused = false"
+    >
+        <div class="stamp-container">
 
-    <div class="stamp-header">
-        ✅ BEKRÆFTET
-    </div>
-
-    <div class="stamp-sub">
-        Sagen er sendt til DKG
-    </div>
-
-    <div class="stamp-body">
-
-        <div class="review-row">
-            <div class="review-label">Sagsnummer</div>
-            <div class="review-value font-bold">
-                {{ $this->sag->sagsnr ?? '-' }}
+            <div class="stamp-header">
+                ✅ BEKRÆFTET
             </div>
-        </div>
 
-        <div class="review-row">
-            <div class="review-label">Debitor</div>
-            <div class="review-value">{{ $form->navn }}</div>
-        </div>
-
-        <div class="review-row">
-            <div class="review-label">Sagsbehandler</div>
-            <div class="review-value">
-                {{ $sagsbehandlerOptions[$form->sagsbehandler] ?? '' }}
+            <div class="stamp-sub">
+                Sagen er sendt til DKG
             </div>
+
+            <div class="stamp-body">
+
+                <div class="review-row">
+                    <div class="review-label">Sagsnummer</div>
+                    <div class="review-value font-bold">
+                        {{ $this->sag->sagsnr ?? '-' }}
+                    </div>
+                </div>
+
+                <div class="review-row">
+                    <div class="review-label">Debitor</div>
+                    <div class="review-value">{{ $form->navn }}</div>
+                </div>
+
+                <div class="review-row">
+                    <div class="review-label">Sagsbehandler</div>
+                    <div class="review-value">
+                        {{ $sagsbehandlerOptions[$form->sagsbehandler] ?? '' }}
+                    </div>
+                </div>
+
+                <div class="review-row">
+                    <div class="review-label">Hovedstol</div>
+                    <div class="review-value">{{ $form->hovedstol }}</div>
+                </div>
+
+            </div>
+
+            <div class="stamp-footer">
+                Sendt: {{ now()->format('d-m-Y H:i') }}
+            </div>
+            
+            {{-- 🟢 Udskriver sekunder direkte via Alpine.js --}}
+            <div class="text-sm text-gray-500 mt-3 text-right">
+                Viderestilles om <span x-text="seconds">30</span> sekunder...
+            </div>
+
         </div>
-
-        <div class="review-row">
-            <div class="review-label">Hovedstol</div>
-            <div class="review-value">{{ $form->hovedstol }}</div>
-        </div>
-
     </div>
-
-    <div class="stamp-footer">
-        Sendt: {{ now()->format('d-m-Y H:i') }}
-    </div>
-    <div class="text-sm text-gray-500 mt-3 text-right">
-    Viderestilles om <span id="countdown">30</span> sekunder...
-    </div>
-
-</div>
 
 </div>
 
 @endif
-
-
-{{-- =========================
-SCRIPTS
-========================= --}}
-<script>
-    let countdownInterval;
-    let seconds = 30;
-    let isPaused = false;
-
-    document.addEventListener('livewire:init', () => {
-
-        Livewire.on('startRedirectTimer', () => {
-
-            clearInterval(countdownInterval);
-            seconds = 30;
-            isPaused = false;
-
-            countdownInterval = setInterval(() => {
-
-                if (isPaused) return;
-
-                const el = document.getElementById('countdown');
-
-                if (el) {
-                    el.innerText = seconds;
-                }
-
-                seconds--;
-
-                if (seconds < 0) {
-                    clearInterval(countdownInterval);
-                    // startFadeOutAndRedirect();
-                    window.location.href = "{{ route('kreditor.sager.index') }}?created=1&sag_id={{ $this->sag->id }}";
-                }
-
-            }, 1000);
-
-            // 👇 Pause on hover
-            setTimeout(() => {
-                const modal = document.getElementById('successModal');
-
-                if (modal) {
-                    modal.addEventListener('mouseenter', () => isPaused = true);
-                    modal.addEventListener('mouseleave', () => isPaused = false);
-                }
-            }, 100); // wait for DOM render
-
-        });
-
-        Livewire.on('stopRedirectTimer', () => {
-            clearInterval(countdownInterval);
-        });
-
-    });
-    function startFadeOutAndRedirect() {
-
-        const modal = document.getElementById('successModal');
-
-        if (modal) {
-            modal.classList.add('fade-out');
-
-            setTimeout(() => {
-                window.location.href = "{{ route('kreditor.sager.index') }}?created=1";
-            }, 400);
-        } else {
-            window.location.href = "{{ route('kreditor.sager.index') }}?created=1";
-        }
-    }
-</script>
-
 
 {{-- =========================
 STYLES

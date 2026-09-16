@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Kreditorer;
 
+use Livewire\Attributes\On;
 use App\Models\Kreditorer;
 use App\Models\Sagsbehandler;
 use App\Models\User;
@@ -19,28 +20,20 @@ class ManageKreditor extends Component
 {
     use HasCrudModal;
 
+    #[On('kreditor-updated')]
+    public function handleChildSaved(): void
+    {
+        $this->loadKreditorData();
+    }
+
     public ?Kreditorer $kreditor = null;
-    
-    // NY VARIABEL: Holder styr på om kreditoren lige er oprettet
     public bool $kreditor_lige_oprettet = false;
 
     protected KreditorManagementService $management;
     protected KreditorTransferService $transfer;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Kreditor form
-    |--------------------------------------------------------------------------
-    */
-
     public string $navn = '';
     public ?string $lotusID = null;
-
-    /*
-    |--------------------------------------------------------------------------
-    | User modal
-    |--------------------------------------------------------------------------
-    */
 
     public bool $showUserModal = false;
     public ?User $activeUser = null;
@@ -49,12 +42,6 @@ class ManageKreditor extends Component
     public ?string $userPassword = null;
     public int $sagerCount = 0;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Sagsbehandler modal
-    |--------------------------------------------------------------------------
-    */
-
     public bool $showSagsModal = false;
     public ?Sagsbehandler $activeSagsbehandler = null;
     public string $modalNavn = '';
@@ -62,21 +49,9 @@ class ManageKreditor extends Component
     public ?string $modalTlf = null;
     public ?string $modalMobil = null;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Delete / transfer
-    |--------------------------------------------------------------------------
-    */
-
     public string $securityCode = '';
     public ?int $transferToKreditorId = null;
     public $transferTargets = [];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Dependency injection
-    |--------------------------------------------------------------------------
-    */
 
     public function boot(
         KreditorManagementService $management,
@@ -85,12 +60,6 @@ class ManageKreditor extends Component
         $this->management = $management;
         $this->transfer = $transfer;
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Mount
-    |--------------------------------------------------------------------------
-    */
 
     public function mount(Kreditorer $kreditor): void
     {
@@ -126,9 +95,10 @@ class ManageKreditor extends Component
             ->with([
                 'users:id,name,email',
                 'sagsbehandlere:id,navn,email,tlf,mobil',
+                'hovedsagsbehandler:id,navn,email,tlf,mobil', // 🟢 Sørg for denne er med, så hovedsagsbehandler loades
                 'sager' => fn ($query) =>
                     $query
-                        ->with('sagerdebitor')
+                        ->with('debitor')
                         ->latest()
                         ->take(10),
             ])
@@ -137,12 +107,6 @@ class ManageKreditor extends Component
 
         $this->sagerCount = $this->kreditor->sager_count ?? 0;
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Save creditor
-    |--------------------------------------------------------------------------
-    */
 
     public function save(): void
     {
@@ -169,15 +133,12 @@ class ManageKreditor extends Component
             $this->dispatch('toast', message: $message, type: 'success');
 
         } else {
-            // Opret ny via vores fælles KreditorManagementService
             $nyKreditor = $this->management->create([
                 'navn' => $this->navn,
                 'lotusID' => $this->lotusID,
             ]);
 
             $this->closeFormModal();
-
-            // Omdiriger til detaljesiden med query-parameteren for notifikationen
             $this->redirect(route('kreditor.manage', $nyKreditor->id) . '?oprettet=1', navigate: true);
         }
     }
@@ -339,7 +300,6 @@ class ManageKreditor extends Component
 
     public function closeModals(): void
     {
-        $this->showUserManager = false;
         $this->showUserModal = false;
         $this->showSagsModal = false;
         $this->showDeleteModal = false;

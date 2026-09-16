@@ -14,22 +14,19 @@ use App\Services\KonsulentService;
 use App\Services\ToastService;
 
 use Illuminate\Support\Facades\DB;
-use App\Traits\HasCrudModal; // 🟢 Vores genbrugelige Trait
+use Illuminate\Database\QueryException; // 🟢 Importer denne til at fange SQL-fejl
+use App\Traits\HasCrudModal;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Hash;
-
-
-// Overførsels-felter (tilsvarende kreditor-flowet)
 
 class ManageKonsulenter extends Component
 {
     use WithPagination;
-    use HasCrudModal; // 🟢 Implementerer modal-tilstande
+    use HasCrudModal;
 
-    // 🟢 Tilføj listeners her, så tabellen opdaterer sig automatisk ved slet
     protected $listeners = [
         'refresh-table' => '$refresh',
-        'execute-deletion' => 'handleDeletion', // Lytter på det globale slette-signal
+        'execute-deletion' => 'handleDeletion',
     ];
 
     public ?Konsulenter $konsulentToTransferFrom = null;
@@ -40,7 +37,6 @@ class ManageKonsulenter extends Component
 
     public function handleDeletion($action, $id)
     {
-        // Hvis eventet er ment til netop denne komponent (eller matcher vores action)
         if ($action === 'deleteKonsulent') {
             $this->deleteKonsulent($id);
         }
@@ -66,7 +62,6 @@ class ManageKonsulenter extends Component
     public bool $modalIsSkjult = false;
     public bool $modalIsNotifikation = false;
 
-    // 🟢 Påkrævede metoder fra HasCrudModal Traiten
     public function resetForm(): void
     {
         $this->reset([
@@ -98,12 +93,6 @@ class ManageKonsulenter extends Component
         $this->modalIsNotifikation = NotifikationsKonsulent::has($k);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Handlinger
-    |--------------------------------------------------------------------------
-    */
-
     public function updatedSearch() { $this->resetPage(); }
     public function updatedActiveRoleTab() { $this->resetPage(); }
 
@@ -115,9 +104,14 @@ class ManageKonsulenter extends Component
 
     public function save()
     {
+        // 🟢 Lad Laravel klare unik-tjekket automatisk for både email og tlf.
+        // Vi bruger 'ignore' så man godt kan gemme uden at ændre sin egen e-mail/tlf ved redigering.
+        $konsulentId = $this->activeKonsulent?->id;
+
         $this->validate([
-            'modalNavn' => 'required|string|max:255',
-            'modalEmail' => 'required|email|max:255',
+            'modalNavn'  => ['required', 'string', 'max:255'],
+            'modalEmail' => ['required', 'email', 'max:255', 'unique:konsulenters,email,' . $konsulentId],
+            'modalTlf'   => ['nullable', 'string', 'max:50', 'unique:konsulenters,tlf,' . $konsulentId],
         ]);
 
         DB::transaction(function () {
@@ -126,8 +120,8 @@ class ManageKonsulenter extends Component
                 [
                     'navn'  => $this->modalNavn,
                     'email' => $this->modalEmail,
-                    'tlf'   => $this->modalTlf,
-                    'mobil' => $this->modalMobil,
+                    'tlf'   => $this->modalTlf !== '' ? $this->modalTlf : null,
+                    'mobil' => $this->modalMobil !== '' ? $this->modalMobil : null,
                 ]
             );
 
@@ -143,10 +137,10 @@ class ManageKonsulenter extends Component
 
         $this->closeFormModal();
 
-        $this->dispatch(
-            'notify',
-            ...app(ToastService::class)->success('Konsulent gemt')
-        );
+        $this->dispatch('toast', [
+            'message' => 'Konsulenten blev gemt.',
+            'type' => 'success'
+        ]);
     }
 
     public function cancelDelete(): void
@@ -173,12 +167,10 @@ class ManageKonsulenter extends Component
         }
 
         DB::transaction(function () {
-            // Flyt alle sager til den nye konsulent
             $this->konsulentToTransferFrom->sager()->update([
-                'konsulent_id' => $this->transferToKonsulentId // Ret feltnavnet hvis det hedder noget andet i din database (f.eks. sagsbehandler_id el.lign.)
+                'konsulent_id' => $this->transferToKonsulentId
             ]);
 
-            // Slet derefter den gamle konsulent
             $this->service()->delete($this->konsulentToTransferFrom);
         });
 
@@ -231,13 +223,11 @@ class ManageKonsulenter extends Component
         ]);
     }
 
-    // Slet-håndtering
     public function confirmDelete(int $id): void
     {
         $konsulent = \App\Models\Konsulenter::findOrFail($id);
 
-        // Tjek om konsulenten har aktive sager
-        $sagerCount = \App\Models\Sager::whereHas('sagerkonsulent', function ($q) use ($konsulent) {
+        $sagerCount = \App\Models\Sager::whereHas('konsulent', function ($q) use ($konsulent) {
             $q->where('konsulenters.id', $konsulent->id);
         })->count();
 
@@ -253,11 +243,9 @@ class ManageKonsulenter extends Component
             return;
         }
 
-        // Ingen sager -> Åbn den lokale slette-modal
         $this->deletingId = $id;
         $this->showDeleteModal = true;
     }
-
 
     public function deleteKonsulent(): void
     {
@@ -275,5 +263,4 @@ class ManageKonsulenter extends Component
 
         $this->cancelDelete();
     }
-
 }

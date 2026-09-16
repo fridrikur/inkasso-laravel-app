@@ -127,7 +127,7 @@ class ManageUsers extends Component
 
         $konsulent = \App\Models\Konsulenter::where('email', $user->email)->first();
         if ($konsulent) {
-            $this->userHasSagerCount = \App\Models\Sager::whereHas('sagerkonsulent', function ($q) use ($konsulent) {
+            $this->userHasSagerCount = \App\Models\Sager::whereHas('konsulent', function ($q) use ($konsulent) {
                 $q->where('konsulenter.id', $konsulent->id);
             })->count();
         } else {

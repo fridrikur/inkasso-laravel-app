@@ -59,28 +59,28 @@ class SearchConstructor extends Component
     {
         return Sager::query()
             ->with([
-                'sagerkreditor',
-                'sagerdebitor',
-                'sagerStatus',
+                'kreditor',
+                'debitor',
+                'status',
             ])
             ->when($this->filters['sagsnr'], function ($query) {
                 $query->where('sagsnr', 'like', '%' . $this->filters['sagsnr'] . '%');
             })
-            ->whereHas('sagerkreditor', function ($query) {
+            ->whereHas('kreditor', function ($query) {
                 $query->where('kreditors.id', $this->filters['kreditor_id']);
             })
             ->when($this->filters['debitor_navn'], function ($query) {
-                $query->whereHas('sagerdebitor', function ($q) {
+                $query->whereHas('debitor', function ($q) {
                     $q->where('navn', 'like', '%' . $this->filters['debitor_navn'] . '%');
                 });
             })
             ->when($this->filters['status_id'], function ($query) {
-                $query->whereHas('sagerStatus', function ($q) {
+                $query->whereHas('status', function ($q) {
                     $q->where('status.id', $this->filters['status_id']);
                 });
             })
             ->when($this->filters['postnr'], function ($query) {
-                $query->whereHas('sagerdebitor', function ($q) {
+                $query->whereHas('debitor', function ($q) {
                     $q->where('postnr', $this->filters['postnr']);
                 });
             });
@@ -198,10 +198,10 @@ class SearchConstructor extends Component
 
                 $search->result_count = Sager::query()
                     ->when($filters['sagsnr'], fn ($q) => $q->where('sagsnr', 'like', '%' . $filters['sagsnr'] . '%'))
-                    ->whereHas('sagerkreditor', fn ($q) => $q->where('kreditors.id', $filters['kreditor_id']))
-                    ->when($filters['debitor_navn'], fn ($q) => $q->whereHas('sagerdebitor', fn ($d) => $d->where('navn', 'like', '%' . $filters['debitor_navn'] . '%')))
-                    ->when($filters['status_id'], fn ($q) => $q->whereHas('sagerStatus', fn ($s) => $s->where('status.id', $filters['status_id'])))
-                    ->when($filters['postnr'], fn ($q) => $q->whereHas('sagerdebitor', fn ($d) => $d->where('postnr', $filters['postnr'])))
+                    ->whereHas('kreditor', fn ($q) => $q->where('kreditors.id', $filters['kreditor_id']))
+                    ->when($filters['debitor_navn'], fn ($q) => $q->whereHas('debitor', fn ($d) => $d->where('navn', 'like', '%' . $filters['debitor_navn'] . '%')))
+                    ->when($filters['status_id'], fn ($q) => $q->whereHas('status', fn ($s) => $s->where('status.id', $filters['status_id'])))
+                    ->when($filters['postnr'], fn ($q) => $q->whereHas('debitor', fn ($d) => $d->where('postnr', $filters['postnr'])))
                     ->count();
 
                 return $search;

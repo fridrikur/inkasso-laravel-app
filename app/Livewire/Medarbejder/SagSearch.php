@@ -17,13 +17,13 @@ class SagSearch extends Component
 
         $searchTerm = '%' . trim($this->search) . '%';
 
-        return Sager::with(['sagerdebitor', 'sagerkreditor'])
+        return Sager::with(['debitor', 'kreditor'])
             ->where(function($query) use ($searchTerm) {
                 $query->where('sagsnr', 'like', $searchTerm)
-                      ->orWhereHas('sagerdebitor', function($q) use ($searchTerm) {
+                      ->orWhereHas('debitor', function($q) use ($searchTerm) {
                           $q->where('navn', 'like', $searchTerm);
                       })
-                      ->orWhereHas('sagerkreditor', function($q) use ($searchTerm) {
+                      ->orWhereHas('kreditor', function($q) use ($searchTerm) {
                           $q->where('navn', 'like', $searchTerm);
                       });
             })

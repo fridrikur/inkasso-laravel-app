@@ -19,7 +19,7 @@ class udlaeg extends Model
     ];
 
 
-    public function sagerudlaeg(): BelongsToMany
+    public function sager(): BelongsToMany
     {
         return $this->belongsToMany(Sager::class, 'sager_udlaeg', 'udlaeg_id', 'sag_id');
     }

@@ -59,9 +59,9 @@ class BrevMergeService
     protected function relationFields(Sager $sag): array
     {
         return [
-            'firmanavn' => $sag->sagerkreditor->first()?->firmanavn,
-            'debitor_navn' => $sag->sagerdebitor->first()?->navn,
-            'ktr' => $sag->sagerKtr->first()?->navn,
+            'firmanavn' => $sag->kreditor->first()?->firmanavn,
+            'debitor_navn' => $sag->debitor->first()?->navn,
+            'ktr' => $sag->ktr->first()?->navn,
         ];
     }
 

@@ -15,10 +15,10 @@ trait BuildsSagerQuery
         $query->when(property_exists($this, 'search') && !empty($this->search), function ($q) {
             $q->where(function ($sub) {
                 $sub->where('sagers.id', 'like', '%' . $this->search . '%')
-                    ->orWhereHas('sagerdebitor', function ($debQuery) {
+                    ->orWhereHas('debitor', function ($debQuery) {
                         $debQuery->where('navn', 'like', '%' . $this->search . '%');
                     })
-                    ->orWhereHas('sagerkreditor', function ($kredQuery) {
+                    ->orWhereHas('kreditor', function ($kredQuery) {
                         $kredQuery->where('navn', 'like', '%' . $this->search . '%');
                     });
             });

@@ -179,7 +179,7 @@ class SagForm extends Form
     {
         if (!$sag) return;
 
-        $debitor = $sag->sagerdebitor->first();
+        $debitor = $sag->debitor->first();
         if (!$debitor) return;
 
         $this->debitor = $debitor;
@@ -208,7 +208,7 @@ class SagForm extends Form
 
         // Normalize relation name
         $relation = strtolower($relation);
-        $relationMethod = 'sager' . $relation;
+        $relationMethod = $relation;
 
         if (!method_exists($sag, $relationMethod)) {
             \Log::debug("setRelation: Method {$relationMethod} does not exist on " . get_class($sag));
@@ -230,8 +230,6 @@ class SagForm extends Form
         \Log::debug("setRelation: {$relation} => " . ($this->$property ?? 'null') . " from table {$relatedTable}");
     }
 
-
-
     public function updateRelation(string $property, int $sagId): ?array
     {
         // Find the Sager object
@@ -243,23 +241,28 @@ class SagForm extends Form
         }
 
         // Make sure the property exists on the form
-        if (!property_exists($this, $property) || empty($this->$property)) {
-            \Log::debug("updateRelation: Property {$property} is empty or does not exist on form");
+        if (!property_exists($this, $property)) {
+            \Log::debug("updateRelation: Property {$property} does not exist on form");
             return null;
         }
 
-        // Build the relation method dynamically
-        $relationMethod = 'sager' . ucfirst($property);
+        // 🟢 Brug selve property-navnet direkte (f.eks. 'ktr', 'status', 'udlaeg', etc.)
+        $relationMethod = $property;
         
         if (!method_exists($sag, $relationMethod)) {
             \Log::debug("updateRelation: Relation method {$relationMethod} does not exist on Sager");
             return null;
         }
 
-        // Sync the pivot table with selected value
-        $sag->$relationMethod()->sync([$this->$property]);
-
-        \Log::debug("updateRelation: Synced {$relationMethod} with value {$this->$property}");
+        // Hvis feltet er tomt, fjern relationen (detach), ellers sync
+        if (empty($this->$property)) {
+            $sag->$relationMethod()->detach();
+            \Log::debug("updateRelation: Detached {$relationMethod}");
+        } else {
+            // Sync the pivot table with selected value
+            $sag->$relationMethod()->sync([$this->$property]);
+            \Log::debug("updateRelation: Synced {$relationMethod} with value {$this->$property}");
+        }
 
         return [$this->$property];
     }
@@ -271,13 +274,13 @@ class SagForm extends Form
         }
 
         // ✅ Load sag with kreditor relation
-        $sag = Sager::with('sagerkreditor')->find($sag->id);
-        if (!$sag || $sag->sagerkreditor->isEmpty()) {
+        $sag = Sager::with('kreditor')->find($sag->id);
+        if (!$sag || $sag->kreditor->isEmpty()) {
             return;
         }
 
         // ✅ Get the first related Kreditor
-        $kreditor = $sag->sagerkreditor->first();
+        $kreditor = $sag->kreditor->first();
 
         if ($kreditor) {
             // Optional: eager load counts or other relations
@@ -299,7 +302,7 @@ class SagForm extends Form
             return (int) $this->kreditor;
         }
 
-        return $this->sag?->sagerkreditor->first()?->id ?? null;
+        return $this->sag?->kreditor->first()?->id ?? null;
     }
 
     /**
@@ -311,7 +314,7 @@ class SagForm extends Form
             return (int) $this->sagsbehandler;
         }
 
-        return $this->sag?->sagersagsbehandler->first()?->id ?? null;
+        return $this->sag?->sagsbehandler->first()?->id ?? null;
         }
     
 
@@ -360,12 +363,12 @@ class SagForm extends Form
     $validated = $this->validateDebitor();
 
     // Load related Debitor(s)
-    $sag->load('sagerdebitor');
-    $existingDebitor = $sag->sagerdebitor->first();
+    $sag->load('debitor');
+    $existingDebitor = $sag->debitor->first();
 
     if ($existingDebitor) {
         $existingDebitor->update($validated);
-        $sag->sagerdebitor()->sync([$existingDebitor->id]); // sync ensures only this debitor
+        $sag->debitor()->sync([$existingDebitor->id]); // sync ensures only this debitor
         return $existingDebitor->id;
     }
 
@@ -377,26 +380,29 @@ class SagForm extends Form
         return null;
     }
 
-    $sag->sagerdebitor()->sync([$newDebitor->id]);
+    $sag->debitor()->sync([$newDebitor->id]);
     return $newDebitor->id;
 }
 
-    public function SelectStatus(){
-        $status_id = $this->status;
-        if($status_id != null){
-            $status = Status::withCount('sagerstatus')->where('id',$status_id)->first();
-            $this->status = $status;
-            $this->status = $status->id;
-            return($this->status = $status->id);
-        }
-        else{
-            $status = Status::withCount('sagerstatus')->first();
-            if($status != null){
-                $find_status = $this->status = Status::find($status->id);
-                $this->status = $find_status->id;
-                return($this->status = $find_status->id);
+    public function SelectStatus()
+    {
+        // Hvis der er valgt en status, tjek om den findes (inkl. antal sager via 'sager'-relationen)
+        if (!empty($this->status)) {
+            $status = Status::withCount('sager')->find($this->status);
+            
+            if ($status) {
+                return $this->status = $status->id;
             }
         }
+
+        // Fallback: Hvis intet er valgt, tag den første i tabellen
+        $fallbackStatus = Status::withCount('sager')->first();
+
+        if ($fallbackStatus) {
+            return $this->status = $fallbackStatus->id;
+        }
+
+        return null;
     }
     
     
@@ -424,13 +430,13 @@ class SagForm extends Form
     public function Selectafslutning(){
         $afslutning_id = $this->afslutning;
         if($afslutning_id != null){
-            $afslutning = afslutning::withCount('sagerafslutning')->where('id',$afslutning_id)->first();
+            $afslutning = afslutning::withCount('afslutning')->where('id',$afslutning_id)->first();
             $this->afslutning = $afslutning;
             $this->afslutning = $afslutning->id;
             return($this->afslutning = $afslutning->id);
         }
         else{
-            $afslutning = afslutning::withCount('sagerafslutning')->first();
+            $afslutning = afslutning::withCount('afslutning')->first();
             if($afslutning != null){
                 $find_afslutning = $this->afslutning = afslutning::find($afslutning->id);
                 $this->afslutning = $find_afslutning->id;
@@ -447,13 +453,13 @@ class SagForm extends Form
     public function SelectKtr(){
         $ktr_id = $this->ktr;
         if($ktr_id != null){
-            $ktr = ktr::withCount('sagerktr')->where('id',$ktr_id)->first();
+            $ktr = ktr::withCount('ktr')->where('id',$ktr_id)->first();
             $this->ktr = $ktr;
             $this->ktr = $ktr->id;
             return($this->ktr = $ktr->id);
         }
         else{
-            $ktr = ktr::withCount('sagerktr')->first();
+            $ktr = ktr::withCount('ktr')->first();
             if($ktr != null){
                 $find_ktr = $this->ktr = ktr::find($ktr->id);
                 $this->ktr = $find_ktr->id;

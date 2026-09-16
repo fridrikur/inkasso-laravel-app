@@ -36,7 +36,7 @@ class Dashboard extends Component
     private function baseQuery()
     {
         return Sager::query()
-            ->whereHas('sagerkreditor', function ($query) {
+            ->whereHas('kreditor', function ($query) {
                 $query->where('kreditor_id', $this->kreditor->id);
             });
     }
@@ -62,7 +62,7 @@ class Dashboard extends Component
     public function getRecentSagerProperty()
     {
         return $this->baseQuery()
-            ->with(['sagerdebitor'])
+            ->with(['debitor'])
             ->latest('created_at')
             ->take(5)
             ->get();
@@ -100,7 +100,7 @@ class Dashboard extends Component
         return $this->afslutninger
             ->mapWithKeys(function ($afslutning) use ($base) {
                 $count = (clone $base)
-                    ->whereHas('sagerAfslutning', function ($sub) use ($afslutning) {
+                    ->whereHas('afslutning', function ($sub) use ($afslutning) {
                         $sub->whereKey($afslutning->id);
                     })
                     ->count();

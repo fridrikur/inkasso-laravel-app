@@ -51,8 +51,8 @@
                 <tbody class="divide-y divide-slate-100 bg-white text-slate-700">
                 @forelse($this->searchResults as $sag)
                     @php
-                        $debitor = $sag->sagerdebitor->first();
-                        $kreditor = $sag->sagerkreditor->first();
+                        $debitor = $sag->debitor->first();
+                        $kreditor = $sag->kreditor->first();
                     @endphp
                     <tr class="hover:bg-slate-50/60 transition duration-150">
                         <td class="whitespace-nowrap px-6 py-4 font-semibold text-slate-900">

@@ -19,7 +19,7 @@ class bemaerkning extends Model
     ];
 
 
-    public function sagerbemaerkning(): BelongsToMany
+    public function sager(): BelongsToMany
     {
         return $this->belongsToMany(Sager::class, 'sager_bemaerkning', 'bemaerkning_id', 'sag_id');
     }

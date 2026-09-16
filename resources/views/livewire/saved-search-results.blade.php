@@ -35,10 +35,10 @@
                     @forelse($this->results as $sag)
                         <tr class="hover:bg-slate-50">
                             <td class="px-4 py-3">{{ $sag->sagsnr }}</td>
-                            <td class="px-4 py-3">{{ $sag->sagerkreditor->pluck('navn')->join(', ') }}</td>
-                            <td class="px-4 py-3">{{ $sag->sagerdebitor->pluck('navn')->join(', ') }}</td>
-                            <td class="px-4 py-3">{{ $sag->sagerStatus->pluck('tekst')->join(', ') }}</td>
-                            <td class="px-4 py-3">{{ $sag->sagerdebitor->pluck('postnr')->join(', ') }}</td>
+                            <td class="px-4 py-3">{{ $sag->kreditor->pluck('navn')->join(', ') }}</td>
+                            <td class="px-4 py-3">{{ $sag->debitor->pluck('navn')->join(', ') }}</td>
+                            <td class="px-4 py-3">{{ $sag->status->pluck('tekst')->join(', ') }}</td>
+                            <td class="px-4 py-3">{{ $sag->debitor->pluck('postnr')->join(', ') }}</td>
                         </tr>
                     @empty
                         <tr>

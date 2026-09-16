@@ -28,8 +28,14 @@ class ManageDialogfelter extends Component
 
     public function openTreeModal($id)
     {
-        // Returret til sagerdebitor
-        $this->selectedSag = Sager::with(['sagerdebitor'])->find($id);
+        $sag = Sager::with(['debitor', 'dialogs.messages'])->find($id);
+
+        if ($sag) {
+            // Fjern eventuelle dubletter fra dialoger, hvis relationen skulle returnere duplikater
+            $sag->setRelation('dialogs', $sag->dialogs->unique('id'));
+        }
+
+        $this->selectedSag = $sag;
         $this->showTreeModal = true;
     }
 
@@ -41,12 +47,13 @@ class ManageDialogfelter extends Component
 
     public function render()
     {
-        // 1. Base Query med søgning på sager og relateret sagerdebitor
-        $query = Sager::with(['sagerdebitor'])
+        // 1. Base Query: Sager der har mindst én dialog
+        $query = Sager::has('dialogs')
+            ->with(['debitor', 'dialogs'])
             ->when($this->search, function ($q) {
                 $q->where(function ($sub) {
                     $sub->where('id', 'like', '%' . $this->search . '%')
-                        ->orWhereHas('sagerdebitor', function ($deb) {
+                        ->orWhereHas('debitor', function ($deb) {
                             $deb->where('navn', 'like', '%' . $this->search . '%')
                                 ->orWhere('email', 'like', '%' . $this->search . '%');
                         });
@@ -67,14 +74,14 @@ class ManageDialogfelter extends Component
             : collect();
 
         $paginatedKlienter = ($this->activeTab === 'klienter') 
-            ? (clone $query)->has('sagerdebitor')->orderBy('id', 'desc')->paginate(15) 
+            ? (clone $query)->has('debitor')->orderBy('id', 'desc')->paginate(15) 
             : collect();
 
-        // 3. Optællinger til fanerne
-        $totalSager = Sager::count();
-        $totalBogholderi = Sager::count();
-        $totalHistorik = Sager::count();
-        $totalKlienter = Sager::has('sagerdebitor')->count();
+        // 3. Korrekte optællinger til fanerne
+        $totalSager = Sager::has('dialogs')->count();
+        $totalBogholderi = Sager::has('dialogs')->where('hovedstol', '>', 0)->count(); // Eller Sager::has('dialogs')->count();
+        $totalHistorik = Sager::has('dialogs')->count();
+        $totalKlienter = Sager::has('dialogs')->has('debitor')->count();
 
         return view('livewire.admin.dialogfelter.manage-dialogfelter', [
             'paginatedSager'      => $paginatedSager,

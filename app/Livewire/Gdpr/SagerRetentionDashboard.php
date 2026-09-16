@@ -104,8 +104,8 @@ class SagerRetentionDashboard extends Component
         $stats = $service->getSummaryStats();
 
         $query = ($this->tab === 'expired')
-            ? Sager::gdprExpired()->with('sagerdebitor')
-            : Sager::gdprExpiringSoon()->with('sagerdebitor');
+            ? Sager::gdprExpired()->with('debitor')
+            : Sager::gdprExpiringSoon()->with('debitor');
 
         $sager = $query->orderBy('afsluttet', 'asc')->paginate(15);
 

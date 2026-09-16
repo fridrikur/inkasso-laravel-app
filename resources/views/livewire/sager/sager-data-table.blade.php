@@ -383,8 +383,8 @@
                                 </div>
                             @endif
                         </td>
-                        <td class="px-6 py-4 font-medium text-slate-800">{{ $sag->debitor_navn ?? $sag->sagerdebitor->first()?->navn ?? '-' }}</td>
-                        <td class="px-6 py-4 text-slate-600">{{ $sag->kreditor_navn ?? $sag->sagerkreditor->first()?->navn ?? '-' }}</td>
+                        <td class="px-6 py-4 font-medium text-slate-800">{{ $sag->debitor_navn ?? $sag->debitor->first()?->navn ?? '-' }}</td>
+                        <td class="px-6 py-4 text-slate-600">{{ $sag->kreditor_navn ?? $sag->kreditor->first()?->navn ?? '-' }}</td>
                         <td class="whitespace-nowrap px-6 py-4 font-mono text-slate-500">
                             {{ $sag->modtaget ? \Carbon\Carbon::parse($sag->modtaget)->format('d-m-Y') : '-' }}
                         </td>

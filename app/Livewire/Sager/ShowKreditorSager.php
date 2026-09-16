@@ -34,7 +34,7 @@ class ShowKreditorSager extends Component
         $query = $this->kreditor
             ->sager()
             ->with([
-                'sagerdebitor.postnummer',
+                'debitor.postnummer',
             ])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
@@ -44,7 +44,7 @@ class ShowKreditorSager extends Component
                         ->orWhere('hovedstol', 'like', '%' . $search . '%')
 
                         // Search related debitor fields
-                        ->orWhereHas('sagerdebitor', function ($q2) use ($search) {
+                        ->orWhereHas('debitor', function ($q2) use ($search) {
                             $q2->where('navn', 'like', '%' . $search . '%')
                                 ->orWhere('adresse', 'like', '%' . $search . '%')
                                 ->orWhere('postnr', 'like', '%' . $search . '%')

@@ -19,12 +19,12 @@ class SagerExport implements FromView
     {
         $sager = Sager::query()
             ->with([
-                'sagerdebitor',
-                'sagerkreditor',
-                'sagerStatus',
-                'sagerAfslutning',
-                'sagersagsbehandler',
-                'sagerkonsulent',
+                'debitor',
+                'kreditor',
+                'status',
+                'afslutning',
+                'sagsbehandler',
+                'konsulent',
             ])
             ->filter($this->filters)
             ->orderBy($this->sortField, $this->sortDirection)

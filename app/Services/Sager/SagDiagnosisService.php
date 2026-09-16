@@ -24,8 +24,8 @@ class SagDiagnosisService
             $score -= 35;
         }
 
-        // Missing Debitor Relation
-        if ($sag->sagerdebitor->isEmpty()) {
+        // Missing Debitor Relation (null-safe)
+        if ($sag->debitor?->isEmpty() ?? true) {
             $issues[] = [
                 'type' => 'critical',
                 'message' => 'Sagen er ikke tilknyttet nogen debitor.',
@@ -33,8 +33,8 @@ class SagDiagnosisService
             $score -= 35;
         }
 
-        // Missing Kreditor Relation
-        if ($sag->sagerkreditor->isEmpty()) {
+        // Missing Kreditor Relation (null-safe)
+        if ($sag->kreditor?->isEmpty() ?? true) {
             $issues[] = [
                 'type' => 'critical',
                 'message' => 'Sagen er ikke tilknyttet nogen kreditor.',
@@ -46,14 +46,15 @@ class SagDiagnosisService
          * 2. OPERATIONAL & RELATIONSHIP WARNINGS (-10% each)
          * ========================================================================= */
 
-        // Status Relation Checks
-        if ($sag->sagerStatus->isEmpty()) {
+        // Status Relation Checks (null-safe)
+        $statusCollection = $sag->status;
+        if ($statusCollection?->isEmpty() ?? true) {
             $issues[] = [
                 'type' => 'warning',
                 'message' => 'Sagen har ingen aktiv status-markering.',
             ];
             $score -= 10;
-        } elseif ($sag->sagerStatus->count() > 1) {
+        } elseif ($statusCollection->count() > 1) {
             $issues[] = [
                 'type' => 'warning',
                 'message' => 'Sagen har flere samtidige statusser tilknyttet (skal konsolideres).',
@@ -61,8 +62,8 @@ class SagDiagnosisService
             $score -= 10;
         }
 
-        // Missing Sagsbehandler
-        if ($sag->sagersagsbehandler->isEmpty()) {
+        // Missing Sagsbehandler (null-safe)
+        if ($sag->sagsbehandler?->isEmpty() ?? true) {
             $issues[] = [
                 'type' => 'warning',
                 'message' => 'Sagen mangler en tildelt sagsbehandler.',
@@ -70,8 +71,8 @@ class SagDiagnosisService
             $score -= 10;
         }
 
-        // Closure Consistency Check (sagerAfslutning vs. $sag->afsluttet)
-        if ($sag->afsluttet && $sag->sagerAfslutning->isEmpty()) {
+        // Closure Consistency Check (afslutning vs. $sag->afsluttet) (null-safe)
+        if ($sag->afsluttet && ($sag->afslutning?->isEmpty() ?? true)) {
             $issues[] = [
                 'type' => 'warning',
                 'message' => 'Sagen er markeret som afsluttet, men mangler en afslutningsårsag.',
@@ -79,8 +80,11 @@ class SagDiagnosisService
             $score -= 10;
         }
 
-        // Inactive/Stale Case Check
-        if (!$sag->afsluttet && $sag->dialogs->isEmpty() && $sag->dokumenter->isEmpty()) {
+        // Inactive/Stale Case Check (null-safe)
+        $hasNoDialogs = $sag->dialogs?->isEmpty() ?? true;
+        $hasNoDokumenter = $sag->dokumenter?->isEmpty() ?? true;
+
+        if (!$sag->afsluttet && $hasNoDialogs && $hasNoDokumenter) {
             $issues[] = [
                 'type' => 'warning',
                 'message' => 'Aktiv sag uden registrerede dialoger eller dokumenter.',
@@ -102,11 +106,11 @@ class SagDiagnosisService
     public function scan(): array
     {
         return Sager::with([
-            'sagerdebitor',
-            'sagerkreditor',
-            'sagersagsbehandler',
-            'sagerStatus',
-            'sagerAfslutning',
+            'debitor',
+            'kreditor',
+            'sagsbehandler',
+            'status',
+            'afslutning',
             'dialogs',
             'dokumenter',
         ])

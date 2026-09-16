@@ -41,9 +41,9 @@ class SagSearch extends Component
 
         $this->results = Sager::query()
             ->with([
-                'sagerdebitor',
-                'sagerkreditor',
-                'sagersagsbehandler'
+                'debitor',
+                'kreditor',
+                'sagsbehandler'
             ])
             ->filter($filters)
             ->limit(50)
@@ -83,7 +83,7 @@ class SagSearch extends Component
         $this->showResults = true;
 
         $this->results = Sager::query()
-            ->with(['sagerdebitor','sagerkreditor','sagersagsbehandler'])
+            ->with(['debitor','kreditor','sagsbehandler'])
             ->filter($this->form->toFilterArray())
             ->limit(50)
             ->get();
@@ -133,8 +133,8 @@ class SagSearch extends Component
 
     public function mapSagToForm($sag): array
     {
-        $debitor = $sag->sagerdebitor->first();
-        $handler = $sag->sagersagsbehandler->first();    
+        $debitor = $sag->debitor->first();
+        $handler = $sag->sagsbehandler->first();    
         return [
             'sagsnr' => $sag->sagsnr,
             'navn' => $debitor?->navn,

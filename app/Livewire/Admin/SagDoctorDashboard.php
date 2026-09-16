@@ -49,33 +49,33 @@ class SagDoctorDashboard extends Component
             'critical' => Sager::query()->where(function ($q) {
                 $q->whereNull('sagsnr')
                   ->orWhere('sagsnr', '')
-                  ->orWhereDoesntHave('sagerdebitor')
-                  ->orWhereDoesntHave('sagerkreditor');
+                  ->orWhereDoesntHave('debitor')
+                  ->orWhereDoesntHave('kreditor');
             })->count(),
 
             'missing_handler' => Sager::query()->where(function ($q) {
-                $q->whereDoesntHave('sagersagsbehandler')
-                  ->orWhereDoesntHave('sagerkonsulent');
+                $q->whereDoesntHave('sagsbehandler')
+                  ->orWhereDoesntHave('konsulent');
             })->count(),
 
             'missing_status' => Sager::query()->where(function ($q) {
-                $q->whereDoesntHave('sagerStatus')
-                  ->orWhereHas('sagerStatus', null, '>', 1);
+                $q->whereDoesntHave('status')
+                  ->orWhereHas('status', null, '>', 1);
             })->count(),
 
             'invalid_closure' => Sager::query()->whereNotNull('afsluttet')
-                ->whereDoesntHave('sagerAfslutning')
+                ->whereDoesntHave('afslutning')
                 ->count(),
 
             'healthy' => Sager::query()
                 ->whereNotNull('sagsnr')
                 ->where('sagsnr', '!=', '')
-                ->whereHas('sagerdebitor')
-                ->whereHas('sagerkreditor')
-                ->whereHas('sagersagsbehandler')
-                ->whereHas('sagerkonsulent')
-                ->whereHas('sagerStatus', null, '=', 1)
-                ->where(fn($q) => $q->whereNull('afsluttet')->orWhereHas('sagerAfslutning'))
+                ->whereHas('debitor')
+                ->whereHas('kreditor')
+                ->whereHas('sagsbehandler')
+                ->whereHas('konsulent')
+                ->whereHas('status', null, '=', 1)
+                ->where(fn($q) => $q->whereNull('afsluttet')->orWhereHas('afslutning'))
                 ->count(),
         ];
     }
@@ -132,19 +132,19 @@ class SagDoctorDashboard extends Component
             return Sager::query()
                 ->whereIn('sagsnr', $duplicates)
                 ->when($this->search, fn($q) => $q->where('sagsnr', 'like', "%{$this->search}%"))
-                ->with(['sagerdebitor', 'sagerkreditor'])
+                ->with(['debitor', 'kreditor'])
                 ->orderBy('sagsnr')
                 ->paginate(10, ['*'], 'duplicatesPage');
         }
 
         // 🩺 SAGER DIAGNOSE
         $query = Sager::query()->with([
-            'sagerdebitor',
-            'sagerkreditor',
-            'sagersagsbehandler',
-            'sagerkonsulent',
-            'sagerStatus',
-            'sagerAfslutning',
+            'debitor',
+            'kreditor',
+            'sagsbehandler',
+            'konsulent',
+            'status',
+            'afslutning',
         ]);
 
         if (!empty(trim($this->search))) {
@@ -152,36 +152,36 @@ class SagDoctorDashboard extends Component
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('sagsnr', 'like', $searchTerm)
                   ->orWhere('id', 'like', $searchTerm)
-                  ->orWhereHas('sagerdebitor', fn($d) => $d->where('navn', 'like', $searchTerm))
-                  ->orWhereHas('sagerkreditor', fn($k) => $k->where('navn', 'like', $searchTerm));
+                  ->orWhereHas('debitor', fn($d) => $d->where('navn', 'like', $searchTerm))
+                  ->orWhereHas('kreditor', fn($k) => $k->where('navn', 'like', $searchTerm));
             });
         }
 
         $query->when($this->activeTab === 'missing_handler', function ($q) {
             $q->where(function ($sub) {
-                $sub->whereDoesntHave('sagersagsbehandler')
-                    ->orWhereDoesntHave('sagerkonsulent');
+                $sub->whereDoesntHave('sagsbehandler')
+                    ->orWhereDoesntHave('konsulent');
             });
         });
 
         $query->when($this->activeTab === 'missing_status', function ($q) {
             $q->where(function ($sub) {
-                $sub->whereDoesntHave('sagerStatus')
-                    ->orWhereHas('sagerStatus', null, '>', 1);
+                $sub->whereDoesntHave('status')
+                    ->orWhereHas('status', null, '>', 1);
             });
         });
 
         $query->when($this->activeTab === 'invalid_closure', function ($q) {
             $q->whereNotNull('afsluttet')
-              ->whereDoesntHave('sagerAfslutning');
+              ->whereDoesntHave('afslutning');
         });
 
         $query->when($this->activeTab === 'critical', function ($q) {
             $q->where(function ($sub) {
                 $sub->whereNull('sagsnr')
                     ->orWhere('sagsnr', '')
-                    ->orWhereDoesntHave('sagerdebitor')
-                    ->orWhereDoesntHave('sagerkreditor');
+                    ->orWhereDoesntHave('debitor')
+                    ->orWhereDoesntHave('kreditor');
             });
         });
 

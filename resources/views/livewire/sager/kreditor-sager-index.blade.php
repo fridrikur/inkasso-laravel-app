@@ -45,7 +45,7 @@
 
 <td class="p-3">{{ $sag->sagsnr }}</td>
 
-<td class="p-3">{{ $sag->sagerdebitor->first()->navn ?? '' }}</td>
+<td class="p-3">{{ $sag->debitor->first()->navn ?? '' }}</td>
 
 <td class="p-3">{{ $sag->hovedstol }}</td>
 

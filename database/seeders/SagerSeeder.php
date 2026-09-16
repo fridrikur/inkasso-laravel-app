@@ -275,23 +275,23 @@ class SagerSeeder extends Seeder
             // 4. TILKNYT SAMTLIGE RELATIONER OG DROPDOWNS
             // -------------------------------------------------------------------------
             
-            $sag->sagerkreditor()->attach($kreditorer->random()->id);
+            $sag->kreditor()->attach($kreditorer->random()->id);
 
             $debitor = $shuffledDebitorer->isNotEmpty() ? $shuffledDebitorer->pop() : $debitorer->random();
-            $sag->sagerdebitor()->attach($debitor->id);
+            $sag->debitor()->attach($debitor->id);
 
-            $sag->sagersagsbehandler()->attach($sagsbehandlere->random()->id);
-            $sag->sagerkonsulent()->attach($konsulenter->random()->id);
+            $sag->sagsbehandler()->attach($sagsbehandlere->random()->id);
+            $sag->konsulent()->attach($konsulenter->random()->id);
 
-            $sag->sagerStatus()->attach($statuser->random()->id);
-            $sag->sagerKtr()->attach($ktrListe->random()->id);
-            $sag->sagerBemaerkning()->attach($bemaerkninger->random()->id);
+            $sag->status()->attach($statuser->random()->id);
+            $sag->ktr()->attach($ktrListe->random()->id);
+            $sag->bemaerkning()->attach($bemaerkninger->random()->id);
             
             if (rand(1, 100) <= 80) {
-                $sag->sagerAfslutning()->attach($afslutninger->random()->id);
+                $sag->afslutning()->attach($afslutninger->random()->id);
             }
             if (rand(1, 100) <= 70) {
-                $sag->sagerUdlaeg()->attach($udlaegListe->random()->id);
+                $sag->udlaeg()->attach($udlaegListe->random()->id);
             }
         }
 

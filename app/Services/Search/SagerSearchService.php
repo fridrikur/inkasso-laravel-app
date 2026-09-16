@@ -11,12 +11,12 @@ class SagerSearchService
     {
         $query = Sager::query()
             ->with([
-                'sagerdebitor',
-                'sagerkreditor',
-                'sagerStatus',
-                'sagerAfslutning',
-                'sagersagsbehandler',
-                'sagerkonsulent',
+                'debitor',
+                'kreditor',
+                'status',
+                'afslutning',
+                'sagsbehandler',
+                'konsulent',
             ]);
 
         return $this->apply($query, $filters);
@@ -87,11 +87,11 @@ class SagerSearchService
                             ->where('sagsnr', 'like', "%{$search}%")
                             ->orWhere('stelnr', 'like', "%{$search}%")
 
-                            ->orWhereHas('sagerdebitor', function ($debitor) use ($search) {
+                            ->orWhereHas('debitor', function ($debitor) use ($search) {
                                 $debitor->where('navn', 'like', "%{$search}%");
                             })
 
-                            ->orWhereHas('sagerkreditor', function ($kreditor) use ($search) {
+                            ->orWhereHas('kreditor', function ($kreditor) use ($search) {
                                 $kreditor->where('navn', 'like', "%{$search}%");
                             });
 
@@ -132,7 +132,7 @@ class SagerSearchService
             ->when(
                 filled($filters['debitor'] ?? null),
                 fn ($q) => $q->whereHas(
-                    'sagerdebitor',
+                    'debitor',
                     fn ($d) => $d->where(
                         'navn',
                         'like',
@@ -144,7 +144,7 @@ class SagerSearchService
             ->when(
                 filled($filters['kreditor_id'] ?? null),
                 fn ($q) => $q->whereHas(
-                    'sagerkreditor',
+                    'kreditor',
                     fn ($k) => $k->where(
                         'kreditor_id',
                         $filters['kreditor_id']
@@ -155,7 +155,7 @@ class SagerSearchService
             ->when(
                 filled($filters['sagsbehandler_id'] ?? null),
                 fn ($q) => $q->whereHas(
-                    'sagersagsbehandler',
+                    'sagsbehandler',
                     fn ($s) => $s->where(
                         'user_id',
                         $filters['sagsbehandler_id']
@@ -166,7 +166,7 @@ class SagerSearchService
             ->when(
                 filled($filters['konsulent_id'] ?? null),
                 fn ($q) => $q->whereHas(
-                    'sagerkonsulent',
+                    'konsulent',
                     fn ($k) => $k->whereKey($filters['konsulent_id'])
                 )
             )
@@ -194,7 +194,7 @@ class SagerSearchService
             ->when(
                 filled($filters['afslutning_id'] ?? null),
                 fn ($q) => $q->whereHas(
-                    'sagerAfslutning',
+                    'afslutning',
                     fn ($a) => $a->whereKey($filters['afslutning_id'])
                 )
             );
@@ -210,7 +210,7 @@ class SagerSearchService
     {
         if (! empty($filters['status_ids'])) {
 
-            $query->whereHas('sagerStatus', function ($status) use ($filters) {
+            $query->whereHas('status', function ($status) use ($filters) {
 
                 $status->whereIn(
                     'sager_status.status_id',

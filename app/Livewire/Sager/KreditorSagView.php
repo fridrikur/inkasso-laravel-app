@@ -22,9 +22,9 @@ class KreditorSagView extends Component
     public function mount(Sager $sag)
 {
     $this->sag = $sag->load([
-        'sagerkreditor',
-        'sagersagsbehandler',
-        'sagerdebitor',
+        'kreditor',
+        'sagsbehandler',
+        'debitor',
         'dokumenter'
     ]);
 
@@ -32,7 +32,7 @@ class KreditorSagView extends Component
 
     $this->refreshBadge();
 
-    $this->debitor = $this->sag->sagerdebitor->first();
+    $this->debitor = $this->sag->debitor->first();
 }
 
     public function refreshBadge()

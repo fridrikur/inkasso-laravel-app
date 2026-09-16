@@ -295,7 +295,7 @@
 
                             <td class="px-6 py-4">
 
-                                @foreach($sag->sagerdebitor as $debitor)
+                                @foreach($sag->debitor as $debitor)
 
                                     {{ $debitor->navn }}
 

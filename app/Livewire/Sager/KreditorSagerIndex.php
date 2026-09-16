@@ -22,7 +22,7 @@ class KreditorSagerIndex extends Component
         $query = Sager::query()
 
             // Only show sager belonging to this kreditor
-            ->whereHas('sagerkreditor', function ($q) use ($kreditor) {
+            ->whereHas('kreditor', function ($q) use ($kreditor) {
                 $q->where('kreditor_id', $kreditor->id);
             })
 
@@ -36,7 +36,7 @@ class KreditorSagerIndex extends Component
                     ->orWhere('hovedstol', 'like', '%' . $search . '%')
 
                     // Search on debitor fields
-                    ->orWhereHas('sagerdebitor', function ($q2) use ($search) {
+                    ->orWhereHas('debitor', function ($q2) use ($search) {
 
                         $q2->where('navn', 'like', '%' . $search . '%')
                             ->orWhere('adresse', 'like', '%' . $search . '%')
@@ -54,8 +54,8 @@ class KreditorSagerIndex extends Component
 
         $sager = $query
             ->with([
-                'sagerdebitor',
-                'sagerdebitor.postnummer',
+                'debitor',
+                'debitor.postnummer',
             ])
             ->latest()
             ->paginate(15);
@@ -65,14 +65,14 @@ class KreditorSagerIndex extends Component
 
         if ($search !== '' && $sager->isEmpty()) {
 
-            $names = Sager::whereHas('sagerkreditor', function ($q) use ($kreditor) {
+            $names = Sager::whereHas('kreditor', function ($q) use ($kreditor) {
                     $q->where('kreditor_id', $kreditor->id);
                 })
-                ->with('sagerdebitor.postnummer')
+                ->with('debitor.postnummer')
                 ->limit(100)
                 ->get()
                 ->flatMap(function ($sag) {
-                    return $sag->sagerdebitor->flatMap(function ($debitor) {
+                    return $sag->debitor->flatMap(function ($debitor) {
                         return array_filter([
                             $debitor->navn,
                             $debitor->adresse,
@@ -120,7 +120,7 @@ class KreditorSagerIndex extends Component
     {
         $kreditor = auth()->user()->kreditorer()->first();
 
-        $sager = Sager::whereHas('sagerkreditor', function ($q) use ($kreditor) {
+        $sager = Sager::whereHas('kreditor', function ($q) use ($kreditor) {
             $q->where('kreditor_id', $kreditor->id);
         })
         ->where(function ($q) {

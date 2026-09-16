@@ -72,17 +72,17 @@ class StatusPage extends Component
     {
         $query = Sager::query()
             ->with([
-                'sagerkreditor',
-                'sagerdebitor',
-                'sagersagsbehandler',
-                'sagerStatus',
+                'kreditor',
+                'debitor',
+                'sagsbehandler',
+                'status',
             ])
-            ->whereHas('sagerStatus', function ($q) {
+            ->whereHas('status', function ($q) {
                 $q->where('status.id', $this->status->id);
             });
 
         if ($this->kreditor_id) {
-            $query->whereHas('sagerkreditor', function ($q) {
+            $query->whereHas('kreditor', function ($q) {
                 $q->where('kreditors.id', $this->kreditor_id);
             });
         }
@@ -155,16 +155,16 @@ class StatusPage extends Component
     {
         return match ($column) {
             'sagsnr'        => $sag->sagsnr ?? '',
-            'status'        => $sag->sagerStatus->first()?->tekst ?? $this->status->tekst ?? '',
-            'kreditor'      => $sag->sagerkreditor->first()?->navn ?? '',
-            'debitor'       => $sag->sagerdebitor->first()?->navn ?? '',
+            'status'        => $sag->status->first()?->tekst ?? $this->status->tekst ?? '',
+            'kreditor'      => $sag->kreditor->first()?->navn ?? '',
+            'debitor'       => $sag->debitor->first()?->navn ?? '',
             'modtaget'      => $sag->modtaget ? $sag->modtaget->format('d-m-Y') : '',
             'afsluttet'     => $sag->afsluttet ? $sag->afsluttet->format('d-m-Y') : '',
             'hovedstol'     => number_format((float) str_replace(',', '.', $sag->hovedstol ?? 0), 2, ',', '.'),
             'rente'         => number_format((float) str_replace(',', '.', $sag->rente ?? 0), 2, ',', '.'),
             'gebyr'         => number_format((float) str_replace(',', '.', $sag->gebyr ?? 0), 2, ',', '.'),
             'saldo'         => number_format((float) str_replace(',', '.', $sag->saldo ?? 0), 2, ',', '.'),
-            'sagsbehandler' => $sag->sagersagsbehandler->first()?->navn ?? $sag->sagersagsbehandler->first()?->name ?? '',
+            'sagsbehandler' => $sag->sagsbehandler->first()?->navn ?? $sag->sagsbehandler->first()?->name ?? '',
             'oprettet'      => $sag->created_at ? $sag->created_at->format('d-m-Y H:i') : '',
             default         => $sag->{$column} ?? '',
         };

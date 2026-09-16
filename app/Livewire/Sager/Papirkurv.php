@@ -121,17 +121,17 @@ class Papirkurv extends Component
             \App\Models\SagEditRequest::where('sag_id', $sag->id)->delete();
         }
 
-        $sag->sagerdebitor()->detach();
-        $sag->sagerkreditor()->detach();
-        $sag->sagersagsbehandler()->detach();
-        $sag->sagerkonsulent()->detach();
-        $sag->sagertokens()->detach();
+        $sag->debitor()->detach();
+        $sag->kreditor()->detach();
+        $sag->sagsbehandler()->detach();
+        $sag->konsulent()->detach();
+        $sag->tokens()->detach();
 
-        $sag->sagerStatus()->detach();
-        $sag->sagerKtr()->detach();
-        $sag->sagerBemaerkning()->detach();
-        $sag->sagerAfslutning()->detach();
-        $sag->sagerUdlaeg()->detach();
+        $sag->status()->detach();
+        $sag->ktr()->detach();
+        $sag->bemaerkning()->detach();
+        $sag->afslutning()->detach();
+        $sag->udlaeg()->detach();
 
         $sag->dialogs()->delete();
         $sag->dokumenter()->delete();

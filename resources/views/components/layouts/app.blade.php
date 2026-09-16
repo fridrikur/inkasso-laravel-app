@@ -483,7 +483,14 @@
         // Lyt efter brugeraktivitet på tværs af browsere (inkl. Firefox)
         window.addEventListener('mousemove', resetIdleTimers);
         window.addEventListener('mousedown', resetIdleTimers);
-        window.addEventListener('keypress', resetIdleTimers);
+        window.addEventListener('keypress', function(e) {
+            // Hvis brugeren skriver i et textarea eller input, skal inaktivitets-timeren IKKE nulstilles på denne måde 
+            // (eller i det mindste skal standard hændelsen ikke forstyrres)
+            // if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
+            //     return; 
+            // }
+            resetIdleTimers();
+        });
         window.addEventListener('scroll', resetIdleTimers);
         window.addEventListener('touchstart', resetIdleTimers);
 

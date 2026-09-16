@@ -41,12 +41,12 @@ class Klientinformation extends Component
     public function getSagNameProperty()
     {
         // Prøver at finde navnet via debitor-relationen (eller tilpas hvis det findes direkte på $this->sag->navn)
-        if ($this->sag->relationLoaded('sagerdebitor') && $this->sag->sagerdebitor->isNotEmpty()) {
-            return $this->sag->sagerdebitor->first()->navn ?? null;
+        if ($this->sag->relationLoaded('debitor') && $this->sag->debitor->isNotEmpty()) {
+            return $this->sag->debitor->first()->navn ?? null;
         }
 
         // Fallback hvis modellen har et direkte navn-felt
-        return $this->sag->navn ?? optional($this->sag->sagerdebitor()->first())->navn ?? 'Ukendt Klient';
+        return $this->sag->navn ?? optional($this->sag->debitor()->first())->navn ?? 'Ukendt Klient';
     }
 
     public function save(): void

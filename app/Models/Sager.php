@@ -61,52 +61,52 @@ class Sager extends Model
      * RELATIONER
      * ========================================================================= */
 
-    public function sagerkreditor()
+    public function kreditor()
     {
         return $this->belongsToMany(Kreditorer::class, 'sager_kreditor', 'sag_id', 'kreditor_id');
     }
 
-    public function sagerdebitor()
+    public function debitor()
     {
         return $this->belongsToMany(Debitorer::class, 'sager_debitor', 'sag_id', 'debitor_id');
     }
 
-    public function sagersagsbehandler()
+    public function sagsbehandler()
     {
         return $this->belongsToMany(Sagsbehandler::class, 'sager_sagsbehandler', 'sag_id', 'sagsbehandler_id');
     }
 
-    public function sagerkonsulent()
+    public function konsulent()
     {
         return $this->belongsToMany(Konsulenter::class, 'sager_konsulent', 'sag_id', 'konsulent_id');
     }
 
-    public function sagertokens()
+    public function tokens()
     {
         return $this->belongsToMany(Tokens::class, 'sager_tokens', 'sag_id', 'token_id');
     }
 
-    public function sagerStatus()
+    public function status()
     {
         return $this->belongsToMany(Status::class, 'sager_status', 'sag_id', 'status_id');
     }
 
-    public function sagerKtr()  
+    public function ktr()
     {
         return $this->belongsToMany(KTR::class, 'sager_ktr', 'sag_id', 'ktr_id');
     }
 
-    public function sagerBemaerkning()
+    public function bemaerkning()
     {
         return $this->belongsToMany(bemaerkning::class, 'sager_bemaerkning', 'sag_id', 'bemaerkning_id');
     }
 
-    public function sagerAfslutning()
+    public function afslutning()
     {
         return $this->belongsToMany(afslutning::class, 'sager_afslutning', 'sag_id', 'afslutning_id');
     }
 
-    public function sagerUdlaeg()
+    public function udlaeg()
     {
         return $this->belongsToMany(udlaeg::class, 'sager_udlaeg', 'sag_id', 'udlaeg_id');
     }
@@ -225,17 +225,17 @@ class Sager extends Model
         parent::booted();
 
         static::forceDeleted(function ($sag) {
-            $sag->sagerdebitor()->detach();
-            $sag->sagerkreditor()->detach();
-            $sag->sagersagsbehandler()->detach();
-            $sag->sagerkonsulent()->detach();
-            $sag->sagertokens()->detach();
+            $sag->debitor()->detach();
+            $sag->kreditor()->detach();
+            $sag->sagsbehandler()->detach();
+            $sag->konsulent()->detach();
+            $sag->tokens()->detach();
 
-            $sag->sagerStatus()->detach();
-            $sag->sagerKtr()->detach();
-            $sag->sagerBemaerkning()->detach();
-            $sag->sagerAfslutning()->detach();
-            $sag->sagerUdlaeg()->detach();
+            $sag->status()->detach();
+            $sag->ktr()->detach();
+            $sag->bemaerkning()->detach();
+            $sag->afslutning()->detach();
+            $sag->udlaeg()->detach();
             
             $sag->dialogs()->delete();
             $sag->dokumenter()->delete();
@@ -254,7 +254,7 @@ class Sager extends Model
                 $kreditorId = $user->kreditorer()->value('kreditors.id');
 
                 if ($kreditorId) {
-                    $query->whereHas('sagerkreditor', function ($q) use ($kreditorId) {
+                    $query->whereHas('kreditor', function ($q) use ($kreditorId) {
                         $q->whereKey($kreditorId);
                     });
                 }
@@ -331,11 +331,12 @@ class Sager extends Model
 
     public function anonymize(): void
     {
-        $this->sagerdebitor()->detach();
-        $this->sagerkreditor()->detach();
-        $this->sagersagsbehandler()->detach();
-        $this->sagerkonsulent()->detach();
-        $this->sagertokens()->detach();
+        // Hvis relationerne hedder debitor, kreditor, sagsbehandler, konsulent, tokens osv.:
+        $this->debitor()->detach();
+        $this->kreditor()->detach();
+        $this->sagsbehandler()->detach();
+        $this->konsulent()->detach();
+        $this->tokens()->detach();
 
         $this->dialogs()->delete();
         $this->dokumenter()->delete();
@@ -394,14 +395,14 @@ class Sager extends Model
 
         // 2. Filtrer på status (hvis valgt i filtrene)
         if (!empty($filters['status_id'])) {
-            $query->whereHas('sagerStatus', function ($q) use ($filters) {
+            $query->whereHas('status', function ($q) use ($filters) {
                 $q->where('statuses.id', $filters['status_id']);
             });
         }
 
         // 3. Filtrer på kreditor (hvis valgt i filtrene)
         if (!empty($filters['kreditor_id'])) {
-            $query->whereHas('sagerkreditor', function ($q) use ($filters) {
+            $query->whereHas('kreditor', function ($q) use ($filters) {
                 $q->where('kreditors.id', $filters['kreditor_id']);
             });
         }
@@ -428,6 +429,6 @@ class Sager extends Model
 
     public function getStatusAttribute()
     {
-        return $this->sagerStatus()->first();
+        return $this->status()->first();
     }
 }

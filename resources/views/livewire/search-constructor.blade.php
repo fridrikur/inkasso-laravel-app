@@ -234,19 +234,19 @@
                         </td>
 
                         <td class="px-4 py-3">
-                            {{ $sag->sagerkreditor->pluck('navn')->join(', ') }}
+                            {{ $sag->kreditor->pluck('navn')->join(', ') }}
                         </td>
 
                         <td class="px-4 py-3">
-                            {{ $sag->sagerdebitor->pluck('navn')->join(', ') }}
+                            {{ $sag->debitor->pluck('navn')->join(', ') }}
                         </td>
 
                         <td class="px-4 py-3">
-                            {{ $sag->sagerStatus->pluck('tekst')->join(', ') }}
+                            {{ $sag->status->pluck('tekst')->join(', ') }}
                         </td>
 
                         <td class="px-4 py-3">
-                            {{ $sag->sagerdebitor->pluck('postnr')->join(', ') }}
+                            {{ $sag->debitor->pluck('postnr')->join(', ') }}
                         </td>
                     </tr>
                 @empty

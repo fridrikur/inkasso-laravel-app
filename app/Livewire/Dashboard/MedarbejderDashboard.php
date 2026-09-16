@@ -43,12 +43,12 @@ class MedarbejderDashboard extends Component
         $searchTerm = trim($this->search);
 
         return Sager::query()
-            ->with(['sagerdebitor', 'sagerkreditor'])
+            ->with(['debitor', 'kreditor'])
             ->where(function ($query) use ($searchTerm) {
                 $query->where('sagsnr', 'like', "%{$searchTerm}%")
                       ->orWhere('id', 'like', "%{$searchTerm}%")
-                      ->orWhereHas('sagerdebitor', fn($q) => $q->where('navn', 'like', "%{$searchTerm}%"))
-                      ->orWhereHas('sagerkreditor', fn($q) => $q->where('navn', 'like', "%{$searchTerm}%"));
+                      ->orWhereHas('debitor', fn($q) => $q->where('navn', 'like', "%{$searchTerm}%"))
+                      ->orWhereHas('kreditor', fn($q) => $q->where('navn', 'like', "%{$searchTerm}%"));
             })
             ->latest()
             ->take(10)
@@ -61,9 +61,9 @@ class MedarbejderDashboard extends Component
 
         // 📄 Seneste sager (med relationer)
         $this->latestSager = Sager::with([
-                'sagerdebitor',
-                'sagerkreditor',
-                'sagersagsbehandler'
+                'debitor',
+                'kreditor',
+                'sagsbehandler'
             ])
             ->latest()
             ->take(8)
@@ -71,9 +71,9 @@ class MedarbejderDashboard extends Component
 
         // 💬 Sager med ulæste beskeder
         $this->sagerWithNewMessages = Sager::with([
-                'sagerdebitor',
-                'sagerkreditor',
-                'sagersagsbehandler'
+                'debitor',
+                'kreditor',
+                'sagsbehandler'
             ])
             ->whereHas('dialogs', function ($q) use ($user) {
                 $q->where('type', 'klientinformation')
@@ -95,7 +95,7 @@ class MedarbejderDashboard extends Component
 
         // 🔴 Ubehandlede sager
         $unreadQuery = Sager::unreadForUser($user)
-            ->with(['sagerdebitor', 'sagerkreditor']);
+            ->with(['debitor', 'kreditor']);
             
         $this->unreadSagerCount = $unreadQuery->count();
         $this->unreadSager = $unreadQuery->latest()->take(5)->get();

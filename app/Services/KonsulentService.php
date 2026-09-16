@@ -6,6 +6,7 @@ use App\Models\Konsulenter;
 use App\Models\HovedKonsulent;
 use App\Models\SkjultKonsulent;
 use App\Models\NotifikationsKonsulent;
+use Illuminate\Support\Facades\DB;
 
 class KonsulentService
 {
@@ -13,18 +14,24 @@ class KonsulentService
         protected ActivityService $activity,
         protected TransferService $transfer,
     ) {}
+
     /*
     |--------------------------------------------------------------------------
     | Create / Update
     |--------------------------------------------------------------------------
     */
 
-
     public function save(
         ?Konsulenter $konsulent,
         array $data
     ): Konsulenter {
-
+        
+        // 🟢 Rens data: Konverter tomme strenge til null for at undgå unik-indeks konflikter i MySQL
+        foreach (['tlf', 'mobil', 'email'] as $field) {
+            if (array_key_exists($field, $data) && $data[$field] === '') {
+                $data[$field] = null;
+            }
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -33,8 +40,6 @@ class KonsulentService
         */
 
         if ($konsulent) {
-
-
             $old = $konsulent->only([
                 'navn',
                 'email',
@@ -42,43 +47,29 @@ class KonsulentService
                 'mobil',
             ]);
 
-
             $konsulent->update($data);
-
 
             $changes = [];
 
-
             foreach ($data as $field => $value) {
-
                 if (($old[$field] ?? null) != $value) {
-
                     $changes[$field] = [
                         'old' => $old[$field] ?? null,
                         'new' => $value,
                     ];
-
                 }
-
             }
 
-
             if ($changes) {
-
                 $this->activity->log(
                     'Konsulent opdateret',
                     $konsulent,
                     $changes
                 );
-
             }
 
-
             return $konsulent->refresh();
-
         }
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -86,9 +77,7 @@ class KonsulentService
         |--------------------------------------------------------------------------
         */
 
-
         $konsulent = Konsulenter::create($data);
-
 
         $this->activity->log(
             'Ny konsulent oprettet',
@@ -99,14 +88,8 @@ class KonsulentService
             ]
         );
 
-
         return $konsulent;
-
     }
-
-
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -114,27 +97,15 @@ class KonsulentService
     |--------------------------------------------------------------------------
     */
 
-
     public function syncRoles(
         Konsulenter $k,
         array $roles
     ): void {
-
-
         $oldRoles = [
-
-            'hoved' =>
-                HovedKonsulent::current()?->id === $k->id,
-
-            'skjult' =>
-                SkjultKonsulent::has($k),
-
-            'notifikation' =>
-                NotifikationsKonsulent::has($k),
-
+            'hoved' => HovedKonsulent::current()?->id === $k->id,
+            'skjult' => SkjultKonsulent::has($k),
+            'notifikation' => NotifikationsKonsulent::has($k),
         ];
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -142,31 +113,15 @@ class KonsulentService
         |--------------------------------------------------------------------------
         */
 
-
         if ($roles['hoved'] ?? false) {
-
-
             HovedKonsulent::setHoved($k);
-
             NotifikationsKonsulent::add($k);
-
             SkjultKonsulent::remove($k);
-
-
         } else {
-
-
-            if(
-                HovedKonsulent::current()?->id === $k->id
-            ){
-
+            if (HovedKonsulent::current()?->id === $k->id) {
                 HovedKonsulent::unsetHoved();
-
             }
-
         }
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -174,28 +129,13 @@ class KonsulentService
         |--------------------------------------------------------------------------
         */
 
-
         if ($roles['skjult'] ?? false) {
-
-
-            if(
-                HovedKonsulent::current()?->id !== $k->id
-            ){
-
+            if (HovedKonsulent::current()?->id !== $k->id) {
                 SkjultKonsulent::add($k);
-
             }
-
-
         } else {
-
-
             SkjultKonsulent::remove($k);
-
         }
-
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -203,48 +143,21 @@ class KonsulentService
         |--------------------------------------------------------------------------
         */
 
-
         if ($roles['notifikation'] ?? false) {
-
-
             NotifikationsKonsulent::add($k);
-
-
         } else {
-
-
-            if(
-                HovedKonsulent::current()?->id !== $k->id
-            ){
-
+            if (HovedKonsulent::current()?->id !== $k->id) {
                 NotifikationsKonsulent::remove($k);
-
             }
-
         }
 
-
-
-
-
         $newRoles = [
-
-            'hoved' =>
-                HovedKonsulent::current()?->id === $k->id,
-
-            'skjult' =>
-                SkjultKonsulent::has($k),
-
-            'notifikation' =>
-                NotifikationsKonsulent::has($k),
-
+            'hoved' => HovedKonsulent::current()?->id === $k->id,
+            'skjult' => SkjultKonsulent::has($k),
+            'notifikation' => NotifikationsKonsulent::has($k),
         ];
 
-
-
-        if($oldRoles !== $newRoles) {
-
-
+        if ($oldRoles !== $newRoles) {
             $this->activity->log(
                 'Konsulentroller ændret',
                 $k,
@@ -253,59 +166,44 @@ class KonsulentService
                     'til' => $newRoles,
                 ]
             );
-
         }
 
         if ($roles['hoved'] ?? false) {
-
             HovedKonsulent::setHoved($k);
-
             NotifikationsKonsulent::add($k);
-
             SkjultKonsulent::remove($k);
-
         }
-
     }
-
-
-
-
 
     /*
     |--------------------------------------------------------------------------
     | Delete
     |--------------------------------------------------------------------------
     */
-        public function transferAndDelete(
-            Konsulenter $from,
-            Konsulenter $to
-        ): void
-        {
-            DB::transaction(function () use ($from, $to) {
 
-                $count = $this->transfer
-                    ->transferKonsulent($from, $to);
+    public function transferAndDelete(
+        Konsulenter $from,
+        Konsulenter $to
+    ): void {
+        DB::transaction(function () use ($from, $to) {
+            $count = $this->transfer->transferKonsulent($from, $to);
 
-                $this->activity->log(
-                    'Konsulent overført',
-                    $from,
-                    [
-                        'til' => $to->navn,
-                        'antal_sager' => $count,
-                    ]
-                );
+            $this->activity->log(
+                'Konsulent overført',
+                $from,
+                [
+                    'til' => $to->navn,
+                    'antal_sager' => $count,
+                ]
+            );
 
-                $this->delete($from);
-
-            });
-        }
+            $this->delete($from);
+        });
+    }
 
     public function delete(
         Konsulenter $k
     ): void {
-
-
         $this->activity->log(
             'Konsulent slettet',
             $k,
@@ -315,26 +213,13 @@ class KonsulentService
             ]
         );
 
-
-
         SkjultKonsulent::remove($k);
-
         NotifikationsKonsulent::remove($k);
 
-
-
-        if(
-            HovedKonsulent::current()?->id === $k->id
-        ){
-
+        if (HovedKonsulent::current()?->id === $k->id) {
             HovedKonsulent::unsetHoved();
-
         }
 
-
-
         $k->delete();
-
     }
-
 }

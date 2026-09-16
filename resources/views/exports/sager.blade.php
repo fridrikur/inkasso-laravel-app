@@ -22,17 +22,17 @@
 
                             'afsluttet' => optional($sag->afsluttet)?->format('d-m-Y'),
 
-                            'debitor' => optional($sag->sagerdebitor->first())->navn,
+                            'debitor' => optional($sag->debitor->first())->navn,
 
-                            'kreditor' => optional($sag->sagerkreditor->first())->navn,
+                            'kreditor' => optional($sag->kreditor->first())->navn,
 
-                            'status' => optional($sag->sagerStatus->first())->tekst,
+                            'status' => optional($sag->status->first())->tekst,
 
-                            'afslutning' => optional($sag->sagerAfslutning->first())->tekst,
+                            'afslutning' => optional($sag->afslutning->first())->tekst,
 
-                            'sagsbehandler' => optional($sag->sagersagsbehandler->first())->navn,
+                            'sagsbehandler' => optional($sag->sagsbehandler->first())->navn,
 
-                            'konsulent' => optional($sag->sagerkonsulent->first())->navn,
+                            'konsulent' => optional($sag->konsulent->first())->navn,
 
                             default => '',
                         };

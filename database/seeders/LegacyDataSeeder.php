@@ -128,21 +128,21 @@ class LegacyDataSeeder extends Seeder
             ]);
 
             // Tilknyt relationer
-            $sag->sagerkreditor()->attach($kreditorer->random()->id);
+            $sag->kreditor()->attach($kreditorer->random()->id);
             $debitor = $shuffledDebitorer->isNotEmpty() ? $shuffledDebitorer->pop() : $debitorer->random();
-            $sag->sagerdebitor()->attach($debitor->id);
-            $sag->sagersagsbehandler()->attach($sagsbehandlere->random()->id);
+            $sag->debitor()->attach($debitor->id);
+            $sag->sagsbehandler()->attach($sagsbehandlere->random()->id);
             
             if ($konsulenter->isNotEmpty()) {
-                $sag->sagerkonsulent()->attach($konsulenter->random()->id);
+                $sag->konsulent()->attach($konsulenter->random()->id);
             }
             
-            $sag->sagerStatus()->attach($statuser->random()->id);
+            $sag->status()->attach($statuser->random()->id);
             
-            if ($ktrListe->isNotEmpty()) $sag->sagerKtr()->attach($ktrListe->random()->id);
-            if ($bemaerkninger->isNotEmpty()) $sag->sagerBemaerkning()->attach($bemaerkninger->random()->id);
-            if ($isAfsluttet && $afslutninger->isNotEmpty()) $sag->sagerAfslutning()->attach($afslutninger->random()->id);
-            if ($udlaegListe->isNotEmpty()) $sag->sagerUdlaeg()->attach($udlaegListe->random()->id);
+            if ($ktrListe->isNotEmpty()) $sag->ktr()->attach($ktrListe->random()->id);
+            if ($bemaerkninger->isNotEmpty()) $sag->bemaerkning()->attach($bemaerkninger->random()->id);
+            if ($isAfsluttet && $afslutninger->isNotEmpty()) $sag->afslutning()->attach($afslutninger->random()->id);
+            if ($udlaegListe->isNotEmpty()) $sag->udlaeg()->attach($udlaegListe->random()->id);
         }
     }
 }

@@ -22,6 +22,7 @@
             </button>
         </div>
     @endif
+
     {{-- TOP NAVIGATION / BREADCRUMB --}}
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
@@ -115,9 +116,8 @@
                         <div class="flex items-center gap-2 pt-2 border-t border-slate-200/60">
                             <button
                                 type="button"
-                                wire:click="openSagsbehandlerModal({{ $currentHsb->id }})"
-                                class="flex-1 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer text-center"
-                            >
+                                wire:click="$dispatch('open-sagsbehandler-edit', { id: {{ $currentHsb->id }}, kreditorId: {{ $kreditor->id }} })"
+                                class="flex-1 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer text-center">
                                 Redigér
                             </button>
                         </div>
@@ -196,13 +196,13 @@
                     </div>
 
                     <button
-                    type="button"
-                    wire:click="$dispatch('open-user-create', { kreditorId: {{ $kreditor->id }} })"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
-                >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <span>Ny bruger</span>
-                </button>
+                        type="button"
+                        wire:click="$dispatch('open-user-create', { kreditorId: {{ $kreditor->id }} })"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
+                    >
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        <span>Ny bruger</span>
+                    </button>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -237,7 +237,7 @@
                 </div>
             </div>
 
-            {{-- 2. SAGSBEHANDLERE --}}
+            {{-- 2. SAGSBEHANDLERE (Viser ALLE sagsbehandlere inkl. hovedsagsbehandler) --}}
             <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
                 <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
                     <div>
@@ -266,9 +266,20 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
+                            @php
+                                $currentHsbId = $this->kreditor->hovedsagsbehandler->first()?->id;
+                            @endphp
+
                             @forelse($this->kreditor->sagsbehandlere as $sagsbehandler)
                                 <tr wire:key="sags-{{ $sagsbehandler->id }}" class="hover:bg-slate-50/60 transition duration-150">
-                                    <td class="px-6 py-3.5 font-semibold text-slate-900">{{ $sagsbehandler->navn }}</td>
+                                    <td class="px-6 py-3.5 font-semibold text-slate-900 flex items-center gap-2">
+                                        {{ $sagsbehandler->navn }}
+                                        @if($sagsbehandler->id === $currentHsbId)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold">
+                                                ⭐ Hovedsagsbehandler
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-3.5 font-mono text-slate-500">{{ $sagsbehandler->email ?? '-' }}</td>
                                     <td class="px-6 py-3.5 font-mono text-slate-500">
                                         {{ implode(' / ', array_filter([$sagsbehandler->tlf, $sagsbehandler->mobil])) ?: '-' }}
@@ -276,7 +287,7 @@
                                     <td class="px-6 py-3.5 text-right font-medium">
                                         <x-table-actions 
                                             :id="$sagsbehandler->id" 
-                                            editAction="$dispatch('open-sagsbehandler-edit', { id: {{ $sagsbehandler->id }} })"
+                                            editAction="$dispatch('open-sagsbehandler-edit', { id: {{ $sagsbehandler->id }}, kreditorId: {{ $kreditor->id }} })"
                                             deleteAction="$dispatch('open-sagsbehandler-delete', { id: {{ $sagsbehandler->id }}, kreditorId: {{ $kreditor->id }} })"
                                         />
                                     </td>
@@ -330,7 +341,7 @@
                                 <tr wire:key="sag-{{ $sag->id }}" class="hover:bg-slate-50/60 transition duration-150">
                                     <td class="px-6 py-3.5 font-mono font-semibold text-slate-900">{{ $sag->sagsnr ?? '#' . $sag->id }}</td>
                                     <td class="px-6 py-3.5 font-medium text-slate-800">
-                                        {{ $sag->sagerdebitor->first()?->navn ?? $sag->debitor_navn ?? '-' }}
+                                        {{ $sag->debitor->first()?->navn ?? $sag->debitor_navn ?? '-' }}
                                     </td>
                                     <td class="px-6 py-3.5">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold">
@@ -366,7 +377,6 @@
     {{-- ================================================================= --}}
 
     {{-- 1. SLET KREDITOR MODAL --}}
-    {{-- 1. SLET KREDITOR MODAL --}}
     @if($showDeleteModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
             <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-4">
@@ -385,7 +395,6 @@
                     <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
                         <p class="text-xs text-amber-800 font-medium">Kreditoren har {{ $sagerCount }} aktive sager. Vælg modtager og indtast sikkerhedskode:</p>
                         
-                        {{-- Vælg modtager --}}
                         <div class="space-y-1">
                             <select wire:model="transferToKreditorId" class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-hidden">
                                 <option value="">-- Vælg modtager-kreditor --</option>
@@ -396,7 +405,6 @@
                             @error('transferToKreditorId') <span class="text-[10px] text-rose-600 font-bold">{{ $message }}</span> @enderror
                         </div>
 
-                        {{-- Sikkerhedskode felt --}}
                         <div class="space-y-1">
                             <input 
                                 type="password" 

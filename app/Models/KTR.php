@@ -14,7 +14,7 @@ class KTR extends Model
         'forkortelse',
     ];
 
-    public function sagerKTR(): BelongsToMany
+    public function sager(): BelongsToMany
     {
         return $this->belongsToMany(Sager::class, 'sager_ktr', 'ktr_id', 'sag_id');
     }

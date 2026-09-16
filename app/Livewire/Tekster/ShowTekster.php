@@ -190,7 +190,7 @@ class ShowTekster extends Component
             /*
              * Prevent deletion if used on cases
              */
-            if ($status->sagerStatus()->exists()) {
+            if ($status->status()->exists()) {
 
                 session()->flash(
                     'error',

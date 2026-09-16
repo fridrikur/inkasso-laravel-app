@@ -29,6 +29,15 @@
                         </div>
                     </div>
 
+                    {{-- 🟢 Checkbox til Hovedsagsbehandler --}}
+                    <div class="pt-2 border-t border-slate-100">
+                        <label class="flex items-center gap-2.5 cursor-pointer">
+                            <input type="checkbox" wire:model="isHoved" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                            <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Sæt som hovedsagsbehandler</span>
+                        </label>
+                        <p class="text-[11px] text-slate-400 mt-1">Bemærk: Der kan kun være én hovedsagsbehandler pr. kreditor. Hvis en anden er sat, vil denne blive erstattet.</p>
+                    </div>
+
                     <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
                         <button type="button" wire:click="closeModal" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Annuller</button>
                         <button type="submit" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">Gem sagsbehandler</button>
@@ -37,12 +46,12 @@
             </div>
         </div>
     @endif
+
     {{-- SLET BEKRÆFTELSESMODAL --}}
     @if($showDeleteModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
             <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-4">
                 
-                {{-- Skjult input for at fastholde kreditorId i Livewire DOM --}}
                 <input type="hidden" wire:model="kreditorId">
                 <input type="hidden" wire:model="deletingId">
 
@@ -63,6 +72,4 @@
             </div>
         </div>
     @endif
-    
-    
 </div>

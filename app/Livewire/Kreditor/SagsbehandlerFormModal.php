@@ -16,28 +16,42 @@ class SagsbehandlerFormModal extends Component
     public string $email = '';
     public string $tlf = '';
     public string $mobil = '';
+    public bool $isHoved = false;
+
     public bool $showDeleteModal = false;
     public ?int $deletingId = null;
 
     protected $listeners = [
         'open-sagsbehandler-create' => 'create',
         'open-sagsbehandler-edit'   => 'edit',
-        'open-sagsbehandler-delete' => 'confirmDeleteModal', // <--- Lytter på slet fra table-actions
+        'open-sagsbehandler-delete' => 'confirmDeleteModal',
     ];    
     
+    // 🟢 Accepterer kreditorId direkte som variabel
     public function create($kreditorId = null)
     {
-        $this->reset(['navn', 'email', 'tlf', 'mobil', 'editingId']);
-        $this->kreditorId = $kreditorId;
-        $this->editingId = null; // Tvinges til null ved oprettelse
+        $this->reset(['navn', 'email', 'tlf', 'mobil', 'isHoved', 'editingId']);
+        
+        // Håndter hvis Livewire sender det som array eller standard variabel
+        $this->kreditorId = is_array($kreditorId) ? ($kreditorId['kreditorId'] ?? null) : $kreditorId;
+        $this->editingId = null;
         $this->showModal = true;
     }
 
-    public function edit($id)
+    // 🟢 Accepterer både id og kreditorId direkte som separate variable
+    public function edit($id, $kreditorId = null)
     {
-        $this->reset(['navn', 'email', 'tlf', 'mobil', 'editingId', 'kreditorId']);
+        $this->reset(['navn', 'email', 'tlf', 'mobil', 'isHoved', 'editingId', 'kreditorId']);
         
-        $this->editingId = (int) $id;
+        // Sikr at id og kreditorId fanges uanset om de kommer fladt eller i et array
+        $sagsbehandlerId = is_array($id) ? ($id['id'] ?? null) : $id;
+        if (is_array($id) && isset($id['kreditorId'])) {
+            $this->kreditorId = $id['kreditorId'];
+        } else {
+            $this->kreditorId = $kreditorId;
+        }
+
+        $this->editingId = (int) $sagsbehandlerId;
         $sagsbehandler = Sagsbehandler::findOrFail($this->editingId);
         
         $this->navn  = $sagsbehandler->navn;
@@ -45,13 +59,21 @@ class SagsbehandlerFormModal extends Component
         $this->tlf   = $sagsbehandler->tlf ?? '';
         $this->mobil = $sagsbehandler->mobil ?? '';
 
+        // Tjek om sagsbehandleren er hovedsagsbehandler
+        if ($this->kreditorId) {
+            $kreditor = Kreditorer::find($this->kreditorId);
+            if ($kreditor && method_exists($kreditor, 'hovedsagsbehandler')) {
+                $this->isHoved = $kreditor->hovedsagsbehandler()->where('sagsbehandlers.id', $sagsbehandler->id)->exists();
+            }
+        }
+
         $this->showModal = true;
     }
 
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['navn', 'email', 'tlf', 'mobil', 'editingId', 'kreditorId']);
+        $this->reset(['navn', 'email', 'tlf', 'mobil', 'isHoved', 'editingId', 'kreditorId']);
     }
 
     public function save()
@@ -77,12 +99,26 @@ class SagsbehandlerFormModal extends Component
                 $msg = 'Sagsbehandler opdateret.';
             } else {
                 $sagsbehandler = Sagsbehandler::create($data);
+                $msg = 'Sagsbehandler oprettet.';
+            }
 
-                if ($this->kreditorId) {
-                    $kreditor = Kreditorer::find($this->kreditorId);
-                    $kreditor?->sagsbehandlere()->syncWithoutDetaching([$sagsbehandler->id]);
+            // Knyt til kreditor og hovedsagsbehandler
+            if ($this->kreditorId) {
+                $kreditor = Kreditorer::find($this->kreditorId);
+                if ($kreditor) {
+                    $kreditor->sagsbehandlere()->syncWithoutDetaching([$sagsbehandler->id]);
+
+                    if (method_exists($kreditor, 'hovedsagsbehandler')) {
+                        if ($this->isHoved) {
+                            $kreditor->hovedsagsbehandler()->sync([$sagsbehandler->id]);
+                        } else {
+                            $isCurrentHoved = $kreditor->hovedsagsbehandler()->where('sagsbehandlers.id', $sagsbehandler->id)->exists();
+                            if ($isCurrentHoved) {
+                                $kreditor->hovedsagsbehandler()->detach($sagsbehandler->id);
+                            }
+                        }
+                    }
                 }
-                $msg = 'Sagsbehandler oprettet og tilknyttet.';
             }
 
             $this->dispatch('toast', ['message' => $msg, 'type' => 'success']);
@@ -90,12 +126,10 @@ class SagsbehandlerFormModal extends Component
             $this->dispatch('kreditor-updated');
 
         } catch (\Illuminate\Database\QueryException $e) {
-            // Tjek om fejlen er en duplikat-indtastning (MySQL fejlode 1062)
             if ($e->errorInfo[1] === 1062) {
                 $this->addError('navn', 'Der findes allerede en sagsbehandler med dette navn.');
                 $this->dispatch('toast', ['message' => 'Der findes allerede en sagsbehandler med dette navn.', 'type' => 'error']);
             } else {
-                // Generel databasefejl
                 $this->dispatch('toast', ['message' => 'Der opstod en databasefejl. Prøv igen.', 'type' => 'error']);
             }
         }
@@ -103,15 +137,9 @@ class SagsbehandlerFormModal extends Component
 
     public function confirmDeleteModal($id = null)
     {
-        // Hvis $id kommer som et array fra et dispatch, udlæser vi 'id' ellers tager vi værdien direkte
         $this->deletingId = is_array($id) ? ($id['id'] ?? null) : $id;
         
-        // Hvis kreditorId ikke er sat, kan vi hente det fra den sagsbehandler der skal slettes, 
-        // eller lade den finde det fra den aktuelle side.
         if (!empty($this->deletingId)) {
-            $sagsbehandler = Sagsbehandler::find($this->deletingId);
-            // Hvis sagsbehandleren har en kreditor-relation, kan vi finde den herfra
-            // Ellers bruger vi bare den kreditor der er aktiv i Livewire (hvis den er sendt med)
             if (is_array($id) && isset($id['kreditorId'])) {
                 $this->kreditorId = $id['kreditorId'];
             }
@@ -126,12 +154,14 @@ class SagsbehandlerFormModal extends Component
             $sagsbehandler = Sagsbehandler::find($this->deletingId);
             
             if ($sagsbehandler) {
-                // Hvis kreditorId er kendt, sletter vi specifikt for den kreditor
                 if ($this->kreditorId) {
                     $kreditor = Kreditorer::find($this->kreditorId);
                     $kreditor?->sagsbehandlere()->detach($this->deletingId);
+                    
+                    if (method_exists($kreditor, 'hovedsagsbehandler')) {
+                        $kreditor->hovedsagsbehandler()->detach($this->deletingId);
+                    }
                 } else {
-                    // Fallback: Fjerner tilknytningen fra alle kreditorer hvis kreditorId mangler
                     $sagsbehandler->kreditorer()->detach();
                 }
             }
@@ -141,8 +171,6 @@ class SagsbehandlerFormModal extends Component
 
         $this->showDeleteModal = false;
         $this->deletingId = null;
-        
-        // Genindlæs hovedkomponenten
         $this->dispatch('kreditor-updated');
     }
 

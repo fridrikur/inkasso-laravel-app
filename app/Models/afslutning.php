@@ -14,7 +14,7 @@ class afslutning extends Model
         'forkortelse',
     ];
 
-    public function sagerafslutning(): BelongsToMany
+    public function sager(): BelongsToMany
     {
         return $this->belongsToMany(Sager::class, 'sager_afslutning', 'afslutning_id', 'sag_id');
     }

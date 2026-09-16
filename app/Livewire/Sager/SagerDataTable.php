@@ -46,7 +46,7 @@ class SagerDataTable extends Component
         $query = $this->baseQuery()->onlyTrashed();
 
         if ($this->selectedKreditor) {
-            $query->whereHas('sagerkreditor', fn($k) => $k->where('kreditors.navn', $this->selectedKreditor));
+            $query->whereHas('kreditor', fn($k) => $k->where('kreditors.navn', $this->selectedKreditor));
         }
 
         return $query->count();
@@ -64,7 +64,7 @@ class SagerDataTable extends Component
         });
 
         if ($this->selectedKreditor) {
-            $query->whereHas('sagerkreditor', fn($k) => $k->where('kreditors.navn', $this->selectedKreditor));
+            $query->whereHas('kreditor', fn($k) => $k->where('kreditors.navn', $this->selectedKreditor));
         }
 
         return $query->count();
@@ -167,17 +167,17 @@ class SagerDataTable extends Component
                     \App\Models\SagEditRequest::where('sag_id', $sagId)->delete();
                 }
 
-                $sag->sagerdebitor()->detach();
-                $sag->sagerkreditor()->detach();
-                $sag->sagersagsbehandler()->detach();
-                $sag->sagerkonsulent()?->detach();
-                $sag->sagertokens()->detach();
+                $sag->debitor()->detach();
+                $sag->kreditor()->detach();
+                $sag->sagsbehandler()->detach();
+                $sag->konsulent()?->detach();
+                $sag->tokens()->detach();
 
-                $sag->sagerStatus()->detach();
-                $sag->sagerKtr()->detach();
-                $sag->sagerBemaerkning()->detach();
-                $sag->sagerAfslutning()->detach();
-                $sag->sagerUdlaeg()->detach();
+                $sag->status()->detach();
+                $sag->ktr()->detach();
+                $sag->bemaerkning()->detach();
+                $sag->afslutning()->detach();
+                $sag->udlaeg()->detach();
 
                 $sag->dialogs()->delete();
                 $sag->dokumenter()->delete();
@@ -210,8 +210,8 @@ class SagerDataTable extends Component
     {
         return Sager::query()
             ->with([
-                'sagerdebitor',
-                'sagerkreditor',
+                'debitor',
+                'kreditor',
             ])
             ->when(
                 trim($this->search) !== '',
@@ -222,7 +222,7 @@ class SagerDataTable extends Component
                         $q->where('sagsnr', 'like', "%{$search}%")
 
                             ->orWhereHas(
-                                'sagerdebitor',
+                                'debitor',
                                 function ($q) use ($search) {
                                     $q->where(
                                         'navn',
@@ -233,7 +233,7 @@ class SagerDataTable extends Component
                             )
 
                             ->orWhereHas(
-                                'sagerkreditor',
+                                'kreditor',
                                 function ($q) use ($search) {
                                     $q->where(
                                         'navn',
@@ -309,13 +309,13 @@ class SagerDataTable extends Component
 
             case 'kreditor':
                 if ($this->kreditor) {
-                    $query->whereHas('sagerkreditor', fn ($q) => $q->whereKey($this->kreditor->id));
+                    $query->whereHas('kreditor', fn ($q) => $q->whereKey($this->kreditor->id));
                 }
                 break;
 
             case 'status':
                 if ($this->statusId) {
-                    $query->whereHas('sagerStatus', fn($s) => $s->where('status.id', $this->statusId));
+                    $query->whereHas('status', fn($s) => $s->where('status.id', $this->statusId));
                 }
                 break;
         }
@@ -328,13 +328,13 @@ class SagerDataTable extends Component
         $query->when($this->search, function ($q) {
             $q->where(function ($sub) {
                 $sub->where('sagers.sagsnr', 'like', "%{$this->search}%")
-                    ->orWhereHas('sagerdebitor', fn($d) => $d->where('debitors.navn', 'like', "%{$this->search}%"))
-                    ->orWhereHas('sagerkreditor', fn($k) => $k->where('kreditors.navn', 'like', "%{$this->search}%"));
+                    ->orWhereHas('debitor', fn($d) => $d->where('debitors.navn', 'like', "%{$this->search}%"))
+                    ->orWhereHas('kreditor', fn($k) => $k->where('kreditors.navn', 'like', "%{$this->search}%"));
             });
         });
 
         $query->when($this->selectedKreditor, function ($q) {
-            $q->whereHas('sagerkreditor', function ($k) {
+            $q->whereHas('kreditor', function ($k) {
                 $k->where('kreditors.navn', $this->selectedKreditor);
             });
         });
@@ -375,8 +375,8 @@ class SagerDataTable extends Component
 
         $sagers = $query
             ->with([
-                'sagerdebitor',
-                'sagerkreditor',
+                'debitor',
+                'kreditor',
             ])
             ->withExists([
                 'dialogs as has_unread_messages' => function ($q) {

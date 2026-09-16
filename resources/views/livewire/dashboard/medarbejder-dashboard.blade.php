@@ -113,8 +113,8 @@
             <div class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
                 @forelse($this->searchResults as $sag)
                     @php
-                        $debitor = $sag->sagerdebitor->first();
-                        $kreditor = $sag->sagerkreditor->first();
+                        $debitor = $sag->debitor->first();
+                        $kreditor = $sag->kreditor->first();
                     @endphp
 
                     <a href="{{ route('medarbejder.sager.edit', $sag->id) }}" 
@@ -180,8 +180,8 @@
                 <div class="divide-y divide-slate-100">
                     @forelse($sagerWithNewMessages as $sag)
                         @php
-                            $debitor = $sag->sagerdebitor->first();
-                            $kreditor = $sag->sagerkreditor->first();
+                            $debitor = $sag->debitor->first();
+                            $kreditor = $sag->kreditor->first();
                         @endphp
 
                         <a href="{{ route('medarbejder.sager.klientinformation', $sag->id) }}" 
@@ -238,8 +238,8 @@
                 <div class="divide-y divide-slate-100">
                     @forelse($unreadSager as $sag)
                         @php
-                            $debitor = $sag->sagerdebitor->first();
-                            $kreditor = $sag->sagerkreditor->first();
+                            $debitor = $sag->debitor->first();
+                            $kreditor = $sag->kreditor->first();
                         @endphp
 
                         <a href="{{ route('medarbejder.sager.edit', $sag->id) }}" 
@@ -295,9 +295,9 @@
                 <div class="divide-y divide-slate-100">
                     @forelse($latestSager as $sag)
                         @php
-                            $debitor = $sag->sagerdebitor->first();
-                            $kreditor = $sag->sagerkreditor->first();
-                            $sagsbehandler = $sag->sagersagsbehandler->first();
+                            $debitor = $sag->debitor->first();
+                            $kreditor = $sag->kreditor->first();
+                            $sagsbehandler = $sag->sagsbehandler->first();
                         @endphp
 
                         <a href="{{ route('medarbejder.sager.edit', $sag->id) }}" 

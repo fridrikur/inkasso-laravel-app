@@ -14,7 +14,7 @@
 {{-- ====================================================== --}}
 {{-- SECTION 1: Generelt / Kreditor / Status                --}}
 {{-- ====================================================== --}}
-<div class="relative space-y-4" wire:keydown.enter.prevent>
+<div class="relative space-y-4">
     @if($isSearchMode)
         <div wire:loading.flex
             wire:target="form"

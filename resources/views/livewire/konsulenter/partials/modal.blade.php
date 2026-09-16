@@ -31,14 +31,19 @@
 
                         <div>
                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">E-mail</label>
-                            <input type="email" wire:model="modalEmail" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" required />
-                            @error('modalEmail') <span class="text-xs text-rose-600 mt-1 block font-semibold">{{ $message }}</span> @enderror
+                            <input type="email" wire:model="modalEmail" class="w-full rounded-xl border @error('modalEmail') border-rose-300 bg-rose-50/50 @else border-slate-200 @endif px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" required />
+                            @error('modalEmail') 
+                                <span class="text-xs text-rose-600 mt-1 block font-semibold">{{ $message }}</span> 
+                            @enderror
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Telefon</label>
-                                <input type="text" wire:model="modalTlf" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                                <input type="text" wire:model="modalTlf" class="w-full rounded-xl border @error('modalTlf') border-rose-300 bg-rose-50/50 @else border-slate-200 @endif px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                                @error('modalTlf')
+                                    <span class="text-xs text-rose-600 mt-1 block font-semibold">{{ $message }}</span>
+                                @enderror
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Mobil</label>

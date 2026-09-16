@@ -138,10 +138,10 @@ class FormBuilder extends Component
             'opgivet' => ['label' => 'Opgivet', 'type' => 'date', 'category' => 'dates'],
             
             // Relation fields
-            'kreditor' => ['label' => 'Kreditor', 'type' => 'select', 'category' => 'relations', 'relation' => 'sagerkreditor'],
-            'debitor' => ['label' => 'Debitor', 'type' => 'select', 'category' => 'relations', 'relation' => 'sagerdebitor'],
-            'sagsbehandler' => ['label' => 'Sagsbehandler', 'type' => 'select', 'category' => 'relations', 'relation' => 'sagersagsbehandler'],
-            'konsulent' => ['label' => 'Konsulent', 'type' => 'select', 'category' => 'relations', 'relation' => 'sagerkonsulent'],
+            'kreditor' => ['label' => 'Kreditor', 'type' => 'select', 'category' => 'relations', 'relation' => 'kreditor'],
+            'debitor' => ['label' => 'Debitor', 'type' => 'select', 'category' => 'relations', 'relation' => 'debitor'],
+            'sagsbehandler' => ['label' => 'Sagsbehandler', 'type' => 'select', 'category' => 'relations', 'relation' => 'sagsbehandler'],
+            'konsulent' => ['label' => 'Konsulent', 'type' => 'select', 'category' => 'relations', 'relation' => 'konsulent'],
             'status' => ['label' => 'Status', 'type' => 'select', 'category' => 'relations', 'options' => Status::class],
             'bemaerkning' => ['label' => 'Bemærkning', 'type' => 'select', 'category' => 'relations', 'options' => Bemaerkning::class],
             'afslutning' => ['label' => 'Afslutning', 'type' => 'select', 'category' => 'relations', 'options' => Afslutning::class],

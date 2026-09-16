@@ -104,21 +104,22 @@ class MergeBrev extends Component
     {
         $tokens = [];
 
+        // Hent fillable felter fra Sager-modellen
         foreach ($this->sag->getFillable() as $field) {
             $tokens[] = $field;
         }
 
-        if ($this->sag->debitor) {
-            foreach ($this->sag->debitor->getFillable() as $field) {
-                $tokens[] = 'debitor_' . $field;
-            }
+        // 🟢 Hent fillable felter direkte fra Debitor-relaterede model via relationen
+        foreach ($this->sag->debitor()->getRelated()->getFillable() as $field) {
+            $tokens[] = 'debitor_' . $field;
         }
 
         $tokens[] = 'today';
 
         return $tokens;
     }
-/** Update Brev title inline */
+    
+    /** Update Brev title inline */
     public function updateBrevTitle($brevId, $newTitle)
     {
         $brev = Brev::find($brevId);

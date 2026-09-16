@@ -74,7 +74,7 @@
     <div>
         <label class="block text-sm font-medium">Sagsbehandler</label>
         <p class="mt-1">
-            {{ $sag->sagersagsbehandler->first()?->navn ?? '-' }}
+            {{ $sag->sagsbehandler->first()?->navn ?? '-' }}
         </p>
     </div>
 

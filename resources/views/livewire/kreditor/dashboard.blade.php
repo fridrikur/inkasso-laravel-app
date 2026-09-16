@@ -137,7 +137,7 @@
                                 #{{ $sag->sagsnr }}
                             </td>
                             <td class="py-3.5 px-6 font-medium">
-                                {{ $sag->sagerdebitor->first()?->navn ?? 'Ingen debitor' }}
+                                {{ $sag->debitor->first()?->navn ?? 'Ingen debitor' }}
                             </td>
                             <td class="py-3.5 px-6 font-semibold text-slate-900">
                                 {{ number_format($sag->hovedstol, 2, ',', '.') }} kr.

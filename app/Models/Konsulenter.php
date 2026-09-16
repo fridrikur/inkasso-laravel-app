@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Illuminate\Database\QueryException;
 
 class Konsulenter extends Model
 {
@@ -73,8 +74,22 @@ class Konsulenter extends Model
         );
     }
 
-
-
+    protected static function booted()
+        {
+            static::saving(function ($konsulent) {
+                // Sørg for at tomme værdier bliver null, så unik-indekset ikke fejler
+                if (empty($konsulent->tlf)) {
+                    $konsulent->tlf = null;
+                }
+                if (empty($konsulent->mobil)) {
+                    $konsulent->mobil = null;
+                }
+                if (empty($konsulent->email)) {
+                    $konsulent->email = null;
+                }
+            });
+        }
+    
     /*
     |--------------------------------------------------------------------------
     | Convenience helpers

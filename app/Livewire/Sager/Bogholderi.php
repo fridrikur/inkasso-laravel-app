@@ -28,7 +28,7 @@ class Bogholderi extends Component
     {
         $this->sag = $sag;
 
-        $konsulenter = $sag->sagerkonsulent ?? collect();
+        $konsulenter = $sag->konsulent ?? collect();
 
         $hoved = $konsulenter->first(function ($k) {
             return method_exists($k, 'isHovedKonsulent') ? $k->isHovedKonsulent() : false;
