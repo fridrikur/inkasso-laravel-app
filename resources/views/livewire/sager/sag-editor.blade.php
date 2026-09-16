@@ -15,68 +15,7 @@
     style="background-color: var(--theme-sag-editor-wrapper-bg);"
     class="relative rounded-3xl p-6 sm:p-8 space-y-6 transition-colors duration-200 border border-slate-200/60 shadow-xs"
 >
-    {{-- SPINNER OVERLAY --}}
-    <div 
-        wire:loading.flex
-        wire:target="setTab"
-        class="absolute inset-0 bg-white/40 z-50 items-center justify-center rounded-3xl transition-all"
-        style="display: none;"
-    >
-        <div class="bg-white px-5 py-3 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-3 text-slate-800 text-xs font-bold">
-            <svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Indlæser sagen...</span>
-        </div>
-    </div>
-
-    {{-- OVERTAGELSES-MODAL (Uden wire:ignore, så knapperne reagerer normalt) --}}
-    @if($showTakeoverModal && $pendingRequests->isNotEmpty())
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
-            <div class="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl space-y-4 border border-slate-100">
-                <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 text-xl font-bold shrink-0">
-                        ⚠️
-                    </div>
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900">Anmodning om overtagelse</h3>
-                        <p class="text-xs text-slate-500">En anden medarbejder ønsker at åbne denne sag.</p>
-                    </div>
-                </div>
-
-                <div class="space-y-2 py-2">
-                    @foreach($pendingRequests as $req)
-                        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between" wire:key="request-row-{{ $req->id }}">
-                            <div>
-                                <span class="text-xs font-bold text-slate-800">{{ $req->requester?->name ?? 'Kollega' }}</span>
-                                <p class="text-[11px] text-slate-500">Vil overtage redigering af sagen.</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button 
-                                    type="button" 
-                                    wire:key="reject-btn-{{ $req->id }}"
-                                    wire:click="rejectTakeover({{ $req->id }})" 
-                                    class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition cursor-pointer"
-                                >
-                                    Afvis
-                                </button>
-                                <button 
-                                    type="button" 
-                                    wire:key="accept-btn-{{ $req->id }}"
-                                    wire:click="acceptTakeover({{ $req->id }})" 
-                                    class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition cursor-pointer"
-                                >
-                                    Accepter
-                                </button>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    @endif    
-    {{-- SPINNER OVERLAY (Vises KUN ved indlæsning og fane-skift, helt uden blur) --}}
+    {{-- SPINNER OVERLAY (Vises KUN ved indlæsning og fane-skift) --}}
     <div 
         wire:loading.flex
         wire:target="setTab"
@@ -163,9 +102,20 @@
                 </button>
             @endif
 
-            <span class="px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md text-xs font-bold">
-                Status: {{ $sag->status?->tekst ?? ($sag->exists ? 'Ikke angivet' : 'Kladde') }}
-            </span>
+            {{-- INTERAKTIV STATUS DROPDOWN I HEADEREN --}}
+            <div class="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3 py-1 rounded-xl text-xs font-bold text-white border border-white/10">
+                <span class="opacity-75">Status:</span>
+                <select 
+                    wire:model.live="form.status" 
+                    wire:change="updateStatusHeader($event.target.value)"
+                    class="bg-transparent text-white font-bold text-xs outline-none cursor-pointer [&>option]:text-slate-900"
+                >
+                    <option value="">{{ $sag->exists ? 'Ikke angivet' : 'Kladde' }}</option>
+                    @foreach($selectOptions['status'] ?? [] as $id => $navn)
+                        <option value="{{ $id }}">{{ $navn }}</option>
+                    @endforeach
+                </select>
+            </div>
         </div>
     </div>
 
@@ -191,7 +141,7 @@
                         </p>
                     </div>
 
-                    <div>
+                    <div class="space-y-3">
                         @if($myTakeoverRequest && $myTakeoverRequest->status === 'pending')
                             <span class="w-full py-2.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-xl block border border-amber-200">
                                 ⏳ Anmodning om overtagelse er sendt... Venter på svar
@@ -205,6 +155,7 @@
                                 Overtagelse accepteret – Klik for at fortsætte
                             </button>
                         @else
+                            {{-- Standard anmod-knap til almindelige medarbejdere --}}
                             <button 
                                 type="button" 
                                 wire:click="requestTakeover" 
@@ -213,6 +164,34 @@
                                 <span>🔑 Anmod om overtagelse af sag</span>
                             </button>
                         @endif
+
+                        {{-- 🟢 ADMIN: GIV SAG TIL EN ANDEN MEDARBEJDER --}}
+                        @role('Admin')
+                            <div class="pt-3 border-t border-slate-100 space-y-2 text-left">
+                                <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                                    ⚡ [Admin] Giv sag til anden medarbejder:
+                                </label>
+                                <div class="flex gap-2">
+                                    <select 
+                                        wire:model="selectedTargetUserId" 
+                                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-indigo-500 font-medium text-slate-800 cursor-pointer"
+                                    >
+                                        <option value="">-- Vælg medarbejder --</option>
+                                        @foreach(\App\Models\User::query()->role(['Admin', 'Medarbejder'])->get() as $u)
+                                            <option value="{{ $u->id }}">{{ $u->name }}</option>
+                                        @endforeach
+                                    </select>
+
+                                    <button 
+                                        type="button" 
+                                        wire:click="adminAssignSagToUser" 
+                                        class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition shadow-xs cursor-pointer shrink-0"
+                                    >
+                                        Tildel
+                                    </button>
+                                </div>
+                            </div>
+                        @endrole
                     </div>
                 </div>
             </div>

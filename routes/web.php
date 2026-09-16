@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
 use App\Services\SettingsService;
 use App\Livewire\Sager\SagerIndex;
+use App\Livewire\Admin\Dialogfelter\ManageDialogfelter;
 use App\Livewire\Admin\DropdownIndex;
 use App\Livewire\AdminDashboard;
 use App\Livewire\Admin\SystemSettings\ManageSettings;
@@ -35,6 +36,7 @@ use App\Livewire\Users\Showkreditorusers;
 use App\Http\Controllers\sager\ImportExecuteController;
 use App\Livewire\Users\UpdateUser;
 use App\Livewire\Users\CreateMedarbejderUser;
+use App\Livewire\Admin\Breve\RedigerBrev;
 use App\Livewire\Users\Createkreditoruser;
 use App\Livewire\Sagervalgliste\CreateSagervalgliste;
 use App\Livewire\Sagervalgliste\ShowSagervalgliste;
@@ -91,6 +93,7 @@ use App\Http\Controllers\sager\ImportUploadController;
 use App\Http\Controllers\sager\ImportFormController;
 use App\Http\Controllers\sager\ImportSessionController;
 use App\Http\Controllers\DokumenterController;
+use App\Http\Controllers\BrevFilterController;
 use App\Livewire\Dashboard\MedarbejderDashboard;
 use App\Livewire\Kreditor\Dashboard;
 use App\Models\Status;
@@ -248,6 +251,8 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             return redirect()->route('sager.index')->with('success', 'Sagen blev slettet.');
         });
 
+        Route::get('/dialogfelter', ManageDialogfelter::class)->name('admin.dialogfelter');
+
         // 🟢 TILFØJET: Admin-ruter til sagsfaner (så Admin ikke skal bruge /medarbejder/)
         Route::get('/sager/{sag}/bogholderi', \App\Livewire\Sager\Bogholderi::class)->name('sager.bogholderi');
         Route::get('/sager/{sag}/historik', \App\Livewire\Sager\Historik::class)->name('sager.historik');
@@ -381,9 +386,11 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             });
 
         Route::get('/admin/doctor-norton', SagDoctorDashboard::class)->name('sager.doctor');
-        Route::get('/sager/breve/opret', function () {
-            return view('admin.breve.opret');
-        })->name('sager.breve.opret');
+        Route::get('/sager/breve/rediger', RedigerBrev::class)->name('admin.breve.rediger');
+
+        Route::get('/breve/filter', [BrevFilterController::class, 'index'])->name('breve.filter');
+        Route::post('/breve/filter/{brevID}', [BrevFilterController::class, 'update'])->name('breve.filter.update');
+        Route::post('/breve/sortering', [BrevFilterController::class, 'updateSorting'])->name('breve.sortering.update');
     });
 
 /*

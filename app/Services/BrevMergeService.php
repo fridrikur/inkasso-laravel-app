@@ -72,5 +72,7 @@ class BrevMergeService
             'aktiv' => $sag->aktiv ? 'Aktiv' : 'Afsluttet',
         ];
     }
+
+    
     
 }

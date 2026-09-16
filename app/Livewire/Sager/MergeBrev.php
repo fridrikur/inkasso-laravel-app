@@ -162,7 +162,7 @@ class MergeBrev extends Component
     
     public function render()
     {
-        return view('livewire.sager.merge-brev', [
+        return view('livewire.sager.brev-flet', [
             'breve' => Brev::orderBy('brevpos')->get(),
             'breveList' => $this->breveList,
         ]);

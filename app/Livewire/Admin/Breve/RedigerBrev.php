@@ -7,7 +7,7 @@ use App\Models\Brev;
 use App\Models\Sager;
 use App\Services\BrevMergeService;
 
-class OpretBrev extends Component
+class RedigerBrev extends Component
 {
     public ?int $brevId = null;
 
@@ -23,6 +23,10 @@ class OpretBrev extends Component
     public ?Sager $previewSag = null;
 
     public bool $previewExpanded = false;
+
+    public $showDeleteBrevModal = false;
+    public $brevToDeleteId = null;
+    public $brevToDeleteTitle = '';
 
     // -----------------------------------------
     // INIT
@@ -205,8 +209,60 @@ class OpretBrev extends Component
     // -----------------------------------------
     // VIEW
     // -----------------------------------------
+    
+    public function updateBrevTitle($brevId, $newTitle)
+    {
+        if (empty(trim($newTitle))) {
+            return;
+        }
+
+        $brev = \App\Models\Brev::find($brevId);
+        if ($brev) {
+            $brev->titel = $newTitle;
+            $brev->save();
+            
+            // Genindlæs listen af breve så de opdateres i UI'et
+            $this->loadBreveList(); // Eller det kald I bruger til at hente breve
+        }
+    }
+
+    // Åbn modal og gem ID'et på det brev der ønskes slettet
+    public function confirmDeleteBrev($id)
+    {
+        $brev = \App\Models\Brev::find($id);
+        if ($brev) {
+            $this->brevToDeleteId = $brev->id;
+            $this->brevToDeleteTitle = $brev->titel;
+            $this->showDeleteBrevModal = true;
+        }
+    }
+
+    // Annuller
+    public function cancelDeleteBrev()
+    {
+        $this->showDeleteBrevModal = false;
+        $this->brevToDeleteId = null;
+        $this->brevToDeleteTitle = '';
+    }
+
+    // Udfør selve sletningen
+    public function executeDeleteBrev()
+    {
+        if ($this->brevToDeleteId) {
+            \App\Models\Brev::where('id', $this->brevToDeleteId)->delete();
+            
+            // Nulstil og genindlæs listen
+            $this->showDeleteBrevModal = false;
+            $this->brevToDeleteId = null;
+            $this->brevToDeleteTitle = '';
+            
+            // Genindlæs dine breve (tilpas evt. til dit eget metodekald for at hente listen)
+            $this->loadBreveList(); 
+        }
+    }
+
     public function render()
     {
-        return view('livewire.admin.breve.opret-brev');
+        return view('livewire.admin.breve.rediger-brev');
     }
 }

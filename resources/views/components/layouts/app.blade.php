@@ -195,10 +195,45 @@
                                class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.search') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                 <span>🔍</span> Søg Sager
                             </a>
-                            <a href="{{ route('sager.breve.opret') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.breve.opret') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                <span>✉️</span> Opret Brev
-                            </a>
+
+                            {{-- BREVE DROPDOWN MENU ITEM --}}
+                            <div class="relative pt-1" x-data="{ open: false }">
+                                <button 
+                                    @click="open = !open" 
+                                    @click.away="open = false"
+                                    class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition cursor-pointer"
+                                >
+                                    <div class="flex items-center gap-2">
+                                        <span>✉️</span>
+                                        <span>Breve</span>
+                                    </div>
+                                    <svg class="w-3.5 h-3.5 transition-transform duration-200 text-white" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+
+                                <div 
+                                    x-show="open" 
+                                    class="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl shadow-xl py-2 z-50 space-y-1 text-xs"
+                                    style="display: none;"
+                                >
+                                    <a 
+                                        href="{{ route('admin.breve.rediger') }}" 
+                                        class="flex items-center gap-2 px-4 py-2 font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                                    >
+                                        <span>✏️</span> Rediger skabeloner
+                                    </a>
+
+                                    <a 
+                                        href="{{ url('/breve/filter') }}" 
+                                        class="flex items-center gap-2 px-4 py-2 font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                                    >
+                                        <span>⚙️</span> Sortering & synlige felter
+                                    </a>
+                                </div>
+                            </div>
+                            {{-- SLUT PÅ BREVE DROPDOWN --}}
+
                             <a href="{{ route('sager.papirkurv') }}" 
                                class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.papirkurv') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                 <span>🗑️</span> Papirkurv
@@ -382,5 +417,119 @@
     </div>
     <livewire:admin.quick-menu />
     @livewireScripts
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let idleTimeout = 15 * 60 * 1000; // 15 minutter i millisekunder
+        let countdownInterval;
+        let warningTimer;
+        let reauthTimer;
+
+        function resetIdleTimers() {
+            clearTimeout(warningTimer);
+            clearTimeout(reauthTimer);
+            clearInterval(countdownInterval);
+
+            // Skjul modal hvis den er åben og brugeren bevæger musen/taster
+            document.getElementById('session-warning').style.display = 'none';
+            document.getElementById('modal-step-warning').style.display = 'block';
+            document.getElementById('modal-step-reauth').style.display = 'none';
+
+            // Start 15 minutter timer før advarsel vises (14 minutter og 30 sekunder)
+            warningTimer = setTimeout(showWarningModal, idleTimeout - 30000);
+        }
+
+        function showWarningModal() {
+            const modal = document.getElementById('session-warning');
+            const countdownEl = document.getElementById('countdown');
+            let timeLeft = 30;
+
+            modal.style.display = 'flex';
+            countdownEl.innerText = timeLeft;
+
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                countdownEl.innerText = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    triggerLockout();
+                }
+            }, 1000);
+        }
+
+        function extendSession() {
+            // Send et letvekts AJAX-kald for at holde Laravel sessionen i live
+            fetch('/_ignition/health-check', { method: 'GET' }).catch(() => {});
+            resetIdleTimers();
+        }
+
+        function triggerLockout() {
+            // Skift til re-auth trin i modalen
+            document.getElementById('modal-step-warning').style.display = 'none';
+            document.getElementById('modal-step-reauth').style.display = 'block';
+            
+            // Log ud i baggrunden via et fetch-kald til logout-ruten
+            fetch('{{ route("logout") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json'
+                }
+            });
+        }
+
+        window.extendSession = extendSession;
+
+        // Lyt efter brugeraktivitet på tværs af browsere (inkl. Firefox)
+        window.addEventListener('mousemove', resetIdleTimers);
+        window.addEventListener('mousedown', resetIdleTimers);
+        window.addEventListener('keypress', resetIdleTimers);
+        window.addEventListener('scroll', resetIdleTimers);
+        window.addEventListener('touchstart', resetIdleTimers);
+
+        // Initialiser ved indlæsning
+        resetIdleTimers();
+    });
+
+    // Funktion til at låse op igen uden at miste fane-state
+    function reAuthenticate(event) {
+        event.preventDefault();
+        const password = document.getElementById('re-auth-password').value;
+        const errorEl = document.getElementById('re-auth-error');
+        const btn = document.getElementById('re-auth-btn');
+
+        btn.disabled = true;
+        btn.innerText = 'Logger ind...';
+        errorEl.style.display = 'none';
+
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                email: '{{ auth()->user()?->email ?? "" }}',
+                password: password
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.reload(); // Genindlæs siden når adgangskoden er godkendt
+            } else {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Forkert adgangskode.');
+                });
+            }
+        })
+        .catch(error => {
+            errorEl.innerText = error.message;
+            errorEl.style.display = 'block';
+            btn.disabled = false;
+            btn.innerText = 'Lås op og fortsæt';
+        });
+    }
+    </script>
 </body>
 </html>

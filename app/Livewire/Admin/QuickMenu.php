@@ -59,7 +59,7 @@ class QuickMenu extends Component
 
     public function goToCreateBrev()
     {
-        return redirect()->route('sager.breve.opret');
+        return redirect()->route('admin.breve.rediger');
     }
 
     public function goToFindSag()

@@ -37,6 +37,7 @@ use App\Models\SagEditRequest;
 use Illuminate\Support\Facades\Broadcast;
 use Livewire\WithFileUploads;
 use App\Models\Dokument;
+use Carbon\Carbon;
 
 class SagEditor extends Component
 {
@@ -72,6 +73,8 @@ class SagEditor extends Component
 
     public bool $showDeleteMessageModal = false;
     public ?int $messageToDeleteId = null;
+
+    public ?int $selectedTargetUserId = null;
     
     protected bool $ready = false;
 
@@ -1177,6 +1180,16 @@ class SagEditor extends Component
 
         $lock = SagLock::where('sag_id', $this->sag->id)->first();
 
+        if ($lock) {
+            // 🟢 AUTOMATISK FRIGIVELSE: Hvis låsen er ældre end 3 minutter uden opdatering (bruger er logget af / væk)
+            if ($lock->locked_at && Carbon::parse($lock->locked_at)->lt(now()->subMinutes(3))) {
+                $lock->delete();
+                SagEditRequest::where('sag_id', $this->sag->id)->where('status', 'pending')->update(['status' => 'rejected']);
+                
+                $lock = null; // Sæt til null da den nu er slettet
+            }
+        }
+
         // 🟢 VIGTIGT: Hent KUN anmodninger fra ANDRE brugere!
         $this->pendingRequests = SagEditRequest::where('sag_id', $this->sag->id)
             ->where('requested_by', '!=', auth()->id())
@@ -1451,5 +1464,106 @@ class SagEditor extends Component
 
             $this->dispatch('dialogUpdated');
         }
+    }
+
+    public function updateStatusHeader($statusId)
+    {
+        if (!$this->sag?->exists) {
+            // Hvis sagen er ny og ikke gemt endnu, sætter vi blot formens status-felt
+            $this->form->status = $statusId;
+            return;
+        }
+
+        // Hvis sagen eksisterer, gemmer vi relationen med det samme i databasen
+        $this->form->status = $statusId;
+        $this->form->updateRelation('status', $this->sag->id);
+        
+        // Genindlæs relationen på sagen, så headeren opdaterer sig med det samme
+        $this->sag->load('sagerStatus');
+
+        $this->dispatch('toast', message: 'Status blev opdateret.', type: 'success');
+    }
+
+    public function adminForceTakeover(): void
+    {
+        // Tjek at brugeren rent faktisk er Admin
+        if (!auth()->user()->hasRole('Admin')) {
+            $this->dispatch('toast', message: 'Kun administratorer kan gennemtvinge overtagelse.', type: 'error');
+            return;
+        }
+
+        if (!$this->sag?->id) {
+            return;
+        }
+
+        // 1. Slet enhver eksisterende lås på sagen
+        SagLock::where('sag_id', $this->sag->id)->delete();
+
+        // 2. Afvis evt. udestående anmodninger, så tavlen er ren
+        SagEditRequest::where('sag_id', $this->sag->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'rejected']);
+
+        // 3. Opret en ny lås til den administrator/medarbejder der udfører handlingen
+        SagLock::create([
+            'sag_id' => $this->sag->id,
+            'user_id' => auth()->id(),
+            'locked_at' => now(),
+        ]);
+
+        // 4. Opdater state og spil succeslyd
+        $this->syncLockState();
+        $this->dispatch('play-success-sound');
+        
+        $this->dispatch('toast', message: 'Admin har tvunget overtagelse af sagen. Du har nu låsen.', type: 'success');
+    }
+
+    public function adminReleaseLock(int $sagId): void
+    {
+        // Sikre at kun administratorer kan gøre dette
+        if (!auth()->user()->hasRole('Admin')) {
+            $this->dispatch('toast', message: 'Kun administratorer kan frigive låste sager.', type: 'error');
+            return;
+        }
+
+        // Slet låsen og afvis eventuelle ventende anmodninger for denne sag
+        SagLock::where('sag_id', $sagId)->delete();
+        SagEditRequest::where('sag_id', $sagId)->update(['status' => 'rejected']);
+
+        $this->dispatch('toast', message: 'Sagens lås er blevet frigivet af administrator.', type: 'success');
+    }
+
+    public function adminAssignSagToUser(): void
+    {
+        if (!auth()->user()->hasRole('Admin')) {
+            $this->dispatch('toast', message: 'Kun administratorer kan overdrage sager.', type: 'error');
+            return;
+        }
+
+        if (!$this->sag?->id || !$this->selectedTargetUserId) {
+            $this->dispatch('toast', message: 'Vælg venligst en medarbejder.', type: 'error');
+            return;
+        }
+
+        // 1. Slet eksisterende lås og udestående anmodninger
+        SagLock::where('sag_id', $this->sag->id)->delete();
+        SagEditRequest::where('sag_id', $this->sag->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'rejected']);
+
+        // 2. Opret en ny lås direkte til den valgte medarbejder
+        SagLock::create([
+            'sag_id' => $this->sag->id,
+            'user_id' => $this->selectedTargetUserId,
+            'locked_at' => now(),
+        ]);
+
+        $targetUser = \App\Models\User::find($this->selectedTargetUserId);
+        $userName = $targetUser?->name ?? 'medarbejderen';
+
+        $this->selectedTargetUserId = null;
+        $this->syncLockState();
+
+        $this->dispatch('toast', message: "Sagen er nu tildelt og låst til {$userName}.", type: 'success');
     }
 }
