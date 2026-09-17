@@ -11,18 +11,18 @@
                     Velkommen, {{ $kreditor->navn }}
                 </h1>
                 <p class="text-slate-300 text-xs sm:text-sm mt-1">
-                    Her er din aktuelle status og oversigt over sager hos DKG.
+                    Her er din aktuelle status, økonomiske overblik og sager hos DKG.
                 </p>
             </div>
 
             <div class="flex items-center gap-3">
-                <button
-                    wire:click="createSag"
+                <a
+                    href="{{ route('kreditor.sag.create') }}"
                     class="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg transition flex items-center gap-2 cursor-pointer shrink-0"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     <span>Opret ny sag</span>
-                </button>
+                </a>
             </div>
         </div>
     </div>
@@ -72,30 +72,30 @@
         <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Hurtig filtrering</p>
             <div class="flex items-center gap-2 mt-2">
-                <button wire:click="showActive" class="flex-1 py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition text-center">
+                <a href="{{ route('kreditor.sager.index') }}?status=aktive" class="flex-1 py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition text-center">
                     Aktive
-                </button>
-                <button wire:click="showClosed" class="flex-1 py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition text-center">
+                </a>
+                <a href="{{ route('kreditor.sager.index') }}?status=afsluttede" class="flex-1 py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition text-center">
                     Afsluttede
-                </button>
-                <button wire:click="showAll" class="flex-1 py-1.5 px-2 border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl transition text-center">
+                </a>
+                <a href="{{ route('kreditor.sager.index') }}" class="flex-1 py-1.5 px-2 border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl transition text-center">
                     Alle
-                </button>
+                </a>
             </div>
         </div>
 
     </div>
 
-    {{-- SØGEBAR --}}
+    {{-- SØGEBAR OG HURTIGGENVEJE --}}
     <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm">
-        <form wire:submit.prevent="performSearch" class="flex gap-3">
+        <form action="{{ route('kreditor.search') }}" method="GET" class="flex gap-3">
             <div class="relative flex-1">
                 <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     🔍
                 </span>
                 <input
                     type="text"
-                    wire:model="search"
+                    name="q"
                     placeholder="Søg efter sagsnummer, debitor navn..."
                     class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none"
                 >
@@ -104,81 +104,140 @@
                 type="submit"
                 class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition shadow-sm cursor-pointer shrink-0"
             >
-                Søg
+                Søg i sager
             </button>
         </form>
     </div>
 
-    {{-- SENESTE SAGER TABEL --}}
-    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Senest oprettede sager</h2>
-            <a href="{{ route('kreditor.sager.index') }}" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
-                Se alle sager &rarr;
-            </a>
+    {{-- 2-KOLONNE SEKTION: SAGSLISTE & SAGSBEHANDLERE --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {{-- SENESTE SAGER (2 kolonner bred) --}}
+        <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Senest oprettede sager</h2>
+                    <a href="{{ route('kreditor.sager.index') }}" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
+                        Se alle sager &rarr;
+                    </a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider text-[10px] bg-slate-50/30">
+                                <th class="py-3 px-6">Sagsnr.</th>
+                                <th class="py-3 px-6">Debitor</th>
+                                <th class="py-3 px-6">Hovedstol</th>
+                                <th class="py-3 px-6">Oprettet</th>
+                                <th class="py-3 px-6">Status</th>
+                                <th class="py-3 px-6 text-right">Handling</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-slate-700">
+                            @forelse($this->recentSager as $sag)
+                                <tr class="hover:bg-slate-50/60 transition">
+                                    <td class="py-3.5 px-6 font-bold text-slate-900 font-mono">
+                                        #{{ $sag->sagsnr }}
+                                    </td>
+                                    <td class="py-3.5 px-6 font-medium">
+                                        {{ $sag->debitor->first()?->navn ?? 'Ingen debitor' }}
+                                    </td>
+                                    <td class="py-3.5 px-6 font-semibold text-slate-900">
+                                        {{ number_format($sag->hovedstol, 2, ',', '.') }} kr.
+                                    </td>
+                                    <td class="py-3.5 px-6 text-slate-400">
+                                        {{ $sag->created_at->format('d/m-Y') }}
+                                    </td>
+                                    <td class="py-3.5 px-6">
+                                        @if($sag->afsluttet)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold text-[10px]">
+                                                Afsluttet
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold text-[10px]">
+                                                Aktiv
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="py-3.5 px-6 text-right">
+                                        <a 
+                                            href="{{ route('kreditor.sag.view', $sag->id) }}" 
+                                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 text-indigo-600 font-bold text-[11px] transition"
+                                        >
+                                            <span>Åbn</span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="py-8 text-center text-slate-400 italic">
+                                        Du har ingen sager registreret i systemet endnu.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-xs">
-                <thead>
-                    <tr class="border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider text-[10px] bg-slate-50/30">
-                        <th class="py-3 px-6">Sagsnr.</th>
-                        <th class="py-3 px-6">Debitor</th>
-                        <th class="py-3 px-6">Hovedstol</th>
-                        <th class="py-3 px-6">Oprettet</th>
-                        <th class="py-3 px-6">Status</th>
-                        <th class="py-3 px-6 text-right">Handling</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-slate-700">
-                    @forelse($this->recentSager as $sag)
-                        <tr class="hover:bg-slate-50/60 transition">
-                            <td class="py-3.5 px-6 font-bold text-slate-900 font-mono">
-                                #{{ $sag->sagsnr }}
-                            </td>
-                            <td class="py-3.5 px-6 font-medium">
-                                {{ $sag->debitor->first()?->navn ?? 'Ingen debitor' }}
-                            </td>
-                            <td class="py-3.5 px-6 font-semibold text-slate-900">
-                                {{ number_format($sag->hovedstol, 2, ',', '.') }} kr.
-                            </td>
-                            <td class="py-3.5 px-6 text-slate-400">
-                                {{ $sag->created_at->format('d/m-Y') }}
-                            </td>
-                            <td class="py-3.5 px-6">
-                                @if($sag->afsluttet)
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold text-[10px]">
-                                        Afsluttet
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold text-[10px]">
-                                        Aktiv
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="py-3.5 px-6 text-right">
-                                <a 
-                                    href="{{ route('kreditor.sag.view', $sag->id) }}" 
-                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 text-indigo-600 font-bold text-[11px] transition"
-                                >
-                                    <span>Åbn</span>
-                                </a>
-                            </td>
-                        </tr>
+        {{-- SAGSBEHANDLERE & KONTAKTOPLYSNINGER (1 kolonne bred) --}}
+        <div class="space-y-6">
+            <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                        Tilnyttede sagsbehandlere
+                    </h2>
+                    <span class="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
+                        {{ $kreditor->sagsbehandlere->count() }}
+                    </span>
+                </div>
+
+                {{-- Hovedsagsbehandler boks --}}
+                @php
+                    $hovedsagsbehandler = $kreditor->hovedsagsbehandler()->first();
+                @endphp
+                @if($hovedsagsbehandler)
+                    <div class="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-100 space-y-1.5">
+                        <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">⭐ Hovedsagsbehandler</span>
+                        <p class="text-xs font-bold text-slate-900">{{ $hovedsagsbehandler->navn }}</p>
+                        <div class="text-[11px] text-slate-600 space-y-0.5 pt-1">
+                            @if($hovedsagsbehandler->email)
+                                <p>📧 <a href="mailto:{{ $hovedsagsbehandler->email }}" class="text-indigo-600 hover:underline">{{ $hovedsagsbehandler->email }}</a></p>
+                            @endif
+                            @if($hovedsagsbehandler->tlf || $hovedsagsbehandler->mobil)
+                                <p>📞 {{ $hovedsagsbehandler->tlf ?? $hovedsagsbehandler->mobil }}</p>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Liste over øvrige sagsbehandlere --}}
+                <div class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                    @forelse($kreditor->sagsbehandlere as $sb)
+                        <div class="p-3 rounded-2xl border border-slate-100 hover:border-slate-200 transition text-xs space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-slate-800">{{ $sb->navn }}</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500">
+                                @if($sb->email) <span>{{ $sb->email }}</span> @endif
+                                @if($sb->tlf) <span class="ml-2">• {{ $sb->tlf }}</span> @endif
+                            </div>
+                        </div>
                     @empty
-                        <tr>
-                            <td colspan="6" class="py-8 text-center text-slate-400 italic">
-                                Du har ingen sager registreret i systemet endnu.
-                            </td>
-                        </tr>
+                        <p class="text-xs text-slate-400 italic py-2 text-center">
+                            Ingen sagsbehandlere tilknyttet endnu.
+                        </p>
                     @endforelse
-                </tbody>
-            </table>
+                </div>
+            </div>
         </div>
+
     </div>
 
     {{-- AFSLUTTEDE SAGER STATISTIK OG GRAF --}}
-    @if(array_sum($this->closedStats) > 0)
+    @if(isset($this->closedStats) && array_sum($this->closedStats) > 0)
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm">
                 <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">
@@ -189,8 +248,8 @@
                         x-data="{
                             chart: null,
                             init() {
-                                const labels = @js($this->chartData['labels']);
-                                const values = @js($this->chartData['values']);
+                                const labels = @js($this->chartData['labels'] ?? []);
+                                const values = @js($this->chartData['values'] ?? []);
 
                                 this.chart = new Chart(this.$refs.canvas, {
                                     type: 'doughnut',
@@ -217,7 +276,7 @@
                 <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
                     Afslutningsårsager
                 </h2>
-                @foreach($afslutninger as $afslutning)
+                @foreach($afslutninger ?? [] as $afslutning)
                     <a
                         href="{{ route('kreditor.search', ['filter' => 'closed', 'afslutning_id' => $afslutning->id]) }}"
                         class="flex items-center justify-between p-3 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition text-xs font-semibold text-slate-700"

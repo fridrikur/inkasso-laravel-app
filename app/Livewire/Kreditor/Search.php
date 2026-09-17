@@ -3,6 +3,7 @@
 namespace App\Livewire\Kreditor;
 
 use Livewire\Component;
+use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use App\Models\Sager;
 use App\Services\Search\SagerSearchService;
@@ -12,32 +13,41 @@ class Search extends Component
 {
     use WithPagination;
 
+    #[Url(keep: true)] // 🟢 Kun én Url-attribut pr. property
+    public $search = '';
+
     protected $paginationTheme = 'tailwind';
 
-    public string $search = '';
-
+    #[Url(keep: true)]
     public string $filter = 'all';
 
+    #[Url(as: 'afslutning_id', keep: true)]
     public ?int $afslutningId = null;
 
     public $afslutninger;
 
+    #[Url(keep: true)]
     public ?string $modtagetFrom = null;
+    
+    #[Url(as: 'modtaget_to', keep: true)]
     public ?string $modtagetTo = null;
 
+    #[Url(as: 'afsluttet_from', keep: true)]
     public ?string $afsluttetFrom = null;
+    
+    #[Url(as: 'afsluttet_to', keep: true)]
     public ?string $afsluttetTo = null;
 
     public function mount()
     {
         abort_unless(auth()->user()->hasRole('Kreditor'), 403);
 
-        $this->filter = request('filter', 'all');
-        $this->afslutningId = request('afslutning_id');
-
         $this->afslutninger = afslutning::orderBy('tekst')->get();
 
-        $this->search = request()->string('search')->toString();
+        // Fanger også hvis 'q' bruges i stedet for 'search' i URL'en (f.eks. ?q=23)
+        if (empty($this->search) && request()->has('q')) {
+            $this->search = request()->string('q')->toString();
+        }
     }
 
     public function updatedSearch()
@@ -60,28 +70,12 @@ class Search extends Component
         $this->reset([
             'search',
             'afslutningId',
-
             'modtagetFrom',
             'modtagetTo',
-
             'afsluttetFrom',
             'afsluttetTo',
         ]);
-    }
-
-    public function updatedDateType()
-    {
-        $this->resetPage();
-    }
-
-    public function updatedDateFrom()
-    {
-        $this->resetPage();
-    }
-
-    public function updatedDateTo()
-    {
-        $this->resetPage();
+        $this->filter = 'all';
     }
 
     public function updatedModtagetFrom()
@@ -103,28 +97,20 @@ class Search extends Component
     {
         $this->resetPage();
     }
-    public function render(
-    SagerSearchService $service
-    )
+
+    public function render(SagerSearchService $service)
     {
         return view(
             'livewire.kreditor.search',
             [
                 'sager' => $service->paginate([
-
-                'search' => $this->search,
-
-                'status' => $this->filter,
-
-                'afslutning_id' => $this->afslutningId,
-
-
-                'modtaget_from' => $this->modtagetFrom,
-                'modtaget_to' => $this->modtagetTo,
-
-                'afsluttet_from' => $this->afsluttetFrom,
-                'afsluttet_to' => $this->afsluttetTo,
-
+                    'search' => $this->search,
+                    'status' => $this->filter,
+                    'afslutning_id' => $this->afslutningId,
+                    'modtaget_from' => $this->modtagetFrom,
+                    'modtaget_to' => $this->modtagetTo,
+                    'afsluttet_from' => $this->afsluttetFrom,
+                    'afsluttet_to' => $this->afsluttetTo,
                 ]),
             ]
         );

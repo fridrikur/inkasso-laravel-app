@@ -1,7 +1,7 @@
 <div class="max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow space-y-6">
 
     <h2 class="text-2xl font-bold">
-        Sag: {{ $sag->id }} 
+        Sag: {{ $sag->sagsnr }} 
     </h2>
 
     {{-- Tabs --}}
@@ -34,9 +34,15 @@
     <div class="grid grid-cols-2 gap-6">
 
         <div>
+            <label class="block text-sm font-medium">Aktiv</label>
+            <p class="mt-1">{{ $sag->aktiv }}</p>
+        </div>
+        
+        <div>
             <label class="block text-sm font-medium">Hovedstol</label>
             <p class="mt-1">{{ $this->formatNumber($sag->hovedstol) }}</p>
         </div>
+        
 
         <div>
             <label class="block text-sm font-medium">Renter</label>

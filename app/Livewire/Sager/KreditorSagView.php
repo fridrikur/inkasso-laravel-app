@@ -15,6 +15,8 @@ class KreditorSagView extends Component
     public $isEditMode = false;
     public $debitor;
 
+    public $aktiv;
+
     public $klientinformationUnread = 0;
 
     protected $listeners = ['klientinformationUpdated' => 'refreshBadge'];
@@ -25,7 +27,7 @@ class KreditorSagView extends Component
         'kreditor',
         'sagsbehandler',
         'debitor',
-        'dokumenter'
+        'dokumenter',
     ]);
 
     $this->isEditMode = true;

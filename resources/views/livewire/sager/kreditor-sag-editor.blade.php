@@ -32,6 +32,12 @@ FORM MODE
         </select>
     </div>
 
+    <div class="col-span-2">
+        <label class="block text-sm font-medium">Aktiv</label>
+        <input type="text" wire:model.lazy="form.aktiv" class="mt-1 w-full rounded-md border-gray-300" />
+    </div>
+
+
     {{-- Dynamic fields --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @foreach($allowedFields as $field)
@@ -153,6 +159,11 @@ REVIEW MODE
     <div class="review-row">
         <div class="review-label">Sagsnummer</div>
         <div class="review-value">{{ $form->sagsnr }}</div>
+    </div>
+
+    <div class="review-row">
+        <div class="review-label">Aktiv</div>
+        <div class="review-value">{{ $form->aktiv }}</div>
     </div>
 
     <div class="review-row">
@@ -284,7 +295,6 @@ SUCCESS MODAL
                         {{ $this->sag->sagsnr ?? '-' }}
                     </div>
                 </div>
-
                 <div class="review-row">
                     <div class="review-label">Debitor</div>
                     <div class="review-value">{{ $form->navn }}</div>

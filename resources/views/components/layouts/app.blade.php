@@ -290,7 +290,34 @@
                             </a>
                         </div>
                     @endrole
+                    {{-- ============================================================ --}}
+                    {{-- 🏢 KREDITOR MENU --}}
+                    {{-- ============================================================ --}}
+                    @hasrole('Kreditor')
+                        <div class="space-y-1">
+                            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kreditor Overblik</div>
+                            <a href="{{ route('kreditor.dashboard') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.dashboard') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>📊</span> Dashboard
+                            </a>
+                        </div>
 
+                        <div class="space-y-1">
+                            <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sagsstyring</div>
+                            <a href="{{ route('kreditor.sager.index') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sager.index') || request()->routeIs('kreditor.sag.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>📂</span> Alle sager
+                            </a>
+                            <a href="{{ route('kreditor.search') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.search') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>🔍</span> Søg i sager
+                            </a>
+                            <a href="{{ route('kreditor.sag.create') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('kreditor.sag.create') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <span>➕</span> Opret ny sag
+                            </a>
+                        </div>
+                    @endhasrole
                 </nav>
             </div>
 
