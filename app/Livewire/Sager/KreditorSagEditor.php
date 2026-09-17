@@ -44,6 +44,9 @@ class KreditorSagEditor extends Component
     'gebyr' => 'Gebyr',
     'indbetalt' => 'Indbetalt',
 
+    'aktiv' => 'Aktiv',         
+    'cvr' => 'CPR / CVR',
+
     ];
 
     protected $listeners = ['closeModal' => 'closeModal'];
@@ -76,7 +79,9 @@ class KreditorSagEditor extends Component
                 'hovedstol',
                 'renter',
                 'gebyr',
-                'indbetalt'
+                'indbetalt',
+                'aktiv',
+                'cvr'
             ];
         }
 
@@ -137,18 +142,7 @@ class KreditorSagEditor extends Component
 
         return number_format($number, 2, ',', '.');
     }
-    public function saveOLD()
-    {
-        $this->validate([
-            'form.sagsnr' => 'required',
-            'form.navn' => 'required',
-            'form.sagsbehandler' => 'required',
-            'form.aktiv' => 'required',
-        ]);
-
-        $this->showConfirmModal = true;
-    }
-
+    
     public function save()
     {
         try {

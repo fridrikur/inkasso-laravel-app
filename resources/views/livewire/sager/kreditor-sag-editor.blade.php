@@ -32,30 +32,22 @@ FORM MODE
         </select>
     </div>
 
-    <div class="col-span-2">
-        <label class="block text-sm font-medium">Aktiv</label>
-        <input type="text" wire:model.lazy="form.aktiv" class="mt-1 w-full rounded-md border-gray-300" />
-    </div>
-
-
     {{-- Dynamic fields --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @foreach($allowedFields as $field)
 
-            <div>
+            <div class="{{ in_array($field, ['navn', 'adresse']) ? 'md:col-span-2' : '' }}">
                 <label class="block text-sm font-medium">
                     {{ $fieldLabels[$field] ?? ucfirst($field) }}
                 </label>
 
                 {{-- Postnr --}}
                 @if($field === 'postnr')
-
                     <input
                         type="text"
                         wire:model.live="form.postnr"
                         class="mt-1 w-full rounded-md border-gray-300"
                     />
-
                     @if(!empty($form->postnr) && empty($form->by))
                         <p class="mt-1 text-sm text-red-500">
                             Postnummer ikke fundet
@@ -64,7 +56,6 @@ FORM MODE
 
                 {{-- By --}}
                 @elseif($field === 'by')
-
                     <div class="relative">
                         <input
                             type="text"
@@ -74,7 +65,6 @@ FORM MODE
                             autocomplete="off"
                             class="mt-1 w-full rounded-md border-gray-300 bg-gray-100 text-gray-700"
                         />
-
                         @if(!empty($showByDropdown) && !empty($bySuggestions))
                             <ul class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
                                 @foreach($bySuggestions as $item)
@@ -92,7 +82,6 @@ FORM MODE
 
                 {{-- Danish number fields --}}
                 @elseif(in_array($field, ['hovedstol', 'renter', 'gebyr', 'indbetalt']))
-
                     <input
                         type="text"
                         wire:model.blur="form.{{ $field }}"
@@ -100,15 +89,17 @@ FORM MODE
                         inputmode="decimal"
                     />
 
-                {{-- Everything else --}}
+                {{-- Everything else (inklusiv aktiv, cvr, sagsnr osv.) --}}
+                {{-- Everything else (inklusiv aktiv, cvr, sagsnr osv.) --}}
                 @else
-
                     <input
                         type="text"
-                        wire:model.defer="form.{{ $field }}"
+                        wire:model="form.{{ $field }}"
                         class="mt-1 w-full rounded-md border-gray-300"
+                        @if($field === 'cvr')
+                            placeholder="f.eks. 20-04-68-3377 eller CVR-nr."
+                        @endif
                     />
-
                 @endif
             </div>
 
@@ -154,67 +145,48 @@ REVIEW MODE
 
 <div id="reviewContainer" tabindex="-1" class="review-paper">
 
-    <h3 class="review-section">Sag oplysninger</h3>
+    <h3 class="review-section">Sag- og debitoroplysninger</h3>
 
-    <div class="review-row">
-        <div class="review-label">Sagsnummer</div>
-        <div class="review-value">{{ $form->sagsnr }}</div>
-    </div>
-
-    <div class="review-row">
-        <div class="review-label">Aktiv</div>
-        <div class="review-value">{{ $form->aktiv }}</div>
-    </div>
-
+    {{-- Sagsbehandler (Fast felt uden for det dynamiske loop) --}}
     <div class="review-row">
         <div class="review-label">Sagsbehandler</div>
         <div class="review-value">
-            {{ $sagsbehandlerOptions[$form->sagsbehandler] ?? '' }}
+            {{ $sagsbehandlerOptions[$form->sagsbehandler] ?? '-' }}
         </div>
     </div>
 
-    <h3 class="review-section">Debitor</h3>
-
-    <div class="review-row">
-        <div class="review-label">Navn</div>
-        <div class="review-value">{{ $form->navn }}</div>
-    </div>
-
-    <div class="review-row">
-        <div class="review-label">Adresse</div>
-        <div class="review-value">{{ $form->adresse }}</div>
-    </div>
-
-    <div class="review-row">
-        <div class="review-label">Postnr</div>
-        <div class="review-value">{{ $form->postnr }}</div>
-    </div>
-
-    <div class="review-row">
-        <div class="review-label">By</div>
-        <div class="review-value">{{ $form->by }}</div>
-    </div>
+    {{-- Dynamiske felter (Henter alt fra allowedFields, f.eks. sagsnr, navn, adresse, postnr, by, aktiv, cvr osv.) --}}
+    @foreach($allowedFields as $field)
+        <div class="review-row">
+            <div class="review-label">
+                {{ $fieldLabels[$field] ?? ucfirst($field) }}
+            </div>
+            <div class="review-value">
+                {{ $form->$field ?? '-' }}
+            </div>
+        </div>
+    @endforeach
 
     <h3 class="review-section">Økonomi</h3>
 
     <div class="review-row">
         <div class="review-label">Hovedstol</div>
-        <div class="review-value">{{ $form->hovedstol }}</div>
+        <div class="review-value">{{ $form->hovedstol ?? '0,00' }}</div>
     </div>
 
     <div class="review-row">
         <div class="review-label">Renter</div>
-        <div class="review-value">{{ $form->renter }}</div>
+        <div class="review-value">{{ $form->renter ?? '0,00' }}</div>
     </div>
 
     <div class="review-row">
         <div class="review-label">Gebyr</div>
-        <div class="review-value">{{ $form->gebyr }}</div>
+        <div class="review-value">{{ $form->gebyr ?? '0,00' }}</div>
     </div>
 
     <div class="review-row">
         <div class="review-label">Indbetalt</div>
-        <div class="review-value">{{ $form->indbetalt }}</div>
+        <div class="review-value">{{ $form->indbetalt ?? '0,00' }}</div>
     </div>
 
 </div>
@@ -250,7 +222,6 @@ SUCCESS MODAL
     wire:click.self="$set('showSuccessModal', false)"
 >
 
-    {{-- 🟢 Vi bruger Alpine.js (x-data) direkte her, så timeren starter sekunder efter modalen renderes --}}
     <div 
         class="modal-box" 
         id="successModal"
@@ -289,27 +260,45 @@ SUCCESS MODAL
 
             <div class="stamp-body">
 
-                <div class="review-row">
-                    <div class="review-label">Sagsnummer</div>
-                    <div class="review-value font-bold">
-                        {{ $this->sag->sagsnr ?? '-' }}
-                    </div>
-                </div>
-                <div class="review-row">
-                    <div class="review-label">Debitor</div>
-                    <div class="review-value">{{ $form->navn }}</div>
-                </div>
-
+                {{-- Sagsbehandler --}}
                 <div class="review-row">
                     <div class="review-label">Sagsbehandler</div>
                     <div class="review-value">
-                        {{ $sagsbehandlerOptions[$form->sagsbehandler] ?? '' }}
+                        {{ $sagsbehandlerOptions[$form->sagsbehandler] ?? '-' }}
                     </div>
                 </div>
 
+                {{-- Dynamiske felter (Sagsnr, navn, aktiv, cvr osv.) --}}
+                @foreach($allowedFields as $field)
+                    <div class="review-row">
+                        <div class="review-label">
+                            {{ $fieldLabels[$field] ?? ucfirst($field) }}
+                        </div>
+                        <div class="review-value {{ $field === 'sagsnr' ? 'font-bold' : '' }}">
+                            {{ $form->$field ?? '-' }}
+                        </div>
+                    </div>
+                @endforeach
+
+                {{-- Økonomi felter --}}
                 <div class="review-row">
                     <div class="review-label">Hovedstol</div>
-                    <div class="review-value">{{ $form->hovedstol }}</div>
+                    <div class="review-value">{{ $form->hovedstol ?? '0,00' }}</div>
+                </div>
+
+                <div class="review-row">
+                    <div class="review-label">Renter</div>
+                    <div class="review-value">{{ $form->renter ?? '0,00' }}</div>
+                </div>
+
+                <div class="review-row">
+                    <div class="review-label">Gebyr</div>
+                    <div class="review-value">{{ $form->gebyr ?? '0,00' }}</div>
+                </div>
+
+                <div class="review-row">
+                    <div class="review-label">Indbetalt</div>
+                    <div class="review-value">{{ $form->indbetalt ?? '0,00' }}</div>
                 </div>
 
             </div>
@@ -318,7 +307,7 @@ SUCCESS MODAL
                 Sendt: {{ now()->format('d-m-Y H:i') }}
             </div>
             
-            {{-- 🟢 Udskriver sekunder direkte via Alpine.js --}}
+            {{-- Timer visning --}}
             <div class="text-sm text-gray-500 mt-3 text-right">
                 Viderestilles om <span x-text="seconds">30</span> sekunder...
             </div>

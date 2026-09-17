@@ -149,7 +149,7 @@ class Historik extends Component
             ->first();
 
         return view('livewire.sager.historik', [
-            'messages' => $dialog ? $dialog->messages()->orderBy('created_at', 'asc')->get() : collect(),
+            'messages' => $dialog ? $dialog->messages()->orderBy('created_at', 'desc')->get() : collect(),
         ]);
     }
 }

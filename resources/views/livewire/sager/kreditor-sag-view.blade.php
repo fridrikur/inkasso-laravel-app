@@ -30,74 +30,76 @@
 
     </div>
 
+    {{-- Sag & Debitor Information (Dynamisk visning af felter) --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
+
+        <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Aktiv</label>
+            <p class="mt-1 font-semibold text-slate-800">{{ $sag->aktiv ?? '-' }}</p>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">CPR / CVR</label>
+            <p class="mt-1 font-semibold text-slate-800">{{ $sag->cvr ?? '-' }}</p>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Debitor navn</label>
+            <p class="mt-1 font-semibold text-slate-800">{{ $debitor->navn ?? '-' }}</p>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Adresse</label>
+            <p class="mt-1 font-semibold text-slate-800">
+                {{ $debitor->adresse ?? '-' }}<br>
+                <span class="text-xs font-normal text-slate-500">
+                    {{ $debitor->postnr ?? '' }} {{ optional($debitor->postnummer)->by ?? '' }}
+                </span>
+            </p>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Sagsbehandler</label>
+            <p class="mt-1 font-semibold text-slate-800">
+                {{ $sag->sagsbehandler->first()?->navn ?? '-' }}
+            </p>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Modtaget dato</label>
+            <p class="mt-1 font-semibold text-slate-800">
+                {{ optional($sag->modtaget)->format('d-m-Y H:i') ?? '-' }}
+            </p>
+        </div>
+
+    </div>
+
     {{-- Financial Information --}}
-    <div class="grid grid-cols-2 gap-6">
-
-        <div>
-            <label class="block text-sm font-medium">Aktiv</label>
-            <p class="mt-1">{{ $sag->aktiv }}</p>
-        </div>
-        
-        <div>
-            <label class="block text-sm font-medium">Hovedstol</label>
-            <p class="mt-1">{{ $this->formatNumber($sag->hovedstol) }}</p>
-        </div>
-        
-
-        <div>
-            <label class="block text-sm font-medium">Renter</label>
-            <p class="mt-1">{{ $this->formatNumber($sag->renter) }}</p>
-        </div>
-
-        <div>
-            <label class="block text-sm font-medium">Gebyr</label>
-            <p class="mt-1">{{ $this->formatNumber($sag->gebyr) }}</p>
-        </div>
-
-        <div>
-            <label class="block text-sm font-medium">I alt</label>
-            <p class="mt-1">{{ $this->formatNumber($sag->ialt) }}</p>
-        </div>
-
-    </div>
-
-    {{-- Debitor information --}}
     <div>
+        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">Økonomi</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl border border-slate-200/80 bg-white">
 
-        <div class="mt-4">
-            <label class="block text-sm font-medium">Debitor navn</label>
-            <p class="mt-1">{{ $debitor->navn ?? '-' }}</p>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500">Hovedstol</label>
+                <p class="mt-1 font-bold text-slate-900">{{ $this->formatNumber($sag->hovedstol) }} kr.</p>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500">Renter</label>
+                <p class="mt-1 font-bold text-slate-900">{{ $this->formatNumber($sag->renter) }} kr.</p>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500">Gebyr</label>
+                <p class="mt-1 font-bold text-slate-900">{{ $this->formatNumber($sag->gebyr) }} kr.</p>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500">I alt</label>
+                <p class="mt-1 font-bold text-indigo-600">{{ $this->formatNumber($sag->ialt) }} kr.</p>
+            </div>
+
         </div>
-
-        <div class="mt-4">
-            <label class="block text-sm font-medium">Adresse</label>
-            <p class="mt-1">{{ $debitor->adresse ?? '-' }}</p>
-        </div>
-
-    </div>
-
-    {{-- Sagsbehandler --}}
-    <div>
-        <label class="block text-sm font-medium">Sagsbehandler</label>
-        <p class="mt-1">
-            {{ $sag->sagsbehandler->first()?->navn ?? '-' }}
-        </p>
-    </div>
-
-    {{-- Date --}}
-    <div>
-        <label class="block text-sm font-medium">Dato</label>
-        <p class="mt-1">
-            {{ optional($sag->dato)->format('d-m-Y') ?? '-' }}
-        </p>
-    </div>
-
-    {{-- Note --}}
-    <div>
-        <label class="block text-sm font-medium">Kort bemærkning</label>
-        <p class="mt-1 whitespace-pre-line">
-            {{ $sag->kort_bemaerkning ?? '-' }}
-        </p>
     </div>
 
     {{-- Dokument Upload --}}
@@ -115,11 +117,11 @@
 
             @csrf
 
-            <input type="file" name="file" required>
+            <input type="file" name="file" required class="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
 
             <button
             type="submit"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-500 transition cursor-pointer">
 
                 Upload
 
