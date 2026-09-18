@@ -406,6 +406,23 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
             </div>
         </div>
 
+        {{-- 📂 IMPORT AF DOKUMENTER FRA FILE_RECORDS --}}
+    <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+        <div>
+            <h3 class="text-xs font-bold text-slate-800 mb-1">Import af Dokumenter (File Records)</h3>
+            <p class="text-[11px] text-slate-500">Importerer filer fra <code>file_records</code> tabellen og knytter dem til sager via <code>pnummer</code> og <code>sagsnr</code>.</p>
+        </div>
+
+        <div class="flex items-center gap-4 flex-wrap">
+            <input type="text" wire:model="dokumenterFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="file_records.sql">
+            
+            <button type="button" wire:click="runDokumenterImport" wire:loading.attr="disabled" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer">
+                <span wire:loading.remove wire:target="runDokumenterImport">Start Dokument-import 📁</span>
+                <span wire:loading wire:target="runDokumenterImport">Importerer filer... ⏳</span>
+            </button>
+        </div>
+    </div>
+
     {{-- 2. KOMPLET SYSTEM-IMPORT --}}
     <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4" @if($isImportingSystem) wire:poll.1s="checkSystemImportStatus" @endif>
         <div>

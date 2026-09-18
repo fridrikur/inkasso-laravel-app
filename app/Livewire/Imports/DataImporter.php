@@ -24,6 +24,7 @@ class DataImporter extends Component
     public string $konsulentFile = 'konsulenter.sql';
     public string $sagsbehandlerFile = 'sagsbehandlere.sql';    
     public string $dialogFile = 'dialoger.sql';
+    public string $dokumenterFile = 'file_records.sql';
     
     public string $importType = 'sager';
     public $file;
@@ -610,6 +611,37 @@ class DataImporter extends Component
             }
         } catch (\Throwable $e) {
             session()->flash('error', 'Databasefejl under import: ' . $e->getMessage());
+        }
+    }
+
+    public function runDokumenterImport()
+    {
+        set_time_limit(120);
+
+        try {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+
+            $affectedRows = DB::statement("
+                INSERT INTO dokumenter (sag_id, file_name, file_path, file_size, uploaded_date, created_at, updated_at)
+                SELECT 
+                    sagers.id AS sag_id,
+                    file_records.file_name,
+                    CONCAT('/storage/', file_records.file_name) AS file_path,
+                    file_records.file_size,
+                    file_records.uploaded_date,
+                    NOW() AS created_at,
+                    NOW() AS updated_at
+                FROM file_records
+                JOIN sager ON sager.pnummer = file_records.pnummer
+                JOIN sagers ON sagers.sagsnr COLLATE utf8mb4_unicode_ci = sager.sagsnr COLLATE utf8mb4_unicode_ci
+            ");
+
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+
+            session()->flash('success', "🎉 Dokumenter importeret succesfuldt! Rækker tilføjet.");
+        } catch (\Throwable $e) {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+            session()->flash('error', 'Fejl ved import af dokumenter: ' . $e->getMessage());
         }
     }
 
