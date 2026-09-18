@@ -12,6 +12,28 @@
         </div>
     </div>
 
+    {{-- 🚀 PLACERET ØVERST: TOAST-BESKEDER SÅ DE ER SYNLIGE MED DET SAMME --}}
+    @if (session()->has('success'))
+        <div class="p-4 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl text-xs font-bold shadow-sm flex items-center gap-3">
+            <span class="text-base">🎉</span>
+            <div class="flex-1">{!! session('success') !!}</div>
+        </div>
+    @endif
+
+    @if (!empty($systemFlashMessage))
+        <div class="p-4 {{ $systemFlashType === 'success' ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-rose-50 border-rose-300 text-rose-900' }} border rounded-2xl text-xs font-bold shadow-sm flex items-center gap-3">
+            <span class="text-base">{{ $systemFlashType === 'success' ? '✅' : '⚠️' }}</span>
+            <div class="flex-1">{!! $systemFlashMessage !!}</div>
+        </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="p-4 bg-rose-50 border border-rose-300 text-rose-900 rounded-2xl text-xs font-bold shadow-sm flex items-center gap-3">
+            <span class="text-base">❌</span>
+            <div class="flex-1">{!! session('error') !!}</div>
+        </div>
+    @endif
+
     {{-- 🟢 STEP 1: FIL-UPLOAD, MAPPING, SKABELONER OG FORHÅNDSVISNING --}}
     @if ($step == 1)
         <div class="space-y-6">
@@ -139,17 +161,16 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 text-slate-600">
-                                    @foreach($targetFields as $targetKey => $targetLabel)
+                                    @foreach($targetFields as $targetKey =>$targetLabel)
                                         @php
                                             $sourceCol = $mapping[$targetKey] ?? null;
-                                            $isMapped = !empty($sourceCol);
-                                            $isExactMatch = strtolower($sourceCol) === strtolower($targetKey);
+                                            $isMapped = !empty($sourceCol);$isExactMatch = strtolower($sourceCol) === strtolower($targetKey);
                                         @endphp
                                         <tr class="hover:bg-slate-50/50 transition">
                                             <td class="p-3.5 font-mono text-[11px]">
                                                 @if($isMapped)
                                                     <span class="px-2 py-1 rounded-lg border font-bold {{ $isExactMatch ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-indigo-50 text-indigo-700 border-indigo-100' }}">
-                                                        {{ $sourceCol }} {{ $isExactMatch ? '🎯 (1:1)' : '' }}
+                                                        {{ $sourceCol }} {{$isExactMatch ? '🎯 (1:1)' : '' }}
                                                     </span>
                                                 @else
                                                     <span class="text-slate-400 italic">Ikke valgt</span>
@@ -199,7 +220,7 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
 
                     <div class="p-6 border-t border-slate-100 space-y-6 bg-white">
                         @if(!empty($templates) && count($templates) > 0)
-                            @foreach($templates as $tpl)
+                            @foreach($templates as$tpl)
                                 <div class="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-4">
                                     <div class="flex items-center justify-between gap-4 flex-wrap">
                                         <div>
@@ -209,7 +230,7 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                                             <p class="text-[11px] text-slate-500 mt-0.5">Parrede felter: <strong class="text-slate-700 font-mono">{{ count($tpl->mapping ?? []) }}</strong></p>
                                         </div>
                                         <div class="flex items-center gap-2 flex-wrap">
-                                            <button type="button" wire:click="$set('selectedTemplateId', {{ $tpl->id }}); $wire.loadTemplate()" class="px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition cursor-pointer">📥 Brug</button>
+                                            <button type="button" wire:click="$set('selectedTemplateId', {{ $tpl->id }});$wire.loadTemplate()" class="px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition cursor-pointer">📥 Brug</button>
                                             <button type="button" wire:click="exportTemplate({{ $tpl->id }})" class="px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition cursor-pointer">📤 Eksportér</button>
                                             <button type="button" wire:click="deleteTemplate({{ $tpl->id }})" wire:confirm="Er du sikker?" class="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition cursor-pointer">🗑️ Slet</button>
                                         </div>
@@ -238,15 +259,15 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                         <table class="w-full text-left text-xs">
                             <thead class="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold">
                                 <tr>
-                                    @foreach($sourceColumns as $col)
+                                    @foreach($sourceColumns as$col)
                                         <th id="csv-col-{{ Str::slug($col) }}" class="p-3 truncate max-w-[150px] transition-colors duration-300">{{ $col }}</th>
                                     @endforeach
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 text-slate-600">
-                                @foreach($previewRows as $row)
+                                @foreach($previewRows as$row)
                                     <tr class="hover:bg-slate-50/50">
-                                        @foreach($sourceColumns as $index => $col)
+                                        @foreach($sourceColumns as $index =>$col)
                                             <td class="p-3 truncate max-w-[150px] font-mono text-[11px]">{{ $row[$index] ?? '' }}</td>
                                         @endforeach
                                     </tr>
@@ -268,7 +289,7 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                 </div>
 
                 <div class="space-y-3">
-                    @foreach($targetFields as $targetKey => $targetLabel)
+                    @foreach($targetFields as $targetKey =>$targetLabel)
                         @php
                             $isPivotRelation = in_array($targetKey, [
                                 'kreditor_id', 'debitor_id', 'sagsbehandler_id', 'konsulent_id', 
@@ -292,7 +313,7 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
                             <div class="w-1/2 space-y-1">
                                 <select wire:model="mapping.{{ $targetKey }}" class="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs text-slate-800 outline-none focus:border-indigo-500">
                                     <option value="">-- Vælg kolonne fra fil --</option>
-                                    @foreach($sourceColumns as $source)
+                                    @foreach($sourceColumns as$source)
                                         <option value="{{ $source }}">{{ $source }}</option>
                                     @endforeach
                                 </select>
@@ -340,73 +361,70 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
     @endif
 
     {{-- DIREKTE IMPORT AF DIALOGER MED BEKRÆFTELSES-MODAL --}}
-        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+    <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+        <div>
+            <h3 class="text-xs font-bold text-slate-800 mb-1">Import af Dialoger (Direkte kørsel)</h3>
+            <p class="text-[11px] text-slate-500">Kør importen direkte. Tager under et minut.</p>
+        </div>
+
+        <div class="flex items-center gap-4 flex-wrap">
+            <input type="text" wire:model="dialogFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="Dialog fil">
             
-            <div>
-                <h3 class="text-xs font-bold text-slate-800 mb-1">Import af Dialoger (Direkte kørsel)</h3>
-                <p class="text-[11px] text-slate-500">Kør importen direkte. Tager under et minut.</p>
-            </div>
+            <button type="button" wire:click="confirmImport" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer">
+                Start Dialog-import 🚀
+            </button>
+        </div>
 
-            <div class="flex items-center gap-4 flex-wrap">
-                <input type="text" wire:model="dialogFile" class="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 bg-slate-50/50 outline-none" placeholder="Dialog fil">
+        {{-- 🟢 BEKRÆFTELSES-MODAL STYRET AF LIVEWIRE --}}
+        <div x-show="$wire.showConfirmModal" 
+            x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0">
+            
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-5"
+                @click.outside="$wire.set('showConfirmModal', false)">
                 
-                {{-- ÅBNER MODALEN VIA LIVEWIRE --}}
-                <button type="button" wire:click="confirmImport" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer">
-                    Start Dialog-import 🚀
-                </button>
-            </div>
-
-            {{-- 🟢 BEKRÆFTELSES-MODAL STYRET AF LIVEWIRE --}}
-            <div x-show="$wire.showConfirmModal" 
-                x-cloak
-                class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
-                x-transition:enter="transition ease-out duration-200"
-                x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100"
-                x-transition:leave="transition ease-in duration-150"
-                x-transition:leave-start="opacity-100"
-                x-transition:leave-end="opacity-0">
+                <button type="button" wire:click="$set('showConfirmModal', false)" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">&times;</button>
                 
-                <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-5"
-                    @click.outside="$wire.set('showConfirmModal', false)">
-                    
-                    <button type="button" wire:click="$set('showConfirmModal', false)" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">&times;</button>
-                    
-                    <div class="flex items-center gap-3.5">
-                        <div class="p-3.5 bg-indigo-50 rounded-2xl text-indigo-600 shrink-0">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900">Bekræft dialog-import</h3>
-                            <p class="text-xs text-slate-500">Er du sikker på, at du vil starte importen?</p>
-                        </div>
+                <div class="flex items-center gap-3.5">
+                    <div class="p-3.5 bg-indigo-50 rounded-2xl text-indigo-600 shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
                     </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Bekræft dialog-import</h3>
+                        <p class="text-xs text-slate-500">Er du sikker på, at du vil starte importen?</p>
+                    </div>
+                </div>
 
-                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/60 space-y-2 text-xs text-slate-600 font-mono">
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Dialog-fil:</span>
-                            <span class="font-bold text-slate-800" x-text="$wire.dialogFile"></span>
-                        </div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/60 space-y-2 text-xs text-slate-600 font-mono">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Dialog-fil:</span>
+                        <span class="font-bold text-slate-800" x-text="$wire.dialogFile"></span>
                     </div>
+                </div>
 
-                    <div class="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
-                        <button type="button" wire:click="$set('showConfirmModal', false)" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">
-                            Annuller
-                        </button>
-                        
-                        {{-- UDLØSER IMPORTEN VED FØRSTE KLIK --}}
-                        <button type="button" wire:click="runDialogImportDirectly" wire:loading.attr="disabled" class="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">
-                            <span wire:loading.remove wire:target="runDialogImportDirectly">Ja, start import 🚀</span>
-                            <span wire:loading wire:target="runDialogImportDirectly">Importerer data... ⏳</span>
-                        </button>
-                    </div>
+                <div class="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
+                    <button type="button" wire:click="$set('showConfirmModal', false)" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">
+                        Annuller
+                    </button>
+                    
+                    <button type="button" wire:click="runDialogImportDirectly" wire:loading.attr="disabled" class="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer">
+                        <span wire:loading.remove wire:target="runDialogImportDirectly">Ja, start import 🚀</span>
+                        <span wire:loading wire:target="runDialogImportDirectly">Importerer data... ⏳</span>
+                    </button>
                 </div>
             </div>
         </div>
+    </div>
 
-        {{-- 📂 IMPORT AF DOKUMENTER FRA FILE_RECORDS --}}
+    {{-- 📂 IMPORT AF DOKUMENTER FRA FILE_RECORDS --}}
     <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
         <div>
             <h3 class="text-xs font-bold text-slate-800 mb-1">Import af Dokumenter (File Records)</h3>
@@ -477,21 +495,4 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
         @endif
     </div>
 
-    @if (session()->has('success'))
-        <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-medium">
-            {!! session('success') !!}
-        </div>
-    @endif
-
-    @if (!empty($systemFlashMessage))
-        <div class="p-4 {{ $systemFlashType === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800' }} border rounded-2xl text-xs font-medium">
-            {!! $systemFlashMessage !!}
-        </div>
-    @endif
-
-    @if (session()->has('error'))
-        <div class="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-xs font-medium">
-            {!! session('error') !!}
-        </div>
-    @endif
 </div>
