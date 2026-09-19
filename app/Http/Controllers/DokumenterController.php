@@ -63,16 +63,32 @@ class DokumenterController extends Controller
                 abort(403);
             }
 
-            // Ekstra sikkerhed: Tjek at dokumentet rent faktisk tilhører den pågældende sag
             if ($dokument->sag_id !== $sag->id) {
                 abort(404);
             }
 
-            if (!Storage::disk('public')->exists($dokument->file_path)) {
-                abort(404, 'Filen blev ikke fundet.');
+            // Rens fil-stien, så vi fjerner evt. foranstillet '/storage/' eller 'storage/'
+            $cleanPath = ltrim(str_replace('/storage', '', $dokument->file_path), '/');
+
+            // 1. Tjek i standard Laravel storage (storage/app/public/...)
+            $fullPath = storage_path('app/public/' . $cleanPath);
+            if (file_exists($fullPath)) {
+                return response()->download($fullPath, $dokument->file_name);
             }
 
-            return Storage::disk('public')->download($dokument->file_path, $dokument->file_name);
+            // 2. Tjek direkte på filnavnet i public/storage mappen
+            $publicPath = public_path('storage/' . $cleanPath);
+            if (file_exists($publicPath)) {
+                return response()->download($publicPath, $dokument->file_name);
+            }
+
+            // 3. Fallback: Hvis filen ligger et helt andet sted eller bruger det rå filnavn
+            $altPath = storage_path('app/public/' . $dokument->file_name);
+            if (file_exists($altPath)) {
+                return response()->download($altPath, $dokument->file_name);
+            }
+
+            abort(404, 'Fysisk fil blev ikke fundet på serveren (Søgt på: ' . $fullPath . ')');
         }
 
         public function downloadAll(Sager $sag)

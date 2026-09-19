@@ -44,7 +44,21 @@
                     </div>
                 </div>
 
+                @php
+                    $ext = strtolower(pathinfo($dok->file_name, PATHINFO_EXTENSION));
+                    $isPdf = $ext === 'pdf';
+                    $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp']);
+                    // Generer URL til visning (kræver en rute eller at filen kan tilgås via storage URL)
+                    $fileUrl = route('sager.dokumenter.download', [$sag->id, $dok->id]); // eller asset('storage/' . $dok->file_path)
+                @endphp
                 <div class="flex items-center gap-4">
+                    @if($isPdf || $isImage)
+                        <button type="button" 
+                                @click="$dispatch('open-preview', { url: '{{ $fileUrl }}', name: '{{ $dok->file_name }}', type: '{{ $isPdf ? 'pdf' : 'image' }}' })"
+                                class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+                            <span>👁️</span> Vis
+                        </button>
+                    @endif
                     {{-- Download link (enten via asset() eller via din download route) --}}
                     <a href="{{ route('sager.dokumenter.download', [$sag, $dok]) }}"
                     class="text-blue-600 hover:underline text-sm font-semibold">
@@ -70,5 +84,57 @@
         @endforelse
     </div>
 
+</div>
+{{-- PREVIEW / LÆSER MODAL --}}
+<div x-data="{ 
+        showPreview: false, 
+        fileUrl: '', 
+        fileName: '', 
+        fileType: '' 
+     }" 
+     @open-preview.window="
+        showPreview = true; 
+        fileUrl = $event.detail.url; 
+        fileName = $event.detail.name; 
+        fileType = $event.detail.type;
+     "
+     x-show="showPreview" 
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4"
+     style="display: none;">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden border border-slate-100"
+         @click.outside="showPreview = false">
+        
+        {{-- MODAL HEADER --}}
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <span class="text-xl" x-text="fileType === 'pdf' ? '📄' : '🖼️'"></span>
+                <div>
+                    <h3 class="text-xs font-bold text-slate-900 truncate max-w-md" x-text="fileName"></h3>
+                    <span class="text-[10px] text-slate-400">Forhåndsvisning</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <a :href="fileUrl" download class="px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                    <span>⬇️</span> Download
+                </a>
+                <button @click="showPreview = false" class="w-8 h-8 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center font-bold transition cursor-pointer">
+                    &times;
+                </button>
+            </div>
+        </div>
+
+        {{-- MODAL BODY (VISER PDF ELLER BILLEDE) --}}
+        <div class="flex-1 bg-slate-900/5 p-4 flex items-center justify-center overflow-auto">
+            <template x-if="fileType === 'pdf'">
+                <iframe :src="fileUrl" class="w-full h-full rounded-2xl border border-slate-200 bg-white shadow-inner"></iframe>
+            </template>
+
+            <template x-if="fileType === 'image'">
+                <img :src="fileUrl" class="max-h-full max-w-full object-contain rounded-2xl shadow-md bg-white p-2">
+            </template>
+        </div>
+
+    </div>
 </div>
 </x-layouts.app>

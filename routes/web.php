@@ -253,6 +253,9 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
 
         Route::get('/dialogfelter', ManageDialogfelter::class)->name('admin.dialogfelter');
 
+        Route::get('/admin/dokumenter-portal', \App\Livewire\Admin\DokumenterPortal::class)
+        ->name('admin.dokumenter.portal');
+
         // 🟢 TILFØJET: Admin-ruter til sagsfaner (så Admin ikke skal bruge /medarbejder/)
         Route::get('/sager/{sag}/bogholderi', \App\Livewire\Sager\Bogholderi::class)->name('sager.bogholderi');
         Route::get('/sager/{sag}/historik', \App\Livewire\Sager\Historik::class)->name('sager.historik');
