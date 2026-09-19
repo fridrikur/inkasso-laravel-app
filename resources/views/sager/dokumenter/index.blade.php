@@ -64,16 +64,13 @@
                     class="text-blue-600 hover:underline text-sm font-semibold">
                         Download
                     </a>
-
-                    {{-- Slet-knap (Kun for Admin & Medarbejder) --}}
+                    {{-- Slet-knap med flot modal (Kun for Admin & Medarbejder) --}}
                     @role('Admin|Medarbejder')
-                    <form action="{{ route('sager.dokumenter.destroy', [$sag, $dok]) }}" method="POST" onsubmit="return confirm('Er du sikker på du vil slette dette dokument?');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-rose-600 hover:text-rose-800 text-sm font-semibold cursor-pointer">
-                            Slet
-                        </button>
-                    </form>
+                    <button type="button" 
+                            @click="$dispatch('open-delete-modal', { url: '{{ route('sager.dokumenter.destroy', [$sag, $dok]) }}', name: '{{ $dok->file_name }}' })"
+                            class="text-rose-600 hover:text-rose-800 text-sm font-semibold transition cursor-pointer">
+                        Slet
+                    </button>
                     @endrole
                 </div>
             </div>
