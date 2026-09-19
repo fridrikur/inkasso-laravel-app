@@ -70,7 +70,7 @@
                     <form action="{{ route('sager.dokumenter.destroy', [$sag, $dok]) }}" method="POST" onsubmit="return confirm('Er du sikker på du vil slette dette dokument?');">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="text-rose-600 hover:text-rose-800 text-sm font-semibold">
+                        <button type="submit" class="text-rose-600 hover:text-rose-800 text-sm font-semibold cursor-pointer">
                             Slet
                         </button>
                     </form>

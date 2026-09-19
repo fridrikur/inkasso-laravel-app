@@ -36,13 +36,20 @@ class DokumenterController extends Controller
             return back()->with('success', 'Dokument uploadet');
         }
 
-        public function destroy(Dokument $dokument)
+        public function destroy(Sager $sag, Dokument $dokument)
         {
             if (!auth()->user()->hasAnyRole(['Admin', 'Medarbejder'])) {
                 abort(403);
             }
 
-            Storage::disk('public')->delete($dokument->file_path);
+            if ($dokument->sag_id !== $sag->id) {
+                abort(404);
+            }
+
+            if ($dokument->file_path && Storage::disk('public')->exists($dokument->file_path)) {
+                Storage::disk('public')->delete($dokument->file_path);
+            }
+            
             $dokument->delete();
 
             return back()->with('success', 'Dokument slettet');
