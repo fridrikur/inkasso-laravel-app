@@ -144,4 +144,49 @@
 
     </div>
 </div>
+
+{{-- SLET BEKRÆFTELSES MODAL --}}
+<div x-data="{ 
+        showDeleteModal: false, 
+        deleteUrl: '', 
+        fileName: '' 
+     }" 
+     @open-delete-modal.window="
+        showDeleteModal = true; 
+        deleteUrl = $event.detail.url; 
+        fileName = $event.detail.name;
+     "
+     x-show="showDeleteModal" 
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4"
+     style="display: none;"
+     x-transition.opacity>
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 text-center space-y-4 border border-slate-100"
+         @click.outside="showDeleteModal = false"
+         x-transition.scale>
+        
+        <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto text-xl shadow-inner font-bold">
+            ⚠️
+        </div>
+
+        <div>
+            <h3 class="text-base font-bold text-slate-900">Vil du slette dokumentet?</h3>
+            <p class="text-xs text-slate-500 mt-1">Du er ved at slette <strong class="text-slate-700" x-text="fileName"></strong>. Denne handling kan ikke angres.</p>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+            <button @click="showDeleteModal = false" type="button" class="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer">
+                Annuller
+            </button>
+            
+            <form :action="deleteUrl" method="POST" class="flex-1">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="w-full px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer">
+                    Ja, slet dokument
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
 </x-layouts.app>
