@@ -87,11 +87,23 @@
 
     </nav>
 
-    {{-- 🟢 Download alt-knap (vises når man er på dokument-fanen og der er filer) --}}
-    @if($activeTab === 'dokumenter' && $docCount > 0)
-        <a href="{{ route('sager.dokumenter.downloadAll', $sag) }}"
-           class="px-3.5 py-2 bg-slate-800 text-white rounded-xl text-xs font-semibold hover:bg-slate-700 transition flex items-center gap-2 shadow-sm mr-2">
-            <span>⬇ Download alt (.zip)</span>
-        </a>
-    @endif
+    {{-- HØJRE SIDE: Handlingsknapper (Download alt + Udskriv sag) --}}
+    <div class="flex items-center gap-2">
+        {{-- Download alt-knap (vises når man er på dokument-fanen og der er filer) --}}
+        @if($activeTab === 'dokumenter' && $docCount > 0)
+            <a href="{{ route('sager.dokumenter.downloadAll', $sag) }}"
+               class="px-3.5 py-2 bg-slate-800 text-white rounded-xl text-xs font-semibold hover:bg-slate-700 transition flex items-center gap-2 shadow-sm">
+                <span>⬇ Download alt (.zip)</span>
+            </a>
+        @endif
+
+        {{-- 🟢 UDSKRIV SAG KNAP (Åbner print-siden i ny fane, hvis sagen eksisterer) --}}
+        @if($sag && $sag->exists)
+            <a href="{{ route('sager.print', $sag) }}" 
+               target="_blank"
+               class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+                <span>🖨️</span> Udskriv
+            </a>
+        @endif
+    </div>
 </div>

@@ -34,6 +34,7 @@ use App\Livewire\Debitorer\UpdateDebitor;
 use App\Livewire\Users\CreateUser;
 use App\Livewire\Users\Showkreditorusers;
 use App\Http\Controllers\sager\ImportExecuteController;
+use App\Http\Controllers\SagerPrintController;
 use App\Livewire\Users\UpdateUser;
 use App\Livewire\Users\CreateMedarbejderUser;
 use App\Livewire\Admin\Breve\RedigerBrev;
@@ -468,3 +469,5 @@ Route::middleware(['auth', 'verified', 'role:Admin|Medarbejder|Kreditor'])
         Route::get('/download-all', [DokumenterController::class, 'downloadAll'])
             ->name('downloadAll');
     });
+
+    Route::get('/sager/{sag}/print', [SagerPrintController::class, 'show'])->name('sager.print');
