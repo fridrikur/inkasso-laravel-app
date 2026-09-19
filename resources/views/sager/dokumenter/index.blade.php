@@ -52,7 +52,7 @@
                     $fileUrl = route('sager.dokumenter.download', [$sag->id, $dok->id]); // eller asset('storage/' . $dok->file_path)
                 @endphp
                 <div class="flex items-center gap-4">
-                    @if($isPdf || $isImage) //PDF
+                    @if($isPdf || $isImage) 
                         <button type="button" 
                                 @click="$dispatch('open-preview', { url: '{{ $fileUrl }}', name: '{{ $dok->file_name }}', type: '{{ $isPdf ? 'pdf' : 'image' }}' })"
                                 class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer">
