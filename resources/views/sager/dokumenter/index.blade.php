@@ -85,6 +85,8 @@
     </div>
 
 </div>
+</div>
+
 {{-- PREVIEW / LÆSER MODAL --}}
 <div x-data="{ 
         showPreview: false, 
@@ -127,7 +129,12 @@
         {{-- MODAL BODY (VISER PDF ELLER BILLEDE) --}}
         <div class="flex-1 bg-slate-900/5 p-4 flex items-center justify-center overflow-auto">
             <template x-if="fileType === 'pdf'">
-                <iframe :src="fileUrl" class="w-full h-full rounded-2xl border border-slate-200 bg-white shadow-inner"></iframe>
+                <object :data="fileUrl" type="application/pdf" class="w-full h-full rounded-2xl border border-slate-200 bg-white shadow-inner">
+                    <div class="p-8 text-center space-y-3">
+                        <p class="text-xs text-slate-600">Din browser understøtter ikke direkte visning af PDF-filer.</p>
+                        <a :href="fileUrl" download class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold inline-block">Download PDF i stedet</a>
+                    </div>
+                </object>
             </template>
 
             <template x-if="fileType === 'image'">
