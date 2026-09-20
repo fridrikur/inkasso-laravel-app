@@ -71,9 +71,11 @@
         </div>
 
         {{-- Højre side: Opret-knap + Link til Sortering/Filter opsætning --}}
+        {{-- Route::get('/breve/filter', [BrevFilterController::class, 'index'])->name('breve.filter'); --}}
+        
         <div class="flex items-center gap-2">
             <a
-                href="http://dkg-app.test/breve/filter" 
+                href="{{ route('breve.filter') }}" 
                 class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
                 title="Ret rækkefølge og felter for breve"
             >
