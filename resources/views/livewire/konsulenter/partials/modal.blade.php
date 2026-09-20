@@ -61,11 +61,6 @@
                             </label>
 
                             <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
-                                <input type="checkbox" wire:model="modalIsNotifikation" class="rounded text-indigo-600 focus:ring-indigo-500" />
-                                <span>🔔 Modtag Notifikationer</span>
-                            </label>
-
-                            <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
                                 <input type="checkbox" wire:model="modalIsSkjult" class="rounded text-indigo-600 focus:ring-indigo-500" />
                                 <span>🙈 Skjult Konsulent</span>
                             </label>

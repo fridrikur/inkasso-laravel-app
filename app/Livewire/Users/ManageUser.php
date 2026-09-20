@@ -7,6 +7,7 @@ use App\Models\Kreditorer;
 use Livewire\Component;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\DB;
 
 class ManageUser extends Component
 {
@@ -45,12 +46,27 @@ class ManageUser extends Component
         return view('livewire.users.manage-user', [
             'allRoles' => Role::orderBy('name')->get(),
             'allKreditorer' => Kreditorer::orderBy('navn')->get(),
+            // 🟢 Tjek direkte om brugeren modtager notifikationer
+            'isNotified' => DB::table('notifybrugere')->where('brugerID', $this->user->id)->exists(),
         ]);
     }
 
-    // =========================================================================
-    // REDIGÉR STAMDATA & ROLLE
-    // =========================================================================
+    // 🟢 NY METODE: Skifter notifikationer on/off direkte via switchen i containeren
+    public function toggleNotifications(): void
+    {
+        $exists = DB::table('notifybrugere')->where('brugerID', $this->user->id)->exists();
+
+        if ($exists) {
+            DB::table('notifybrugere')->where('brugerID', $this->user->id)->delete();
+            $msg = 'Notifikationer om nye sager er slået fra.';
+        } else {
+            DB::table('notifybrugere')->insert(['brugerID' => $this->user->id]);
+            $msg = 'Notifikationer om nye sager er slået til.';
+        }
+
+        $this->dispatch('toast', ['message' => $msg, 'type' => 'success']);
+    }
+
     public function openEditModal(): void
     {
         $this->name = $this->user->name;
@@ -63,7 +79,6 @@ class ManageUser extends Component
 
     public function saveStamdata(): void
     {
-        // Beskyttelse: Bruger #1 skal altid forblive Admin
         if ($this->user->id === 1 && $this->selectedRole !== 'Admin') {
             $this->dispatch('toast', [
                 'message' => 'Rollen for systemets primære administrator (Bruger #1) kan ikke ændres.',
@@ -92,6 +107,11 @@ class ManageUser extends Component
             $this->user->kreditorer()->sync([$this->assignedKreditorId]);
         } else {
             $this->user->kreditorer()->detach();
+        }
+
+        // Hvis rollen ændres væk fra Medarbejder, fjernes de evt. fra notifikationer automatisk
+        if ($this->selectedRole !== 'Medarbejder') {
+            DB::table('notifybrugere')->where('brugerID', $this->user->id)->delete();
         }
 
         $this->showEditModal = false;

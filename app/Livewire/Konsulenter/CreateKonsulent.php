@@ -14,26 +14,19 @@ class CreateKonsulent extends Component
     public string $navn = '';
     public string $email = '';
     public string $tlf = '';
-    public string $titel = 'Konsulent';
-    public bool $aktiv = true;
 
     // 🟢 Konsulent roller
     public bool $is_hoved = false;
     public bool $is_skjult = false;
-    public bool $is_notifikation = false;
-
+    
     protected function rules(): array
     {
         return [
-            // Tilføjet unique-regel på navn her, så den fanges i valideringen før databasen
             'navn'  => ['required', 'string', 'max:255', Rule::unique('konsulenters', 'navn')],
             'email' => ['required', 'email', 'max:255', Rule::unique('konsulenters', 'email')],
-            'tlf'   => ['nullable', 'string', 'max:30', Rule::unique('konsulenters', 'tlf')],
-            'titel' => 'nullable|string|max:100',
-            'aktiv' => 'boolean',
-            'is_hoved' => 'boolean',
+            'tlf'   => ['nullable', 'string', 'max:50', Rule::unique('konsulenters', 'tlf')],
+            'is_hoved'  => 'boolean',
             'is_skjult' => 'boolean',
-            'is_notifikation' => 'boolean',
         ];
     }
 
@@ -43,20 +36,17 @@ class CreateKonsulent extends Component
 
         try {
             DB::transaction(function () use ($service) {
-                // 1. Opret konsulenten
-                $konsulent = Konsulenter::create([
+                // 1. Brug service-laget til at oprette konsulenten (sikrer også tlf/email rensning)
+                $konsulent = $service->save(null, [
                     'navn'  => $this->navn,
                     'email' => $this->email,
-                    'tlf'   => !empty(trim($this->tlf)) ? trim($this->tlf) : null,
-                    'titel' => !empty(trim($this->titel)) ? trim($this->titel) : null,
-                    'aktiv' => $this->aktiv,
+                    'tlf'   => $this->tlf,
                 ]);
 
                 // 2. Synkroniser konsulentens roller via KonsulentService
                 $service->syncRoles($konsulent, [
-                    'hoved'        => $this->is_hoved,
-                    'skjult'       => $this->is_skjult,
-                    'notifikation' => $this->is_notifikation,
+                    'hoved'  => $this->is_hoved,
+                    'skjult' => $this->is_skjult,
                 ]);
             });
 
@@ -68,7 +58,6 @@ class CreateKonsulent extends Component
             return redirect()->route('konsulenter.index');
 
         } catch (QueryException $e) {
-            // Fanger MySQL duplicate entry (fejlkode 1062) hvis den mod forventning smutter igennem valideringen
             if ($e->errorInfo[1] === 1062) {
                 $errorMessage = $e->getMessage();
 
@@ -90,7 +79,6 @@ class CreateKonsulent extends Component
                 return;
             }
 
-            // Kaster andre uventede databasefejl videre
             throw $e;
         }
     }

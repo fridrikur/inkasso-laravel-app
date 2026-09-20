@@ -2,7 +2,7 @@
 
     <div class="space-y-6 relative">
 
-        {{-- TOP BAR: TABS & KNAP TIL SKABELON-ADMINISTRATION --}}
+        {{-- TOP BAR: TABS & KNAPPER --}}
         <div class="border-b border-slate-200 flex flex-wrap gap-2 pb-3 items-center justify-between">
 
             {{-- Rene tabs til at vælge brev til fletning --}}
@@ -22,14 +22,27 @@
                 @endforeach
             </div>
 
-            {{-- Link-knap over til skabelon-administration (Rediger / Opret skabeloner) --}}
-            <div>
-                <a
-                    href="{{ route('admin.breve.rediger') }}" 
-                    class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5"
+            {{-- HØJRE SIDE: UDSKRIVNING & SKABELON-ADMIN --}}
+            <div class="flex items-center gap-2">
+                {{-- 🟢 UDSKRIV KNAP MED ID I STEDET FOR ONCLICK --}}
+                <button
+                    type="button"
+                    id="print-btn"
+                    class="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
                 >
-                    <span>⚙️</span> Rediger / Opret skabeloner
-                </a>
+                    <span>🖨️</span> Udskriv brev
+                </button>
+
+                @role('Admin')
+                <div>
+                    <a
+                        href="{{ route('admin.breve.rediger') }}" 
+                        class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5"
+                    >
+                        <span>⚙️</span> Rediger / Opret skabeloner
+                    </a>
+                </div>
+            @endrole
             </div>
 
         </div>
@@ -42,12 +55,47 @@
             </div>
         </div>
 
-        {{-- Preview Area (Selve det flettede brev som vises direkte til medarbejderen) --}}
+        {{-- Preview Area (Selve det flettede brev med en ID, så vi kan målrette printet) --}}
         <div class="mt-4">
-            <div class="border border-slate-200 p-8 bg-white prose max-w-none min-h-[500px] rounded-2xl shadow-sm">
+            <div id="print-container" class="border border-slate-200 p-8 bg-white prose max-w-none min-h-[500px] rounded-2xl shadow-sm">
+                <div class="mb-4 pb-4 border-b border-slate-150 not-prose">
+                    <h2 class="text-lg font-bold text-slate-900">{{ $emne }}</h2>
+                </div>
                 {!! $preview !!}
             </div>
         </div>
 
     </div>
+
+    {{-- CSS STYLING TIL PRINT --}}
+    @assets
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-container, #print-container * {
+                visibility: visible;
+            }
+            #print-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+        }
+    </style>
+    @endassets
+
+    {{-- 🟢 ROBUST JAVASCRIPT DER LŸTTER PÅ KNAPPEN --}}
+    @script
+    <script>
+        document.getElementById('print-btn').addEventListener('click', function () {
+            window.print();
+        });
+    </script>
+    @endscript
 </div>

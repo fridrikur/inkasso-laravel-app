@@ -56,10 +56,12 @@ class MedarbejderDashboard extends Component
     }
 
     public function loadData()
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
 
-        // 📄 Seneste sager (med relationer)
+    // 🟢 Tjekker via pivot-tabellen (notifybrugere) om brugeren har fået aktiveret notifikationer
+    if ($user->receivesNotifications()) {
+        // 📄 Vis nyligt ankomne sager
         $this->latestSager = Sager::with([
                 'debitor',
                 'kreditor',
@@ -68,41 +70,35 @@ class MedarbejderDashboard extends Component
             ->latest()
             ->take(8)
             ->get();
-
-        // 💬 Sager med ulæste beskeder
-        $this->sagerWithNewMessages = Sager::with([
-                'debitor',
-                'kreditor',
-                'sagsbehandler'
-            ])
-            ->whereHas('dialogs', function ($q) use ($user) {
-                $q->where('type', 'klientinformation')
-                  ->whereHas('messages', function ($mq) use ($user) {
-                      $mq->whereNull('read_at')
-                         ->where('sender_id', '!=', $user->id);
-                  });
-            })
-            ->withCount(['dialogs as unread_messages_count' => function ($q) use ($user) {
-                $q->where('type', 'klientinformation')
-                  ->whereHas('messages', function ($mq) use ($user) {
-                      $mq->whereNull('read_at')
-                         ->where('sender_id', '!=', $user->id);
-                  });
-            }])
-            ->latest()
-            ->take(6)
-            ->get();
-
-        // 🔴 Ubehandlede sager
-        $unreadQuery = Sager::unreadForUser($user)
-            ->with(['debitor', 'kreditor']);
-            
-        $this->unreadSagerCount = $unreadQuery->count();
-        $this->unreadSager = $unreadQuery->latest()->take(5)->get();
-
-        // 💼 Mine aktive sager (hvis tilknyttet sagsbehandler/bruger)
-        $this->myActiveSagerCount = Sager::whereNull('afsluttet')->count();
+    } else {
+        // 🟢 Sørg for at rydde listen fuldstændigt, hvis brugeren IKKE skal modtage notifikationer
+        $this->latestSager = collect();
     }
+
+    // --- Resten af data kører uændret ---
+    $this->sagerWithNewMessages = Sager::with(['debitor', 'kreditor', 'sagsbehandler'])
+        ->whereHas('dialogs', function ($q) use ($user) {
+            $q->where('type', 'klientinformation')
+            ->whereHas('messages', function ($mq) use ($user) {
+                $mq->whereNull('read_at')->where('sender_id', '!=', $user->id);
+            });
+        })
+        ->withCount(['dialogs as unread_messages_count' => function ($q) use ($user) {
+            $q->where('type', 'klientinformation')
+            ->whereHas('messages', function ($mq) use ($user) {
+                $mq->whereNull('read_at')->where('sender_id', '!=', $user->id);
+            });
+        }])
+        ->latest()
+        ->take(6)
+        ->get();
+
+    $unreadQuery = Sager::unreadForUser($user)->with(['debitor', 'kreditor']);
+    $this->unreadSagerCount = $unreadQuery->count();
+    $this->unreadSager = $unreadQuery->latest()->take(5)->get();
+
+    $this->myActiveSagerCount = Sager::whereNull('afsluttet')->count();
+}
 
     public function render()
     {

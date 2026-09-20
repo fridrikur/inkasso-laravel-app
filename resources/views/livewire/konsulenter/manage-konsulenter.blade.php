@@ -1,7 +1,6 @@
 <div class="space-y-6">
 
-    {{-- STATISTICS --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total konsulenter</p>
             <p class="mt-2 text-3xl font-bold text-slate-900">{{ $konsulenter->total() }}</p>
@@ -15,31 +14,18 @@
         </div>
 
         <div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Notifikation</p>
-            <p class="mt-2 text-3xl font-bold text-slate-900">{{ \App\Models\NotifikationsKonsulent::count() }}</p>
-        </div>
-
-        <div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Skjulte</p>
             <p class="mt-2 text-3xl font-bold text-slate-900">{{ \App\Models\SkjultKonsulent::count() }}</p>
         </div>
     </div>
 
-    {{-- LEGEND --}}
     <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
         <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">Konsulentroller</h2>
-        <div class="grid gap-4 md:grid-cols-3">
+        <div class="grid gap-4 md:grid-cols-2">
             <div class="rounded-xl bg-indigo-50/70 border border-indigo-100 p-4">
                 <div class="font-bold text-indigo-700 text-xs uppercase tracking-wider">⭐ Hovedkonsulent</div>
                 <p class="mt-1 text-xs text-slate-600 leading-relaxed">
                     Den primære ansvarlige konsulent. Der kan kun eksistere én.
-                </p>
-            </div>
-
-            <div class="rounded-xl bg-emerald-50/70 border border-emerald-100 p-4">
-                <div class="font-bold text-emerald-700 text-xs uppercase tracking-wider">🔔 Notifikationskonsulent</div>
-                <p class="mt-1 text-xs text-slate-600 leading-relaxed">
-                    Modtager systemnotifikationer. Flere kan vælges.
                 </p>
             </div>
 
@@ -52,22 +38,20 @@
         </div>
     </div>
 
-    {{-- 🟢 DATA TABLE MED PRÆCIS 3 HEADERS (+ AUTOMATISK HANDLINGSKOLONNE) --}}
+    {{-- DATA TABLE --}}
     <x-data-table 
         title="Konsulenter" 
-        description="Administrer konsulenter, roller og ansvar."
+        description="Administrer konsulenter og roller."
         :headers="['Navn', 'Email', 'Roller']"
         :items="$konsulenter"
         wire:model.live="search"
     >
-        {{-- TILPASSET HEADER ACTION MED ROLLE-FANER OG OPRET KNAP --}}
         <x-slot:action>
             <div class="flex flex-col xl:flex-row items-stretch xl:items-center gap-3 w-full xl:w-auto">
                 <div class="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl">
                     @foreach([
                         'alle'   => 'Alle',
                         'hoved'  => '⭐ Hoved',
-                        'notif'  => '🔔 Notifikation',
                         'skjult' => '🙈 Skjulte'
                     ] as $key => $label)
                         <button
@@ -93,7 +77,6 @@
             </div>
         </x-slot:action>
 
-        {{-- TABEL RÆKKER --}}
         @forelse($konsulenter as $k)
             <tr wire:key="konsulent-{{ $k->id }}" class="hover:bg-slate-50/60 transition">
                 <td class="px-6 py-4 font-bold text-slate-900 text-xs whitespace-nowrap">
@@ -114,9 +97,7 @@
                     </div>
                 </td>
 
-                {{-- 🟢 INDPAK <X-TABLE-ACTIONS> KORREKT I EN <TD> --}}
-                    {{-- 🟢 ENSEARTET HANDLINGSKOLONNE MED X-TABLE-ACTIONS --}}
-                    <td class="px-6 py-4 text-right whitespace-nowrap">
+                <td class="px-6 py-4 text-right whitespace-nowrap">
                     <x-table-actions 
                         :id="$k->id" 
                         editAction="openEditModal"
@@ -134,9 +115,9 @@
         @endforelse
     </x-data-table>
 
-    {{-- FORMULAR MODAL (OPRET / REDIGER) --}}
     @include('livewire.konsulenter.partials.modal')
 
+    {{-- (Transfer og Slet modaler forbliver uændret) --}}
     @if($showStandaloneTransferModal && $konsulentToTransferFrom)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
             <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-4">
@@ -168,7 +149,6 @@
         </div>
     @endif
 
-    {{-- DIREKTE SLETTEMODAL (UAFHÆNGIG AF GLOBAL MODAL) --}}
     @if($showDeleteModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
             <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-4">

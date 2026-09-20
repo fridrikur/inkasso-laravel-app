@@ -160,10 +160,10 @@
     @endif
 
     {{-- HOVEDINDHOLD GRID --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 @if(auth()->user()->receivesNotifications()) lg:grid-cols-3 @else lg:grid-cols-2 @endif gap-6">
 
-        {{-- VENSTRE KOLONNE: NYE BESKEDER & UBEHANDLEDE SAGER (2 Cols) --}}
-        <div class="lg:col-span-2 space-y-6">
+        {{-- VENSTRE KOLONNE: NYE BESKEDER & UBEHANDLEDE SAGER (Udvider sig automatisk hvis højre kolonne mangler) --}}
+        <div class="@if(auth()->user()->receivesNotifications()) lg:col-span-2 @else lg:col-span-2 @endif space-y-6">
 
             {{-- ✉️ NYE BESKEDER SEKTION --}}
             <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
@@ -281,71 +281,72 @@
 
         </div>
 
-        {{-- HØJRE KOLONNE: SENESTE OPRETTEDE SAGER (1 Col) --}}
-        <div class="space-y-6">
+        {{-- HØJRE KOLONNE: SENESTE OPRETTEDE SAGER (KUN SYNLIG HVIS BRUGEREN MODTAGER NOTIFIKATIONER) --}}
+        @if(auth()->user()->receivesNotifications())
+            <div class="space-y-6">
 
-            <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden sticky top-6">
-                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                    <div>
-                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Seneste Sager</h2>
-                        <p class="text-xs text-slate-500">Nyligt oprettede eller opdaterede sager</p>
+                <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden sticky top-6">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                        <div>
+                            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Seneste Sager</h2>
+                            <p class="text-xs text-slate-500">Nyligt oprettede eller opdaterede sager</p>
+                        </div>
+                    </div>
+
+                    <div class="divide-y divide-slate-100">
+                        @forelse($latestSager as $sag)
+                            @php
+                                $debitor = $sag->debitor->first();
+                                $kreditor = $sag->kreditor->first();
+                                $sagsbehandler = $sag->sagsbehandler->first();
+                            @endphp
+
+                            <a href="{{ route('medarbejder.sager.edit', $sag->id) }}" 
+                               class="block p-4 hover:bg-slate-50/80 transition duration-150 group">
+                                
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="font-mono font-bold text-xs text-slate-900 group-hover:text-indigo-600 transition">
+                                        #{{ $sag->display_number ?? $sag->sagsnr ?? $sag->id }}
+                                    </span>
+                                    <span class="text-[10px] text-slate-400 font-mono">
+                                        {{ $sag->created_at->format('d/m H:i') }}
+                                    </span>
+                                </div>
+
+                                <div class="space-y-0.5 text-xs">
+                                    <div class="flex justify-between text-slate-600">
+                                        <span class="text-slate-400">Debitor:</span>
+                                        <span class="font-medium text-slate-800 truncate max-w-[130px]">{{ $debitor->navn ?? '-' }}</span>
+                                    </div>
+                                    <div class="flex justify-between text-slate-600">
+                                        <span class="text-slate-400">Kreditor:</span>
+                                        <span class="font-medium text-slate-800 truncate max-w-[130px]">{{ $kreditor->navn ?? '-' }}</span>
+                                    </div>
+                                    @if($sagsbehandler)
+                                        <div class="flex justify-between text-slate-600 pt-1">
+                                            <span class="text-slate-400">Sagsbehandler:</span>
+                                            <span class="font-semibold text-indigo-600 truncate max-w-[130px]">{{ $sagsbehandler->navn }}</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </a>
+                        @empty
+                            <div class="p-8 text-center text-slate-400 text-xs">
+                                Ingen sager oprettet endnu.
+                            </div>
+                        @endforelse
+                    </div>
+
+                    <div class="p-4 bg-slate-50/50 border-t border-slate-100 text-center">
+                        <a href="{{ route('medarbejder.sager.index') }}" 
+                           class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
+                            Gå til alle sager &rarr;
+                        </a>
                     </div>
                 </div>
 
-                <div class="divide-y divide-slate-100">
-                    @forelse($latestSager as $sag)
-                        @php
-                            $debitor = $sag->debitor->first();
-                            $kreditor = $sag->kreditor->first();
-                            $sagsbehandler = $sag->sagsbehandler->first();
-                        @endphp
-
-                        <a href="{{ route('medarbejder.sager.edit', $sag->id) }}" 
-                           class="block p-4 hover:bg-slate-50/80 transition duration-150 group">
-                            
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="font-mono font-bold text-xs text-slate-900 group-hover:text-indigo-600 transition">
-                                    #{{ $sag->display_number ?? $sag->sagsnr ?? $sag->id }}
-                                </span>
-                                <span class="text-[10px] text-slate-400 font-mono">
-                                    {{ $sag->created_at->format('d/m H:i') }}
-                                </span>
-                            </div>
-
-                            <div class="space-y-0.5 text-xs">
-                                <div class="flex justify-between text-slate-600">
-                                    <span class="text-slate-400">Debitor:</span>
-                                    <span class="font-medium text-slate-800 truncate max-w-[130px]">{{ $debitor->navn ?? '-' }}</span>
-                                </div>
-                                <div class="flex justify-between text-slate-600">
-                                    <span class="text-slate-400">Kreditor:</span>
-                                    <span class="font-medium text-slate-800 truncate max-w-[130px]">{{ $kreditor->navn ?? '-' }}</span>
-                                </div>
-                                @if($sagsbehandler)
-                                    <div class="flex justify-between text-slate-600 pt-1">
-                                        <span class="text-slate-400">Sagsbehandler:</span>
-                                        <span class="font-semibold text-indigo-600 truncate max-w-[130px]">{{ $sagsbehandler->navn }}</span>
-                                    </div>
-                                @endif
-                            </div>
-                        </a>
-                    @empty
-                        <div class="p-8 text-center text-slate-400 text-xs">
-                            Ingen sager oprettet endnu.
-                        </div>
-                    @endforelse
-                </div>
-
-                <div class="p-4 bg-slate-50/50 border-t border-slate-100 text-center">
-                    <a href="{{ route('medarbejder.sager.index') }}" 
-                       class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
-                        Gå til alle sager &rarr;
-                    </a>
-                </div>
             </div>
-
-        </div>
+        @endif
 
     </div>
-
 </div>

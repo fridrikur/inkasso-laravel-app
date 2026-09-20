@@ -64,17 +64,7 @@ class Konsulenter extends Model
         );
     }
 
-
-    public function notifikationRole(): HasMany
-    {
-        return $this->hasMany(
-            NotifikationsKonsulent::class,
-            'notifikations_konsulent_id',
-            'id'
-        );
-    }
-
-    protected static function booted()
+        protected static function booted()
         {
             static::saving(function ($konsulent) {
                 // Sørg for at tomme værdier bliver null, så unik-indekset ikke fejler
@@ -106,17 +96,6 @@ class Konsulenter extends Model
     public function isSkjult(): bool
     {
         return (bool) $this->skjult_role_exists;
-    }
-
-    public function isNotifikation(): bool
-    {
-        return (bool) $this->notifikation_role_exists;
-    }
-
-
-    public function receivesNotifications(): bool
-    {
-        return $this->notifikationRole()->exists();
     }
 
     public function getActivitylogOptions(): LogOptions
@@ -158,16 +137,6 @@ class Konsulenter extends Model
                 'class' => 'bg-slate-200 text-slate-700',
             ];
         }
-
-
-        if ($this->isNotifikation()) {
-            $roles[] = [
-                'name' => 'Notifikation',
-                'icon' => '🔔',
-                'class' => 'bg-emerald-100 text-emerald-700',
-            ];
-        }
-
 
         if (empty($roles)) {
             $roles[] = [

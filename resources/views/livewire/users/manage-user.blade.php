@@ -189,6 +189,24 @@
                         <p class="font-bold text-indigo-600">{{ $user->roles->first()?->name ?? 'Ingen rolle' }}</p>
                     </div>
                 </div>
+
+                {{-- 🟢 NOTIFIKATIONS-CONTAINER (KUN SYNLIG HVIS BRUGEREN ER MEDARBEJDER) --}}
+                @if($user->roles->first()?->name === 'Medarbejder')
+                    <div class="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between">
+                        <div>
+                            <span class="font-bold text-slate-800 text-xs block">Modtag nye sager på dashboard</span>
+                            <span class="text-[11px] text-slate-500">Viser ubehandlede / nyligt indkomne sager i feedet.</span>
+                        </div>
+
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            {{-- Input har klassen 'peer' --}}
+                            <input type="checkbox" wire:click="toggleNotifications" @checked($isNotified) class="sr-only peer">
+                            
+                            {{-- Toggle switch design der lytter til peer --}}
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+                @endif
             </div>
 
         </div>
@@ -271,7 +289,7 @@
         </div>
     @endif
 
-    {{-- 🔴 MODAL 3: DEAKTIVER BRUGER (DIT MODAL DESIGN) --}}
+    {{-- 🔴 MODAL 3: DEAKTIVER BRUGER --}}
     @if($showDeleteModal)
         <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-100 space-y-2 animate-in fade-in zoom-in-95 duration-150">

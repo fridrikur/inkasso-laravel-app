@@ -8,16 +8,10 @@ use Livewire\WithPagination;
 use App\Models\Konsulenter;
 use App\Models\HovedKonsulent;
 use App\Models\SkjultKonsulent;
-use App\Models\NotifikationsKonsulent;
 
 use App\Services\KonsulentService;
-use App\Services\ToastService;
-
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\QueryException; // 🟢 Importer denne til at fange SQL-fejl
 use App\Traits\HasCrudModal;
-use App\Models\SystemSetting;
-use Illuminate\Support\Facades\Hash;
 
 class ManageKonsulenter extends Component
 {
@@ -60,7 +54,6 @@ class ManageKonsulenter extends Component
 
     public bool $modalIsHoved = false;
     public bool $modalIsSkjult = false;
-    public bool $modalIsNotifikation = false;
 
     public function resetForm(): void
     {
@@ -72,7 +65,6 @@ class ManageKonsulenter extends Component
             'modalMobil',
             'modalIsHoved',
             'modalIsSkjult',
-            'modalIsNotifikation',
         ]);
 
         $this->resetValidation();
@@ -90,7 +82,6 @@ class ManageKonsulenter extends Component
 
         $this->modalIsHoved = HovedKonsulent::current()?->id === $k->id;
         $this->modalIsSkjult = SkjultKonsulent::has($k);
-        $this->modalIsNotifikation = NotifikationsKonsulent::has($k);
     }
 
     public function updatedSearch() { $this->resetPage(); }
@@ -104,8 +95,6 @@ class ManageKonsulenter extends Component
 
     public function save()
     {
-        // 🟢 Lad Laravel klare unik-tjekket automatisk for både email og tlf.
-        // Vi bruger 'ignore' så man godt kan gemme uden at ændre sin egen e-mail/tlf ved redigering.
         $konsulentId = $this->activeKonsulent?->id;
 
         $this->validate([
@@ -130,7 +119,6 @@ class ManageKonsulenter extends Component
                 [
                     'hoved' => $this->modalIsHoved,
                     'skjult' => $this->modalIsSkjult,
-                    'notifikation' => $this->modalIsNotifikation,
                 ]
             );
         });
@@ -194,14 +182,10 @@ class ManageKonsulenter extends Component
     public function render()
     {
         $query = Konsulenter::query()
-            ->withExists(['skjultRole', 'notifikationRole'])->withCount('sager');
+            ->withExists(['skjultRole'])->withCount('sager');
 
         if ($this->activeRoleTab === 'hoved') {
             $query->where('id', HovedKonsulent::current()?->id);
-        }
-
-        if ($this->activeRoleTab === 'notif') {
-            $query->whereIn('id', NotifikationsKonsulent::pluck('notifikations_konsulent_id'));
         }
 
         if ($this->activeRoleTab === 'skjult') {
@@ -218,7 +202,6 @@ class ManageKonsulenter extends Component
         return view('livewire.konsulenter.manage-konsulenter', [
             'konsulenter' => $query->orderBy('navn')->paginate($this->perPage),
             'hovedKonsulent' => HovedKonsulent::current(),
-            'notifikationCount' => NotifikationsKonsulent::count(),
             'skjultCount' => SkjultKonsulent::count(),
         ]);
     }

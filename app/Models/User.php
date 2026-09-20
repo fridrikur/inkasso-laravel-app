@@ -162,4 +162,22 @@ class User extends Authenticatable
         return $this->cachedRole = $this->roles()
             ->value('name');
     }
+
+    // Relation til notifybrugere-tabellen
+    public function notifyRecord(): HasMany
+    {
+        return $this->hasMany(NotifyBruger::class, 'brugerID', 'id');
+    }
+
+    // 🟢 Hjælpemetode (tjekker om der findes en række i tabellen for denne bruger)
+    public function receivesNotifications(): bool
+    {
+        if ($this->hasRole('Admin')) {
+            return true;
+        }
+
+        return \Illuminate\Support\Facades\DB::table('notifybrugere')
+            ->where('brugerID', $this->id)
+            ->exists();
+    }
 }

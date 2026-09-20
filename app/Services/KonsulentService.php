@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Konsulenter;
 use App\Models\HovedKonsulent;
 use App\Models\SkjultKonsulent;
-use App\Models\NotifikationsKonsulent;
 use Illuminate\Support\Facades\DB;
 
 class KonsulentService
@@ -104,7 +103,6 @@ class KonsulentService
         $oldRoles = [
             'hoved' => HovedKonsulent::current()?->id === $k->id,
             'skjult' => SkjultKonsulent::has($k),
-            'notifikation' => NotifikationsKonsulent::has($k),
         ];
 
         /*
@@ -115,7 +113,6 @@ class KonsulentService
 
         if ($roles['hoved'] ?? false) {
             HovedKonsulent::setHoved($k);
-            NotifikationsKonsulent::add($k);
             SkjultKonsulent::remove($k);
         } else {
             if (HovedKonsulent::current()?->id === $k->id) {
@@ -137,24 +134,9 @@ class KonsulentService
             SkjultKonsulent::remove($k);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Notifikation
-        |--------------------------------------------------------------------------
-        */
-
-        if ($roles['notifikation'] ?? false) {
-            NotifikationsKonsulent::add($k);
-        } else {
-            if (HovedKonsulent::current()?->id !== $k->id) {
-                NotifikationsKonsulent::remove($k);
-            }
-        }
-
         $newRoles = [
             'hoved' => HovedKonsulent::current()?->id === $k->id,
             'skjult' => SkjultKonsulent::has($k),
-            'notifikation' => NotifikationsKonsulent::has($k),
         ];
 
         if ($oldRoles !== $newRoles) {
@@ -170,7 +152,6 @@ class KonsulentService
 
         if ($roles['hoved'] ?? false) {
             HovedKonsulent::setHoved($k);
-            NotifikationsKonsulent::add($k);
             SkjultKonsulent::remove($k);
         }
     }
@@ -214,7 +195,6 @@ class KonsulentService
         );
 
         SkjultKonsulent::remove($k);
-        NotifikationsKonsulent::remove($k);
 
         if (HovedKonsulent::current()?->id === $k->id) {
             HovedKonsulent::unsetHoved();

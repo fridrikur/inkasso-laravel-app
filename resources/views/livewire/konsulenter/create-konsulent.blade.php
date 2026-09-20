@@ -110,19 +110,6 @@
                         </div>
                     </label>
 
-                    {{-- NOTIFIKATIONSKONSULENT --}}
-                    <label class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 transition cursor-pointer">
-                        <input 
-                            type="checkbox" 
-                            wire:model="is_notifikation" 
-                            class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
-                        >
-                        <div>
-                            <span class="text-xs font-bold text-slate-800 block">🔔 Notifikation</span>
-                            <span class="text-[10px] text-slate-500 block">Modtager systemadviseringer</span>
-                        </div>
-                    </label>
-
                     {{-- SKJULT KONSULENT --}}
                     <label class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 transition cursor-pointer">
                         <input 
