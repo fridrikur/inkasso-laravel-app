@@ -181,11 +181,11 @@
                         <div class="space-y-1">
                             <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sagsbehandling</div>
                             
-                            {{-- 🟢 SAGER DROPDOWN (INKL. DEBITORER, STATUS, DROPDOWN TEKSTER, GDPR & IMPORT LOG) --}}
-                            <div class="relative pt-1" x-data="{ sagerOpen: {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') || request()->routeIs('debitorer.*') || request()->routeIs('gdpr.*') ? 'true' : 'false' }} }">
+                            {{-- 🟢 SAGER DROPDOWN (INKL. DEBITORER, STATUS, DROPDOWN TEKSTER, BREVE, GDPR & IMPORT LOG) --}}
+                            <div class="relative pt-1" x-data="{ sagerOpen: {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') || request()->routeIs('debitorer.*') || request()->routeIs('gdpr.*') || request()->routeIs('admin.breve.*') || request()->routeIs('breve.*') ? 'true' : 'false' }} }">
                                 <button 
                                     @click="sagerOpen = !sagerOpen" 
-                                    class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') || request()->routeIs('debitorer.*') || request()->routeIs('gdpr.*') ? 'bg-[var(--theme-primary)] text-white font-bold shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                                    class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') || request()->routeIs('debitorer.*') || request()->routeIs('gdpr.*') || request()->routeIs('admin.breve.*') || request()->routeIs('breve.*') ? 'bg-[var(--theme-primary)] text-white font-bold shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
                                 >
                                     <div class="flex items-center gap-3">
                                         <span>📂</span>
@@ -217,6 +217,14 @@
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('dropdowns*') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>💬</span> Dropdown tekster
                                     </a>
+                                    <a href="{{ route('admin.breve.rediger') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('admin.breve.rediger') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                        <span>✉️</span> Brevskabeloner
+                                    </a>
+                                    <a href="{{ route('breve.filter') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('breve.filter') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                        <span>⚙️</span> Brev-felter & filter
+                                    </a>
                                     <a href="{{ route('sager.search') }}" 
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('sager.search') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>🔍</span> Søg Sager
@@ -232,37 +240,6 @@
                                     <a href="{{ route('sager.papirkurv') }}" 
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('sager.papirkurv') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>🗑️</span> Papirkurv
-                                    </a>
-                                </div>
-                            </div>
-
-                            {{-- BREVE DROPDOWN --}}
-                            <div class="relative pt-1" x-data="{ breveOpen: {{ request()->routeIs('admin.breve.*') || request()->routeIs('breve.*') ? 'true' : 'false' }} }">
-                                <button 
-                                    @click="breveOpen = !breveOpen" 
-                                    class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer {{ request()->routeIs('admin.breve.*') || request()->routeIs('breve.*') ? 'bg-[var(--theme-primary)] text-white font-bold shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-                                >
-                                    <div class="flex items-center gap-3">
-                                        <span>✉️</span>
-                                        <span>Breve</span>
-                                    </div>
-                                    <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="{'rotate-180': breveOpen}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                    </svg>
-                                </button>
-
-                                <div 
-                                    x-show="breveOpen" 
-                                    x-cloak
-                                    class="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl shadow-xl py-2 z-50 space-y-1 text-xs"
-                                >
-                                    <a href="{{ route('admin.breve.rediger') }}" 
-                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('admin.breve.rediger') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                        <span>✏️</span> Rediger skabeloner
-                                    </a>
-                                    <a href="{{ route('breve.filter') }}" 
-                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('breve.filter') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                        <span>⚙️</span> Sortering & synlige felter
                                     </a>
                                 </div>
                             </div>
