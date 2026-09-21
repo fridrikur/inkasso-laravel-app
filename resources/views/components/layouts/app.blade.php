@@ -181,11 +181,11 @@
                         <div class="space-y-1">
                             <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sagsbehandling</div>
                             
-                            {{-- 🟢 SAGER DROPDOWN (COLLAPSED FRA START, MEDMINDRE MAN ER PÅ SAGSSIDER) --}}
-                            <div class="relative pt-1" x-data="{ sagerOpen: {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') ? 'true' : 'false' }} }">
+                            {{-- 🟢 SAGER DROPDOWN (INKL. DEBITORER, STATUS, DROPDOWN TEKSTER M.M.) --}}
+                            <div class="relative pt-1" x-data="{ sagerOpen: {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') || request()->routeIs('debitorer.*') ? 'true' : 'false' }} }">
                                 <button 
                                     @click="sagerOpen = !sagerOpen" 
-                                    class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') ? 'bg-[var(--theme-primary)] text-white font-bold shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                                    class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') || request()->routeIs('debitorer.*') ? 'bg-[var(--theme-primary)] text-white font-bold shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
                                 >
                                     <div class="flex items-center gap-3">
                                         <span>📂</span>
@@ -205,6 +205,10 @@
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('sager.index') || request()->routeIs('sager.edit') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>📂</span> Alle sager
                                     </a>
+                                    <a href="{{ route('debitorer.index') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('debitorer.*') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                        <span>👥</span> Debitorer
+                                    </a>
                                     <a href="{{ route('admin.sager.status.index') }}" 
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('admin.sager.status.*') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>🏷️</span> Sagsstatus
@@ -223,10 +227,6 @@
                                     </a>
                                 </div>
                             </div>
-
-                            <a href="{{ route('debitorer.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition text-slate-300 hover:bg-slate-800 hover:text-white">
-                                <span>👥</span> Debitorer
-                            </a>
 
                             {{-- BREVE DROPDOWN --}}
                             <div class="relative pt-1" x-data="{ breveOpen: {{ request()->routeIs('admin.breve.*') || request()->routeIs('breve.*') ? 'true' : 'false' }} }">
