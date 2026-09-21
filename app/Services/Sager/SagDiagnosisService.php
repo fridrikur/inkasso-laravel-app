@@ -48,13 +48,14 @@ class SagDiagnosisService
 
         // Status Relation Checks (null-safe)
         $statusCollection = $sag->status;
-        if ($statusCollection?->isEmpty() ?? true) {
+        // Status Check (håndterer accessor/relation forskel)
+        if (!$sag->status) {
             $issues[] = [
                 'type' => 'warning',
                 'message' => 'Sagen har ingen aktiv status-markering.',
             ];
             $score -= 10;
-        } elseif ($statusCollection->count() > 1) {
+        } elseif ($sag->status()->count() > 1) {
             $issues[] = [
                 'type' => 'warning',
                 'message' => 'Sagen har flere samtidige statusser tilknyttet (skal konsolideres).',
@@ -111,7 +112,7 @@ class SagDiagnosisService
             'sagsbehandler',
             'status',
             'afslutning',
-            'dialogs',
+            'dialogs',  
             'dokumenter',
         ])
         ->get()
