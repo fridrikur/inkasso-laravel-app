@@ -181,11 +181,11 @@
                         <div class="space-y-1">
                             <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sagsbehandling</div>
                             
-                            {{-- 🟢 SAGER DROPDOWN (INKL. DEBITORER, STATUS, DROPDOWN TEKSTER M.M.) --}}
-                            <div class="relative pt-1" x-data="{ sagerOpen: {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') || request()->routeIs('debitorer.*') ? 'true' : 'false' }} }">
+                            {{-- 🟢 SAGER DROPDOWN (INKL. DEBITORER, STATUS, DROPDOWN TEKSTER, GDPR & IMPORT LOG) --}}
+                            <div class="relative pt-1" x-data="{ sagerOpen: {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') || request()->routeIs('debitorer.*') || request()->routeIs('gdpr.*') ? 'true' : 'false' }} }">
                                 <button 
                                     @click="sagerOpen = !sagerOpen" 
-                                    class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') || request()->routeIs('debitorer.*') ? 'bg-[var(--theme-primary)] text-white font-bold shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                                    class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') || request()->routeIs('debitorer.*') || request()->routeIs('gdpr.*') ? 'bg-[var(--theme-primary)] text-white font-bold shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
                                 >
                                     <div class="flex items-center gap-3">
                                         <span>📂</span>
@@ -220,6 +220,14 @@
                                     <a href="{{ route('sager.search') }}" 
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('sager.search') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>🔍</span> Søg Sager
+                                    </a>
+                                    <a href="{{ route('gdpr.sager.retention') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('gdpr*') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                        <span>🛡️</span> GDPR Retention
+                                    </a>
+                                    <a href="{{ route('sager.import.log') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('sager.import.log') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                        <span>📊</span> Import Log
                                     </a>
                                     <a href="{{ route('sager.papirkurv') }}" 
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('sager.papirkurv') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
@@ -258,11 +266,6 @@
                                     </a>
                                 </div>
                             </div>
-
-                            <a href="{{ route('sager.import.log') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.import.log') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} text-xs font-semibold">
-                                <span>📊</span> Import Log
-                            </a>
                         </div>
 
                         <div class="space-y-1">
@@ -284,10 +287,6 @@
                             <a href="{{ route('sager.doctor') }}" 
                                class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.doctor') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                 <span>🩺</span> Doctor Norton 3.0
-                            </a>
-                            <a href="{{ route('gdpr.sager.retention') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('gdpr*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                <span>🛡️</span> GDPR Retention
                             </a>
                             <a href="{{ route('autotekster.index') }}" 
                                class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('autotekster*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
