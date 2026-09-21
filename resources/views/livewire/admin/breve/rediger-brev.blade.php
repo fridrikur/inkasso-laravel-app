@@ -301,7 +301,7 @@
                 @php
                     $standardTokens = array_merge(
                         (new \App\Models\Sager())->getFillable(),
-                        ['today', 'aktiv', 'firmanavn', 'debitor_navn', 'ktr']
+                        ['today', 'aktiv', 'firmanavn', 'debitor_navn', 'ktr', 'debitor_email']
                     );
                 @endphp
                 @foreach($standardTokens as $token)

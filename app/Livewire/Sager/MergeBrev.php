@@ -115,6 +115,7 @@ class MergeBrev extends Component
         $tokens[] = 'aktiv';
         $tokens[] = 'firmanavn';
         $tokens[] = 'debitor_navn';
+        $tokens[] = 'debitor_email';
         $tokens[] = 'ktr';
 
         // Debitor relaterede felter

@@ -14,6 +14,9 @@ class BrevMergeService
 
     public function mergeWithMeta(string $template, Sager $sag): array
     {
+        // 🟢 Rens skabelonen for gamle \r\n og \n tegn, så de ikke skaber støj
+        $template = $this->cleanTemplate($template);
+
         $tokens = $this->resolveTokens($sag);
 
         foreach ($tokens as $key => $value) {
@@ -28,6 +31,15 @@ class BrevMergeService
             'text' => $template,
             'missing' => $this->findMissingTokens($template),
         ];
+    }
+
+    protected function cleanTemplate(string $template): string
+    {
+        // Udskifter bogstavelige '\r\n' eller '\n' strenge (hvis de er gemt som rå tekst) 
+        // samt rigtige linjeskift med enten <br> eller lader dem håndtere pænt.
+        $template = str_replace(['\r\n', '\n'], '<br>', $template);
+        
+        return $template;
     }
 
     protected function findMissingTokens(string $text): array
@@ -49,7 +61,6 @@ class BrevMergeService
     {
         $out = [];
         
-        // Liste over felter der skal formateres som datoer (hvis de ikke er tomme)
         $dateFields = [
             'afsluttet', 
             'faktureret', 
@@ -64,12 +75,11 @@ class BrevMergeService
         foreach ($sag->getFillable() as $field) {
             $value = data_get($sag, $field);
 
-            // Hvis det er et datofelt og værdien findes, formater til d-m-Y
             if (in_array($field, $dateFields) && !empty($value)) {
                 try {
                     $value = Carbon::parse($value)->format('d-m-Y');
                 } catch (\Exception $e) {
-                    // Bevar originalværdi hvis parsing fejer
+                    // Bevar originalværdi hvis parsing fejler
                 }
             }
 
@@ -87,6 +97,7 @@ class BrevMergeService
         return [
             'firmanavn'    => $kreditor?->navn ?? $kreditor?->firmanavn ?? '',
             'debitor_navn' => $debitor?->navn ?? '',
+            'debitor_email' => $debitor?->email ?? $debitor?->debitor_email ?? '',
             'ktr'          => $sag->ktr()->first()?->navn ?? '',
         ];
     }
@@ -94,7 +105,6 @@ class BrevMergeService
     protected function computedFields(Sager $sag): array
     {
         return [
-            // Hvis du vil have en dedikeret {today} token til dags dato:
             'today' => now()->format('d-m-Y'),
         ];
     }
