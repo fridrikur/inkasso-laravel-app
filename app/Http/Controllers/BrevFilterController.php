@@ -16,16 +16,19 @@ class BrevFilterController extends Controller
 
     public function update(Request $request, $brevID)
     {
+        // Hjælpefunktion til at oversætte true/false/1/-1 til 1 eller 0
+        $val = fn($field) => filter_var($request->input($field, 0), FILTER_VALIDATE_BOOLEAN) || intval($request->input($field, 0)) !== 0 ? 1 : 0;
+
         BrevFilter::updateOrCreate(
             ['brevID' => $brevID],
             [
-                'adresse' => $request->input('adresse', 0),
-                'dato' => $request->input('dato', 0),
-                'navn' => $request->input('navn', 0),
-                'sagsnr' => $request->input('sagsnr', 0),
-                'emne' => $request->input('emne', 0),
-                'skjulalle' => $request->input('skjulalle', 0),
-                'visalle' => $request->input('visalle', 0),
+                'adresse'   => $val('adresse'),
+                'dato'      => $val('dato'),
+                'navn'      => $val('navn'),
+                'sagsnr'    => $val('sagsnr'),
+                'emne'      => $val('emne'),
+                'skjulalle' => $val('skjulalle'),
+                'visalle'   => $val('visalle'),
             ]
         );
 
