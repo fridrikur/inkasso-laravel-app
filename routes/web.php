@@ -337,10 +337,12 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
 
         Route::get('/udlaeg', UdlaegIndex::class)->name('udlaeg.index');
         Route::get('/udlaeg/create', CreateUdlaeg::class)->name('udlaeg.create');
+        Route::get('udlaeg/{udlag}', ShowUdlaeg::class)->name('udlaeg.show');
         Route::get('/udlaeg/{udlaeg}/edit', UpdateUdlaeg::class)->name('udlaeg.edit');
 
         Route::get('/afslutning', AfslutningIndex::class)->name('afslutning.index');
         Route::get('/afslutning/create', Createafslutning::class)->name('afslutning.create');
+        Route::get('afslutning/{afslutning}', ShowAfslutning::class)->name('afslutning.show');
         Route::get('/afslutning/{afslutning}/edit', Updateafslutning::class)->name('afslutning.edit');
 
         Route::prefix('users')->as('users.')->group(function () {

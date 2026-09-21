@@ -180,64 +180,85 @@
 
                         <div class="space-y-1">
                             <div class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sagsbehandling</div>
-                            <a href="{{ route('sager.index') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.index') || request()->routeIs('sager.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                <span>📂</span> Sager
-                            </a>
-                            <a href="{{ route('debitorer.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition text-slate-300 hover:bg-slate-800 hover:text-white">
-                                <span>👥</span> Debitorer
-                            </a>
-                            <a href="{{ route('admin.sager.status.index') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('admin.sager.status.*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                <span>🏷️</span> Sagsstatus
-                            </a>
-                            <a href="{{ route('sager.search') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.search') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                <span>🔍</span> Søg Sager
-                            </a>
-
-                            {{-- BREVE DROPDOWN MENU ITEM --}}
-                            <div class="relative pt-1" x-data="{ open: false }">
+                            
+                            {{-- 🟢 SAGER DROPDOWN (COLLAPSED FRA START, MEDMINDRE MAN ER PÅ SAGSSIDER) --}}
+                            <div class="relative pt-1" x-data="{ sagerOpen: {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') ? 'true' : 'false' }} }">
                                 <button 
-                                    @click="open = !open" 
-                                    @click.away="open = false"
-                                    class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition cursor-pointer"
+                                    @click="sagerOpen = !sagerOpen" 
+                                    class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer {{ request()->routeIs('sager.*') || request()->routeIs('admin.sager.status.*') || request()->routeIs('dropdowns.*') ? 'bg-[var(--theme-primary)] text-white font-bold shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
                                 >
-                                    <div class="flex items-center gap-2">
-                                        <span>✉️</span>
-                                        <span>Breve</span>
+                                    <div class="flex items-center gap-3">
+                                        <span>📂</span>
+                                        <span>Sager</span>
                                     </div>
-                                    <svg class="w-3.5 h-3.5 transition-transform duration-200 text-white" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="{'rotate-180': sagerOpen}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </button>
 
                                 <div 
-                                    x-show="open" 
+                                    x-show="sagerOpen" 
+                                    x-cloak
                                     class="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl shadow-xl py-2 z-50 space-y-1 text-xs"
-                                    style="display: none;"
                                 >
-                                    <a 
-                                        href="{{ route('admin.breve.rediger') }}" 
-                                        class="flex items-center gap-2 px-4 py-2 font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
-                                    >
+                                    <a href="{{ route('sager.index') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('sager.index') || request()->routeIs('sager.edit') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                        <span>📂</span> Alle sager
+                                    </a>
+                                    <a href="{{ route('admin.sager.status.index') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('admin.sager.status.*') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                        <span>🏷️</span> Sagsstatus
+                                    </a>
+                                    <a href="{{ route('dropdowns.index') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('dropdowns*') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                        <span>💬</span> Dropdown tekster
+                                    </a>
+                                    <a href="{{ route('sager.search') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('sager.search') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                        <span>🔍</span> Søg Sager
+                                    </a>
+                                    <a href="{{ route('sager.papirkurv') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('sager.papirkurv') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                        <span>🗑️</span> Papirkurv
+                                    </a>
+                                </div>
+                            </div>
+
+                            <a href="{{ route('debitorer.index') }}" class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                                <span>👥</span> Debitorer
+                            </a>
+
+                            {{-- BREVE DROPDOWN --}}
+                            <div class="relative pt-1" x-data="{ breveOpen: {{ request()->routeIs('admin.breve.*') || request()->routeIs('breve.*') ? 'true' : 'false' }} }">
+                                <button 
+                                    @click="breveOpen = !breveOpen" 
+                                    class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer {{ request()->routeIs('admin.breve.*') || request()->routeIs('breve.*') ? 'bg-[var(--theme-primary)] text-white font-bold shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                                >
+                                    <div class="flex items-center gap-3">
+                                        <span>✉️</span>
+                                        <span>Breve</span>
+                                    </div>
+                                    <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="{'rotate-180': breveOpen}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+
+                                <div 
+                                    x-show="breveOpen" 
+                                    x-cloak
+                                    class="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl shadow-xl py-2 z-50 space-y-1 text-xs"
+                                >
+                                    <a href="{{ route('admin.breve.rediger') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('admin.breve.rediger') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>✏️</span> Rediger skabeloner
                                     </a>
-
-                                    <a 
-                                        href="{{ url('/breve/filter') }}" 
-                                        class="flex items-center gap-2 px-4 py-2 font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
-                                    >
+                                    <a href="{{ route('breve.filter') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('breve.filter') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>⚙️</span> Sortering & synlige felter
                                     </a>
                                 </div>
                             </div>
-                            {{-- SLUT PÅ BREVE DROPDOWN --}}
 
-                            <a href="{{ route('sager.papirkurv') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.papirkurv') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                <span>🗑️</span> Papirkurv
-                            </a>
                             <a href="{{ route('sager.import.log') }}" 
                                class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('sager.import.log') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} text-xs font-semibold">
                                 <span>📊</span> Import Log
@@ -271,10 +292,6 @@
                             <a href="{{ route('autotekster.index') }}" 
                                class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('autotekster*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                 <span>💬</span> Autotekster
-                            </a>
-                            <a href="{{ route('dropdowns.index') }}" 
-                               class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('dropdowns*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                <span>💬</span> Dropdown tekster
                             </a>
                             <a href="{{ route('users.manage-users') }}" 
                                class="flex items-center gap-3 px-3.5 py-2 rounded-xl transition {{ request()->routeIs('users*') ? 'bg-[var(--theme-primary)] text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
@@ -446,7 +463,7 @@
     @livewireScripts
     <script>
     document.addEventListener("DOMContentLoaded", function () {
-        let idleTimeout = 15 * 60 * 1000; // 15 minutter i millisekunder
+        let idleTimeout = 15 * 60 * 1000;
         let countdownInterval;
         let warningTimer;
         let reauthTimer;
@@ -456,12 +473,10 @@
             clearTimeout(reauthTimer);
             clearInterval(countdownInterval);
 
-            // Skjul modal hvis den er åben og brugeren bevæger musen/taster
             document.getElementById('session-warning').style.display = 'none';
             document.getElementById('modal-step-warning').style.display = 'block';
             document.getElementById('modal-step-reauth').style.display = 'none';
 
-            // Start 15 minutter timer før advarsel vises (14 minutter og 30 sekunder)
             warningTimer = setTimeout(showWarningModal, idleTimeout - 30000);
         }
 
@@ -485,17 +500,14 @@
         }
 
         function extendSession() {
-            // Send et letvekts AJAX-kald for at holde Laravel sessionen i live
             fetch('/_ignition/health-check', { method: 'GET' }).catch(() => {});
             resetIdleTimers();
         }
 
         function triggerLockout() {
-            // Skift til re-auth trin i modalen
             document.getElementById('modal-step-warning').style.display = 'none';
             document.getElementById('modal-step-reauth').style.display = 'block';
             
-            // Log ud i baggrunden via et fetch-kald til logout-ruten
             fetch('{{ route("logout") }}', {
                 method: 'POST',
                 headers: {
@@ -507,25 +519,17 @@
 
         window.extendSession = extendSession;
 
-        // Lyt efter brugeraktivitet på tværs af browsere (inkl. Firefox)
         window.addEventListener('mousemove', resetIdleTimers);
         window.addEventListener('mousedown', resetIdleTimers);
         window.addEventListener('keypress', function(e) {
-            // Hvis brugeren skriver i et textarea eller input, skal inaktivitets-timeren IKKE nulstilles på denne måde 
-            // (eller i det mindste skal standard hændelsen ikke forstyrres)
-            // if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
-            //     return; 
-            // }
             resetIdleTimers();
         });
         window.addEventListener('scroll', resetIdleTimers);
         window.addEventListener('touchstart', resetIdleTimers);
 
-        // Initialiser ved indlæsning
         resetIdleTimers();
     });
 
-    // Funktion til at låse op igen uden at miste fane-state
     function reAuthenticate(event) {
         event.preventDefault();
         const password = document.getElementById('re-auth-password').value;
@@ -550,7 +554,7 @@
         })
         .then(response => {
             if (response.ok) {
-                window.location.reload(); // Genindlæs siden når adgangskoden er godkendt
+                window.location.reload();
             } else {
                 return response.json().then(data => {
                     throw new Error(data.message || 'Forkert adgangskode.');

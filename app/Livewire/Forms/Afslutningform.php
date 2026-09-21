@@ -3,7 +3,7 @@
 namespace App\Livewire\Forms;
 
 use Livewire\Attributes\Validate;
-use Livewire\form;
+use Livewire\Form;
 use App\Models\afslutning;
 
 class afslutningForm extends Form
