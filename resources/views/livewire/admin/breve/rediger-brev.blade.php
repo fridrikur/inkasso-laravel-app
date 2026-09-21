@@ -139,18 +139,48 @@
         </div>
 
         {{-- EDITOR --}}
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <h2 class="font-bold mb-3 text-slate-800 text-sm">Skabelon</h2>
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm" x-data="{
+            formatText(tag) {
+                const textarea = document.getElementById('brev-textarea');
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = textarea.value.substring(start, end);
+                
+                // Indpak markeret tekst i HTML tags (f.eks. <b>tekst</b>)
+                const replacement = `<${tag}>${selectedText}</${tag}>`;
+                
+                textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+                
+                // Synkroniser med Livewire ved at udløse et input-event
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                // Sæt fokus tilbage og marker teksten/placer cursoren
+                textarea.focus();
+                textarea.setSelectionRange(start + tag.length + 2, end + tag.length + 2);
+            }
+        }">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="font-bold text-slate-800 text-sm">Skabelon</h2>
+
+                {{-- SIMPEL FORMATERINGS-TOOLBAR --}}
+                <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button type="button" @click="formatText('b')" class="px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 hover:bg-white transition shadow-2xs cursor-pointer" title="Fed tekst"><b>B</b></button>
+                    <button type="button" @click="formatText('i')" class="px-2.5 py-1 rounded-lg text-xs italic text-slate-700 hover:bg-white transition shadow-2xs cursor-pointer" title="Kursiv tekst"><i>I</i></button>
+                    <button type="button" @click="formatText('u')" class="px-2.5 py-1 rounded-lg text-xs underline text-slate-700 hover:bg-white transition shadow-2xs cursor-pointer" title="Understreget tekst"><u>U</u></button>
+                    <span class="text-slate-300 px-1">|</span>
+                    <button type="button" @click="formatText('p')" class="px-2 py-1 rounded-lg text-[11px] font-semibold text-slate-700 hover:bg-white transition shadow-2xs cursor-pointer" title="Ny afsnit">Afsnit</button>
+                </div>
+            </div>
 
             <textarea
+                id="brev-textarea"
                 wire:model="tekst"
                 @drop.prevent="
                     const token = $event.dataTransfer.getData('text/plain');
                     const start = $el.selectionStart;
                     const end = $el.selectionEnd;
-                    const newValue = $el.value.substring(0, start) + token + $el.value.substring(end);
-                    $el.value = newValue;
-                    $el.selectionStart = $el.selectionEnd = start + token.length;
+                    const newValue = $el.value.substring(0, start) + token + $el.value.substring(end);$el.value = newValue;
+                    $el.selectionStart =$el.selectionEnd = start + token.length;
                     $el.dispatchEvent(new Event('input', { bubbles: true }));
                 "
                 @dragover.prevent="$event.dataTransfer.dropEffect = 'copy'"
