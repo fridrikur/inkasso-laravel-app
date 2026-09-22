@@ -262,4 +262,19 @@ class ManageUsers extends Component
     {
         $this->closeModals();
     }
+
+    public function toggleNotificationStatus($userId)
+    {
+        $exists = \App\Models\NotifyBruger::where('brugerID', $userId)->first();
+
+        if ($exists) {
+            $exists->delete();
+            $message = 'Notifikationer slået fra for medarbejderen.';
+        } else {
+            \App\Models\NotifyBruger::create(['brugerID' => $userId]);
+            $message = 'Notifikationer slået til for medarbejderen.';
+        }
+
+        $this->dispatch('toast', message: $message, type: 'success');
+    }
 }

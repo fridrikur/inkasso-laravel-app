@@ -419,53 +419,60 @@
                     </div>
                 @endif
 
-                {{-- USERS TAB --}}
+                {{-- USERS TAB (FLYTET NOTIFIKATIONS-STYRING IND HER) --}}
                 @if ($activeTab === 'users')
-                    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                        <div class="rounded-2xl border border-slate-200 p-5">
-                            <h2 class="text-lg font-semibold text-slate-900">
-                                Brugere
-                            </h2>
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                            <div class="rounded-2xl border border-slate-200 p-5">
+                                <h2 class="text-lg font-semibold text-slate-900">
+                                    Brugere
+                                </h2>
 
-                            <div class="mt-4 grid grid-cols-2 gap-4">
-                                <div class="rounded-xl bg-slate-50 p-4 border border-slate-100">
-                                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total</p>
-                                    <p class="mt-1 text-2xl font-bold text-slate-900">
-                                        {{ $userStats['total'] ?? 0 }}
-                                    </p>
+                                <div class="mt-4 grid grid-cols-2 gap-4">
+                                    <div class="rounded-xl bg-slate-50 p-4 border border-slate-100">
+                                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total</p>
+                                        <p class="mt-1 text-2xl font-bold text-slate-900">
+                                            {{ $userStats['total'] ?? 0 }}
+                                        </p>
+                                    </div>
+
+                                    <div class="rounded-xl bg-emerald-50 p-4 border border-emerald-100">
+                                        <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Aktive i dag</p>
+                                        <p class="mt-1 text-2xl font-bold text-emerald-800">
+                                            {{ $userStats['active_today'] ?? 0 }}
+                                        </p>
+                                    </div>
                                 </div>
+                            </div>
 
-                                <div class="rounded-xl bg-emerald-50 p-4 border border-emerald-100">
-                                    <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Aktive i dag</p>
-                                    <p class="mt-1 text-2xl font-bold text-emerald-800">
-                                        {{ $userStats['active_today'] ?? 0 }}
-                                    </p>
+                            <div class="rounded-2xl border border-slate-200 p-5">
+                                <h2 class="text-lg font-semibold text-slate-900">
+                                    Roller
+                                </h2>
+
+                                <div class="mt-4 space-y-3">
+                                    @forelse ($roleStats as $role => $count)
+                                        <div class="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-100">
+                                            <span class="text-sm font-medium text-slate-700">
+                                                {{ $role }}
+                                            </span>
+
+                                            <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-900 shadow-sm border border-slate-200/60">
+                                                {{ $count }}
+                                            </span>
+                                        </div>
+                                    @empty
+                                        <p class="text-sm text-slate-500">
+                                            Ingen rolledata fundet.
+                                        </p>
+                                    @endforelse
                                 </div>
                             </div>
                         </div>
 
-                        <div class="rounded-2xl border border-slate-200 p-5">
-                            <h2 class="text-lg font-semibold text-slate-900">
-                                Roller
-                            </h2>
-
-                            <div class="mt-4 space-y-3">
-                                @forelse ($roleStats as $role => $count)
-                                    <div class="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-100">
-                                        <span class="text-sm font-medium text-slate-700">
-                                            {{ $role }}
-                                        </span>
-
-                                        <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-900 shadow-sm border border-slate-200/60">
-                                            {{ $count }}
-                                        </span>
-                                    </div>
-                                @empty
-                                    <p class="text-sm text-slate-500">
-                                        Ingen rolledata fundet.
-                                    </p>
-                                @endforelse
-                            </div>
+                        {{-- 🟢 NOTIFIKATIONS-STYRING FOR MEDARBEJDERE LIGGER NU PERFEKT HER --}}
+                        <div class="pt-2">
+                            <livewire:admin.notify-brugere-manager />
                         </div>
                     </div>
                 @endif

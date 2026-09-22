@@ -89,12 +89,6 @@ class User extends Authenticatable
         return $this->hasMany(SagActivity::class);
     }
     
-    // in User model
-    public function scopeRole($query, $roles)
-    {
-        return $query->whereHas('roles', fn($q) => $q->whereIn('name', (array) $roles));
-    }
-
     public function dashboardRoute(): string
     {
         return match ($this->role()) {

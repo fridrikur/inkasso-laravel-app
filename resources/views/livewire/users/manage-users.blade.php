@@ -146,6 +146,57 @@
         </div>
     @endif
 
+    {{-- 🔔 FLOT NOTIFIKATIONS-CONTAINER (VISES KUN NÅR MEDARBEJDER-FANEN ER VALGT) --}}
+    @if($roleFilter === 'Medarbejder')
+        <div class="bg-indigo-50/60 rounded-3xl border border-indigo-200/80 p-5 space-y-4 shadow-xs">
+            <div class="flex items-center justify-between border-b border-indigo-100 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xl">🔔</span>
+                    <div>
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-950">
+                            Hurtigstyring af Medarbejder-notifikationer
+                        </h2>
+                        <p class="text-[11px] text-indigo-700/80 mt-0.5">
+                            Bestem herunder hvem af medarbejderne der modtager sagsnotifikationer i systemet.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                @foreach($users as $medarbejder)
+                    @if($medarbejder->hasRole('Medarbejder'))
+                        <div wire:key="quick-notif-{{ $medarbejder->id }}" class="flex items-center justify-between p-3 bg-white rounded-2xl border border-indigo-100/80 shadow-xs">
+                            <div class="flex items-center gap-2.5 truncate">
+                                <div class="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 font-bold flex items-center justify-center border border-indigo-100 shrink-0 text-[11px]">
+                                    {{ strtoupper(substr($medarbejder->name, 0, 1)) }}
+                                </div>
+                                <div class="truncate">
+                                    <p class="text-xs font-bold text-slate-800 truncate">{{ $medarbejder->name }}</p>
+                                    <p class="text-[10px] text-slate-400 truncate">{{ $medarbejder->email }}</p>
+                                </div>
+                            </div>
+
+                            <button 
+                            type="button"
+                            wire:click="toggleNotificationStatus({{ $medarbejder->id }})"
+                            class="relative inline-flex h-6 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $medarbejder->receivesNotifications() ? 'bg-indigo-600' : 'bg-slate-300' }}"
+                            role="switch"
+                            aria-checked="{{ $medarbejder->receivesNotifications() ? 'true' : 'false' }}"
+                            title="Klik for at ændre"
+                        >
+                            <span 
+                                aria-hidden="true"
+                                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out {{ $medarbejder->receivesNotifications() ? 'translate-x-6' : 'translate-x-0' }}"
+                            ></span>
+                        </button>
+                        </div>
+                    @endif
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     {{-- TABEL OG FILTRE --}}
     <div class="bg-white rounded-3xl shadow-xs border border-slate-200/80 overflow-hidden relative">
         
@@ -294,11 +345,9 @@
                                 </td>
                             @endif
 
-                            {{-- 🟢 HANDLINGER: INTEGRERET X-TABLE-ACTIONS + ADMINISTRER KNAP --}}
+                            {{-- HANDLINGER --}}
                             <td class="px-6 py-3.5 text-right whitespace-nowrap">
                                 <div class="inline-flex items-center justify-end gap-1.5">
-                                    
-                                    {{-- 1. FULD BEHANDLING (DEDIKERET MANAGE-USER SIDE) --}}
                                     <a 
                                         href="{{ route('users.user.manage', $user) }}"
                                         class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 text-xs font-bold rounded-xl transition cursor-pointer"
@@ -308,7 +357,6 @@
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                                     </a>
 
-                                    {{-- 2. X-TABLE-ACTIONS (ØJE TIL SIDE, REDIGER TIL MODAL, SLET) --}}
                                     <x-table-actions 
                                         :id="$user->id" 
                                         :viewUrl="route('users.user.manage', $user)"
@@ -337,12 +385,12 @@
         </div>
     </div>
 
-    {{-- EDIT MODAL (REDIERING I MODAL) --}}
+    {{-- EDIT MODAL --}}
     @if($showFormModal)
         @include('livewire.users.partials.edit-user-modal')
     @endif
 
-    {{-- SLETTEMODAL (DEAKTIVATION BEKRÆFTELSE) --}}
+    {{-- SLETTEMODAL --}}
     @if($showDeleteModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
             <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-slate-100 space-y-4">
