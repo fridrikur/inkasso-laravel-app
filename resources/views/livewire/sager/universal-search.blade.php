@@ -1,8 +1,8 @@
 <div class="min-h-screen bg-slate-900/5 py-8">
 
-    <div class="max-w-6xl mx-auto px-6 space-y-6">
+    <x-search-breadcrumbs />
 
-        <x-search-breadcrumbs />
+    <div class="max-w-6xl mx-auto px-6 space-y-6">
 
         {{-- ========================================================= --}}
         {{-- HEADER --}}
