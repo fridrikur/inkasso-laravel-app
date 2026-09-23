@@ -37,10 +37,12 @@ class ManageUser extends Component
     }
 
     protected function loadRelations(): void
-    {
-        $this->user->load(['roles', 'kreditorer']);
-    }
-
+        {
+            // Tving relationen til at friske sig op fra databasen
+            $this->user->unsetRelation('roles');
+            $this->user->unsetRelation('kreditorer');
+            $this->user->load(['roles', 'kreditorer']);
+        }
     public function render()
     {
         return view('livewire.users.manage-user', [
@@ -71,6 +73,7 @@ class ManageUser extends Component
     {
         $this->name = $this->user->name;
         $this->email = $this->user->email;
+        // 🟢 Hent den faktiske rolle fra databasen via relationen
         $this->selectedRole = $this->user->roles->first()?->name ?? 'Medarbejder';
         $this->assignedKreditorId = $this->user->kreditorer->first()?->id;
 

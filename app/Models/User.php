@@ -174,4 +174,10 @@ class User extends Authenticatable
             ->where('brugerID', $this->id)
             ->exists();
     }
+
+    public function checkRole(string $roleName): bool
+    {
+        return $this->roles()->where('name', $roleName)->exists();
+    }
+    
 }
