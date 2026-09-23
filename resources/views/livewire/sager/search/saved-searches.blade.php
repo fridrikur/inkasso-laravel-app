@@ -1,21 +1,6 @@
 <div class="space-y-4">
 
     {{-- ===================================================== --}}
-    {{-- NEW SEARCH --}}
-    {{-- ===================================================== --}}
-    <div>
-
-        <button
-            wire:click="newSearch"
-            class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
-
-            + Ny søgning
-
-        </button>
-
-    </div>
-
-    {{-- ===================================================== --}}
     {{-- SAVED SEARCHES --}}
     {{-- ===================================================== --}}
     <div class="bg-white rounded-xl border shadow-sm">
