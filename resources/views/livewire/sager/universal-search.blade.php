@@ -1,6 +1,7 @@
-<div class="min-h-screen bg-slate-900/5 py-8">
+<div class="relative">
 
     <x-search-breadcrumbs />
+<div class="min-h-screen bg-slate-900/5 py-8">
 
     <div class="max-w-6xl mx-auto px-6 space-y-6">
 
@@ -189,4 +190,6 @@
         @endif
 
     </div>
+</div>
+
 </div>
