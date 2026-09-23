@@ -98,7 +98,6 @@ use App\Http\Controllers\BrevFilterController;
 use App\Livewire\Dashboard\MedarbejderDashboard;
 use App\Livewire\Kreditor\Dashboard;
 use App\Models\Status;
-use App\Livewire\SearchConstructor;
 use App\Livewire\SavedSearchResults;
 use App\Livewire\SagSearch;
 use App\Models\FormLayout;
@@ -364,8 +363,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
         Route::get('/admin/backups', BackupManager::class)->name('admin.backups');
         Route::get('/tekster', ShowTekster::class)->name('tekster.index');
         Route::get('/gdpr/sager-retention', SagerRetentionDashboard::class)->name('gdpr.sager.retention');
-        Route::get('/search-constructor', SearchConstructor::class)->name('search-constructor');
-
+        
         Route::get('/admin/sager/search', function () {
             return view('livewire.admin.sager.search');
         })->name('lukkede.sager.search');
