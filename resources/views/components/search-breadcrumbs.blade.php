@@ -1,11 +1,6 @@
 @php
     $items = [
         [
-            'label' => 'Gemte søgninger',
-            'route' => 'search-constructor',
-            'active' => request()->routeIs('search-constructor'),
-        ],
-        [
             'label' => 'Låste søgninger',
             'route' => 'lukkede.sager.search',
             'active' => request()->routeIs('lukkede.sager.search'),
