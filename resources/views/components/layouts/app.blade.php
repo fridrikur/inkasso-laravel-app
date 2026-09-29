@@ -442,9 +442,13 @@
         let idleTimeout = 15 * 60 * 1000;
         let countdownInterval;
         let warningTimer;
-        let reauthTimer;
+        let reauthTimer; // 👈 DEFINERET HER
+        let isLockedOut = false; // Flag der holder styr på om vi er låst ude
 
         function resetIdleTimers() {
+            // Hvis vi er nået til adgangskode-trinnet, må mus og tastatur IKKE nulstille timeren
+            if (isLockedOut) return;
+
             clearTimeout(warningTimer);
             clearTimeout(reauthTimer);
             clearInterval(countdownInterval);
@@ -457,6 +461,8 @@
         }
 
         function showWarningModal() {
+            if (isLockedOut) return;
+
             const modal = document.getElementById('session-warning');
             const countdownEl = document.getElementById('countdown');
             let timeLeft = 30;
@@ -476,25 +482,26 @@
         }
 
         function extendSession() {
+            if (isLockedOut) return;
             fetch('/_ignition/health-check', { method: 'GET' }).catch(() => {});
             resetIdleTimers();
         }
 
         function triggerLockout() {
+            isLockedOut = true; // Låser systemet, så mus/tastatur ignoreres
+            clearInterval(countdownInterval);
+            clearTimeout(warningTimer);
+
             document.getElementById('modal-step-warning').style.display = 'none';
             document.getElementById('modal-step-reauth').style.display = 'block';
+            document.getElementById('session-warning').style.display = 'flex';
             
-            fetch('{{ route("logout") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json'
-                }
-            });
+            // Fjerner det automatiske logout herfra, så sessionen bibeholdes indtil adgangskoden tastes
         }
 
         window.extendSession = extendSession;
 
+        // Lyttere til inaktivitet
         window.addEventListener('mousemove', resetIdleTimers);
         window.addEventListener('mousedown', resetIdleTimers);
         window.addEventListener('keypress', function(e) {

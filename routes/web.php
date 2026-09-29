@@ -37,7 +37,7 @@ use App\Http\Controllers\sager\ImportExecuteController;
 use App\Http\Controllers\SagerPrintController;
 use App\Livewire\Users\UpdateUser;
 use App\Livewire\Users\CreateMedarbejderUser;
-use App\Livewire\Admin\Breve\RedigerBrev;
+use App\Livewire\Admin\Breve\BrevManager;
 use App\Livewire\Users\Createkreditoruser;
 use App\Livewire\Sagervalgliste\CreateSagervalgliste;
 use App\Livewire\Sagervalgliste\ShowSagervalgliste;
@@ -390,7 +390,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             });
 
         Route::get('/admin/doctor-norton', SagDoctorDashboard::class)->name('sager.doctor');
-        Route::get('/sager/breve/rediger', RedigerBrev::class)->name('admin.breve.rediger');
+        Route::get('/sager/breve/rediger', BrevManager::class)->name('admin.breve.rediger');
 
         Route::get('/breve/filter', [BrevFilterController::class, 'index'])->name('breve.filter');
         Route::post('/breve/filter/{brevID}', [BrevFilterController::class, 'update'])->name('breve.filter.update');

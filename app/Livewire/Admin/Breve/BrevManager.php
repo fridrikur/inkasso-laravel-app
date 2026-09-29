@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Livewire\Admin\Breve;
 
 use Livewire\Component;
@@ -7,7 +6,7 @@ use App\Models\Brev;
 use App\Models\Sager;
 use App\Services\BrevMergeService;
 
-class RedigerBrev extends Component
+class BrevManager extends Component
 {
     public ?int $brevId = null;
 
@@ -263,6 +262,6 @@ class RedigerBrev extends Component
 
     public function render()
     {
-        return view('livewire.admin.breve.rediger-brev');
+        return view('livewire.admin.breve.brev-manager');
     }
 }
