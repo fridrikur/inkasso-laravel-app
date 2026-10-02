@@ -197,21 +197,28 @@
             </div>
         </div>
 
-        {{-- 1A. VISUEL EDITOR (ContentEditable - Ingen rå HTML-tags) --}}
+        {{-- 1A. VISUEL EDITOR (Viser fejl og "Mente du..." forslag) --}}
         <div x-show="activeTab === 'visual'" class="flex-1 flex">
             <div 
                 contenteditable="true"
                 @input="$wire.set('tekst',$event.target.innerHTML)"
                 class="w-full h-[700px] min-h-[700px] border border-slate-200 rounded-xl px-4 py-3 font-sans text-xs sm:text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 overflow-y-auto bg-white"
             >
-                {!! str_replace(
-                    ['{hovedstol}', '{gebyr}', '{restgaeld}', '{sagsnr}'],
-                    ['<span contenteditable="false" class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-mono text-xs border border-indigo-100 font-bold">25.400,00</span>', 
-                     '<span contenteditable="false" class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-mono text-xs border border-indigo-100 font-bold">450,00</span>', 
-                     '<span contenteditable="false" class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-mono text-xs border border-indigo-100 font-bold">25.850,00</span>', 
-                     '<span contenteditable="false" class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-mono text-xs border border-indigo-100 font-bold">SAG-2026-992</span>'],
-                    $tekst
-                ) !!}
+                {!! 
+                    preg_replace_callback('/\{([^}]+)\}/', function($matches) {$field = $matches[1];$validTokens = array_merge((new \App\Models\Sager())->getFillable(), ['today', 'aktiv', 'firmanavn', 'debitor_navn', 'ktr', 'debitor_email']);
+                        
+                        if (in_array($field,$validTokens)) {
+                            return '<span contenteditable="false" class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-mono text-xs border border-indigo-100 font-bold">{' . $field . '}</span>';
+                        } else {
+                            $suggestion = $this->getClosestTokenSuggestion($field);
+                            $suggestionHtml =$suggestion ? ' <span class="text-[10px] text-rose-800 underline cursor-pointer font-semibold" title="Klik for at rette" wire:click.prevent="replaceToken(\'' . $field . '\', \'' .$suggestion . '\')">Mente du: {' . $suggestion . '}?</span>' : '';
+
+                            return '<span contenteditable="false" class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-mono text-xs border border-rose-300 font-bold inline-flex items-center gap-1.5 mx-1 shadow-2xs">' .
+                                   '<span>{' . $field . '} (Ugyldig)</span>' .$suggestionHtml . 
+                                   '</span>';
+                        }
+                    }, $tekst) 
+                !!}
             </div>
         </div>
 
@@ -433,9 +440,12 @@
                     <div
                         draggable="true"
                         @dragstart="$event.dataTransfer.setData('text/plain', '{{ '{'.$token.'}' }}')"
-                        class="bg-indigo-50 border border-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg cursor-grab active:cursor-grabbing text-xs font-mono font-bold select-none hover:bg-indigo-600 hover:text-white transition shadow-2xs"
+                        class="px-2.5 py-1 rounded-lg cursor-grab active:cursor-grabbing text-xs font-mono font-bold select-none transition shadow-2xs {{ $highlightedToken ===$token ? 'bg-amber-400 text-amber-950 ring-2 ring-amber-500 scale-105 animate-pulse shadow-md' : 'bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white' }}"
                     >
                         {{ '{'.$token.'}' }}
+                        @if($highlightedToken ===$token)
+                            <span class="text-[9px] bg-amber-950 text-amber-200 px-1 rounded ml-1">Match!</span>
+                        @endif
                     </div>
                 @endforeach
             </div>

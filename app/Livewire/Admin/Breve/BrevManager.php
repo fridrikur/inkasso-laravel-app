@@ -27,6 +27,8 @@ class BrevManager extends Component
     public $brevToDeleteId = null;
     public $brevToDeleteTitle = '';
 
+    public ?string $highlightedToken = null;
+
     // -----------------------------------------
     // INIT
     // -----------------------------------------
@@ -260,6 +262,77 @@ class BrevManager extends Component
         }
     }
 
+    // -----------------------------------------
+    // VALIDERING AF FLETTEFELTER (TOKENS)
+    // -----------------------------------------
+    public function getInvalidTokensProperty(): array
+    {
+        // Hent alle tilladte gyldige felter præcis som i din blade-fil
+        $validTokens = array_merge(
+            (new \App\Models\Sager())->getFillable(),
+            ['today', 'aktiv', 'firmanavn', 'debitor_navn', 'ktr', 'debitor_email']
+        );
+
+        // Find alle felter i tekst med curly brackets {feltnavn}
+        preg_match_all('/\{([^}]+)\}/', $this->tekst, $matches);
+        
+        $foundTokens = $matches[1] ?? [];
+        $invalidTokens = [];
+
+        foreach ($foundTokens as $token) {
+            if (!in_array($token, $validTokens)) {
+                $invalidTokens[] = $token;
+            }
+        }
+
+        return array_unique($invalidTokens);
+    }
+
+    // Opdater metoden så den vælger det tætteste match og sætter det som fremhævet
+    public function getClosestTokenSuggestion(string $invalidToken): ?string
+    {
+        $validTokens = array_merge(
+            (new \App\Models\Sager())->getFillable(),
+            ['today', 'aktiv', 'firmanavn', 'debitor_navn', 'ktr', 'debitor_email']
+        );
+
+        $closest = null;
+        $highestPercent = 0;
+
+        foreach ($validTokens as $token) {
+            similar_text($invalidToken, $token, $percent);
+            if ($percent > $highestPercent) {
+                $highestPercent = $percent;
+                $closest = $token;
+            }
+        }
+
+        $suggestion = $highestPercent > 40 ? $closest : null;
+        
+        // Sæt automatisk det fremhævede felt til det foreslåede match
+        if ($suggestion) {
+            $this->highlightedToken = $suggestion;
+        }
+
+        return $suggestion;
+    }
+
+    // Metode til at rydde fremhævningen igen
+    public function clearHighlight(): void
+    {
+        $this->highlightedToken = null;
+    }
+
+    // -----------------------------------------
+    // ERSTAT UGYLDIGT FELT MED FORSLAG
+    // -----------------------------------------
+    public function replaceToken(string $invalidField, string $validField): void
+    {
+        $this->tekst = str_replace('{' . $invalidField . '}', '{' . $validField . '}', $this->tekst);
+        $this->highlightedToken = null;
+        $this->generatePreview();
+    }
+    
     public function render()
     {
         return view('livewire.admin.breve.brev-manager');
