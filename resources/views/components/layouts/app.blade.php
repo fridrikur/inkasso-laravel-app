@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ setting('app_name', 'Sagsbehandling') }} - {{ $title ?? 'Dashboard' }}</title>
 
     {{-- DYNAMISK FARVETEMA FRA SYSTEMSETTINGS --}}
@@ -513,7 +514,7 @@
         resetIdleTimers();
     });
 
-    function reAuthenticate(event) {
+    async function reAuthenticate(event) {
         event.preventDefault();
         const password = document.getElementById('re-auth-password').value;
         const errorEl = document.getElementById('re-auth-error');
@@ -523,33 +524,47 @@
         btn.innerText = 'Logger ind...';
         errorEl.style.display = 'none';
 
-        fetch('/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                email: '{{ auth()->user()?->email ?? "" }}',
-                password: password
-            })
-        })
-        .then(response => {
+        try {
+            // 1. Hent et friskt CSRF-token fra serveren for at undgå mismatch
+            const tokenResponse = await fetch('/sanctum/csrf-cookie', { method: 'GET' }).catch(() => {});
+            
+            // Alternativt kan vi læse cookien hvis Sanctum ikke bruges, 
+            // men vi kan også blot hente forsiden eller en dertiskabelse. 
+            // Den sikreste standard-Laravel metode uden Sanctum er at hente tokenet fra en meta-tag eller opdatere det.
+            
+            // Lad os udlede CSRF-tokenet direkte fra sidens meta-tag, 
+            // eller endnu bedre: lade Laravel modtage det. 
+            // Hvis sessionen er udløbet helt, skal vi gengenerere et nyt token via et hurtigt ancall:
+            
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            let csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '{{ csrf_token() }}';
+
+            // Send login-request afsted med det opdaterede token
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: '{{ auth()->user()?->email ?? "" }}',
+                    password: password
+                })
+            });
+
             if (response.ok) {
                 window.location.reload();
             } else {
-                return response.json().then(data => {
-                    throw new Error(data.message || 'Forkert adgangskode.');
-                });
+                const data = await response.json();
+                throw new Error(data.message || 'Forkert adgangskode.');
             }
-        })
-        .catch(error => {
-            errorEl.innerText = error.message;
+        } catch (error) {
+            errorEl.innerText = error.message || 'CSRF token mismatch eller fejl i adgangskode.';
             errorEl.style.display = 'block';
             btn.disabled = false;
             btn.innerText = 'Lås op og fortsæt';
-        });
+        }
     }
     </script>
 </body>
