@@ -346,10 +346,11 @@
                 <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider border-b border-slate-200/60">
                     <tr>
                         <th scope="col" class="px-6 py-4 cursor-pointer select-none hover:text-indigo-600 transition" wire:click="sortBy('sagers.sagsnr')">Sagsnr</th>
+                        <th scope="col" class="px-6 py-4">Sagsbehandler</th>
                         <th scope="col" class="px-6 py-4">Debitor</th>
-                        <th scope="col" class="px-6 py-4">Kreditor</th>
-                        <th scope="col" class="px-6 py-4 cursor-pointer select-none hover:text-indigo-600 transition" wire:click="sortBy('modtaget')">Modtaget</th>
-                        <th scope="col" class="px-6 py-4">Status</th>
+                        <th scope="col" class="px-6 py-4">Post nr</th>
+                        <th scope="col" class="px-6 py-4">Kontrakttype</th>
+                        <th scope="col" class="px-6 py-4 cursor-pointer select-none hover:text-indigo-600 transition" wire:click="sortBy('modtaget')">Modtaget dato</th>
                         <th scope="col" class="px-6 py-4 text-right w-32">Handlinger</th>
                     </tr>
                 </thead>
@@ -357,6 +358,7 @@
                 <tbody class="divide-y divide-slate-100 bg-white text-slate-700">
                 @forelse($sagers as $sag)
                     <tr class="hover:bg-slate-50/60 transition duration-150">
+                        {{-- 1. Sagsnr --}}
                         <td class="whitespace-nowrap px-6 py-4 font-semibold text-slate-900">
                             <div class="flex items-center gap-2">
                                 <span class="font-mono text-slate-700">{{ $sag->sagsnr ?? '-' }}</span>
@@ -383,23 +385,33 @@
                                 </div>
                             @endif
                         </td>
-                        <td class="px-6 py-4 font-medium text-slate-800">{{ $sag->debitor_navn ?? $sag->debitor->first()?->navn ?? '-' }}</td>
-                        <td class="px-6 py-4 text-slate-600">{{ $sag->kreditor_navn ?? $sag->kreditor->first()?->navn ?? '-' }}</td>
+
+                        {{-- 2. Sagsbehandler (Henter fra belongsToMany relationen i stedet for JSON) --}}
+                        <td class="px-6 py-4 text-slate-600">
+                            {{ $sag->sagsbehandler->pluck('navn')->implode(', ') ?: ($sag->sagsbehandler_navn ?? '-') }}
+                        </td>
+
+                        {{-- 3. Debitor --}}
+                        <td class="px-6 py-4 font-medium text-slate-800">
+                            {{ $sag->debitor_navn ?? $sag->debitor->first()?->navn ?? '-' }}
+                        </td>
+
+                        {{-- 4. Post nr --}}
+                        <td class="px-6 py-4 font-mono text-slate-600">
+                            {{ $sag->postnr ?? $sag->debitor->first()?->postnr ?? '-' }}
+                        </td>
+
+                        {{-- 5. Kontrakttype (Henter fra ktr() relationen) --}}
+                        <td class="px-6 py-4 text-slate-600">
+                            {{ $sag->ktr->pluck('tekst')->implode(', ') ?: ($sag->kontrakttype ?? '-') }}
+                        </td>
+
+                        {{-- 6. Modtaget dato --}}
                         <td class="whitespace-nowrap px-6 py-4 font-mono text-slate-500">
                             {{ $sag->modtaget ? \Carbon\Carbon::parse($sag->modtaget)->format('d-m-Y') : '-' }}
                         </td>
-                        <td class="whitespace-nowrap px-6 py-4">
-                            @if($sag->afsluttet)
-                                <span class="inline-flex items-center rounded-full bg-slate-100 border border-slate-200 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                                    Afsluttet: {{ \Carbon\Carbon::parse($sag->afsluttet)->format('d-m-Y') }}
-                                </span>
-                            @else
-                                <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium text-emerald-700 shadow-sm">
-                                    <span class="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                                    Aktiv
-                                </span>
-                            @endif
-                        </td>
+
+                        {{-- Handlinger --}}
                         <td class="whitespace-nowrap px-6 py-4 text-right font-medium">
                             @if ($sag->trashed())
                                 <div class="flex items-center justify-end gap-1.5">
@@ -426,7 +438,6 @@
                                     GDPR Låst
                                 </span>
                             @else
-                                {{-- 🟢 ÆNDRET TIL MEDARBEJDER EDIT ROUTE (Alt andet beholdt intakt) --}}
                                 <x-table-actions 
                                     :id="$sag->id" 
                                     :editUrl="auth()->user()->hasRole('Admin') ? route('sager.edit', $sag) : route('medarbejder.sager.edit', $sag)" 
@@ -437,7 +448,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-16 text-center text-slate-400">
+                        <td colspan="7" class="px-6 py-16 text-center text-slate-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-8 w-8 text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m9-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -482,5 +493,4 @@
         </div>
     @endif
 
-    
 </div>

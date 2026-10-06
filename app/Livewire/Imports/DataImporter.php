@@ -345,7 +345,6 @@ class DataImporter extends Component
                             if ($value === '') continue;
 
                             if ($targetField === 'token_id') {
-                                // Token håndteres nu direkte via dialoger-importen
                                 continue; 
                             }
 
@@ -463,7 +462,7 @@ class DataImporter extends Component
     public function generateNotes()
     {
         $activeMapping = array_filter($this->mapping);
-        $this->importNotes = "Import-konfiguration for '{$this->importType}':\n- Parrede kolonner: " . count($activeMapping);
+        $this->importNotes = "Import-konfiguration for '{$this->importType}':\nParrede kolonner: " . count($activeMapping);
     }
     
     public function runSystemImport()
@@ -645,6 +644,84 @@ class DataImporter extends Component
         }
     }
 
+    public function runDropdownSync()
+    {
+        set_time_limit(120);
+
+        try {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+
+            // 0. Ryd eventuelle eksisterende dubletter i pivot-tabellerne først
+            DB::statement("DELETE t1 FROM sager_ktr t1 JOIN sager_ktr t2 WHERE t1.id > t2.id AND t1.sag_id = t2.sag_id AND t1.ktr_id = t2.ktr_id");
+            DB::statement("DELETE t1 FROM sager_status t1 JOIN sager_status t2 WHERE t1.id > t2.id AND t1.sag_id = t2.sag_id AND t1.status_id = t2.status_id");
+            DB::statement("DELETE t1 FROM sager_bemaerkning t1 JOIN sager_bemaerkning t2 WHERE t1.id > t2.id AND t1.sag_id = t2.sag_id AND t1.bemaerkning_id = t2.bemaerkning_id");
+            DB::statement("DELETE t1 FROM sager_afslutning t1 JOIN sager_afslutning t2 WHERE t1.id > t2.id AND t1.sag_id = t2.sag_id AND t1.afslutning_id = t2.afslutning_id");
+            DB::statement("DELETE t1 FROM sager_udlaeg t1 JOIN sager_udlaeg t2 WHERE t1.id > t2.id AND t1.sag_id = t2.sag_id AND t1.udlaeg_id = t2.udlaeg_id");
+
+            // 1. KTR (med DISTINCT for at undgå dubletter i selve insert-steppet)
+            DB::statement("
+                INSERT INTO sager_ktr (sag_id, ktr_id, created_at, updated_at)
+                SELECT DISTINCT sagers.id, ktr.id, NOW(), NOW()
+                FROM sagers
+                JOIN sager ON sager.sagsnr COLLATE utf8mb4_unicode_ci = sagers.sagsnr COLLATE utf8mb4_unicode_ci
+                JOIN ktr ON ktr.forkortelse COLLATE utf8mb4_unicode_ci = sager.ktr COLLATE utf8mb4_unicode_ci
+                WHERE sager.ktr IS NOT NULL AND sager.ktr != ''
+                AND NOT EXISTS (SELECT 1 FROM sager_ktr WHERE sager_ktr.sag_id = sagers.id AND sager_ktr.ktr_id = ktr.id)
+            ");
+
+            // 2. Status
+            DB::statement("
+                INSERT INTO sager_status (sag_id, status_id, created_at)
+                SELECT DISTINCT sagers.id, status.id, NOW()
+                FROM sagers
+                JOIN sager ON sager.sagsnr COLLATE utf8mb4_unicode_ci = sagers.sagsnr COLLATE utf8mb4_unicode_ci
+                JOIN status ON status.forkortelse COLLATE utf8mb4_unicode_ci = sager.status COLLATE utf8mb4_unicode_ci
+                WHERE sager.status IS NOT NULL AND sager.status != ''
+                AND NOT EXISTS (SELECT 1 FROM sager_status WHERE sager_status.sag_id = sagers.id AND sager_status.status_id = status.id)
+            ");
+
+            // 3. Bemærkning
+            DB::statement("
+                INSERT INTO sager_bemaerkning (sag_id, bemaerkning_id, created_at)
+                SELECT DISTINCT sagers.id, bemaerkning.id, NOW()
+                FROM sagers
+                JOIN sager ON sager.sagsnr COLLATE utf8mb4_unicode_ci = sagers.sagsnr COLLATE utf8mb4_unicode_ci
+                JOIN bemaerkning ON bemaerkning.forkortelse COLLATE utf8mb4_unicode_ci = sager.bemaerkning COLLATE utf8mb4_unicode_ci
+                WHERE sager.bemaerkning IS NOT NULL AND sager.bemaerkning != ''
+                AND NOT EXISTS (SELECT 1 FROM sager_bemaerkning WHERE sager_bemaerkning.sag_id = sagers.id AND sager_bemaerkning.bemaerkning_id = bemaerkning.id)
+            ");
+
+            // 4. Afslutning
+            DB::statement("
+                INSERT INTO sager_afslutning (sag_id, afslutning_id, created_at)
+                SELECT DISTINCT sagers.id, afslutning.id, NOW()
+                FROM sagers
+                JOIN sager ON sager.sagsnr COLLATE utf8mb4_unicode_ci = sagers.sagsnr COLLATE utf8mb4_unicode_ci
+                JOIN afslutning ON afslutning.forkortelse COLLATE utf8mb4_unicode_ci = sager.afleveret COLLATE utf8mb4_unicode_ci
+                WHERE sager.afleveret IS NOT NULL AND sager.afleveret != ''
+                AND NOT EXISTS (SELECT 1 FROM sager_afslutning WHERE sager_afslutning.sag_id = sagers.id AND sager_afslutning.afslutning_id = afslutning.id)
+            ");
+
+            // 5. Udlæg (finanseringstypeID)
+            DB::statement("
+                INSERT INTO sager_udlaeg (sag_id, udlaeg_id, created_at)
+                SELECT DISTINCT sagers.id, udlaeg.id, NOW()
+                FROM sagers
+                JOIN sager ON sager.sagsnr COLLATE utf8mb4_unicode_ci = sagers.sagsnr COLLATE utf8mb4_unicode_ci
+                JOIN udlaeg ON udlaeg.id = sager.finanseringstypeID
+                WHERE sager.finanseringstypeID IS NOT NULL AND sager.finanseringstypeID != ''
+                AND NOT EXISTS (SELECT 1 FROM sager_udlaeg WHERE sager_udlaeg.sag_id = sagers.id AND sager_udlaeg.udlaeg_id = udlaeg.id)
+            ");
+
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+
+            session()->flash('success', '🎉 Dubletter blev ryddet op, og alle relationer blev synkroniseret rent igennem!');
+        } catch (\Throwable $e) {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+            session()->flash('error', 'Fejl ved synkronisering: ' . $e->getMessage());
+        }
+    }
+    
     public function render()
     {
         return view('imports.data-importer', [

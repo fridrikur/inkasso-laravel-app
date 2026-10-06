@@ -463,6 +463,13 @@ Visse felter håndteres nu via avancerede relationer (f.eks. `sager_konsulent`, 
         </div>
     </div>
 
+    <button 
+        type="button" 
+        wire:click="runDropdownSync"
+        class="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer flex items-center gap-2"
+    >
+        <span>🔄 Synkroniser KTR, Status, Bemærkning, Afslutning & Udlæg</span>
+    </button>
     
     {{-- 2. KOMPLET SYSTEM-IMPORT --}}
     <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4" @if($isImportingSystem) wire:poll.1s="checkSystemImportStatus" @endif>

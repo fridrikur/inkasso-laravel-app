@@ -212,6 +212,7 @@ class SagerDataTable extends Component
             ->with([
                 'debitor',
                 'kreditor',
+                'ktr',
             ])
             ->when(
                 trim($this->search) !== '',
@@ -377,6 +378,8 @@ class SagerDataTable extends Component
             ->with([
                 'debitor',
                 'kreditor',
+                'sagsbehandler', 
+                'ktr',
             ])
             ->withExists([
                 'dialogs as has_unread_messages' => function ($q) {
