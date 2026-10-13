@@ -45,22 +45,24 @@ class SagEditor extends Component
 {
     use WithFileUploads; // Gør det muligt at uploade filer med Livewire
 
+    public string $activeTab = 'stamdata';
+    
     public $newDokument; // Binder til inputfeltet i formen
     
     public bool $showDeleteOptionsModal = false;
     public bool $showPermanentDeleteUnlockModal = false;
     public string $permanentDeleteUnlockCode = '';
 
+    
     #[On('tab-changed')]
-    public function setTab(string $tab): void
+    public function setTab($tab): void
     {
-        $this->activeTab = $tab;
+        $this->activeTab = is_array($tab) ? ($tab['tab'] ?? 'stamdata') : $tab;
     }
 
     public ?Sager $sag = null;
 
-    public string $activeTab = 'stamdata';
-
+    
     public bool $isSearchMode = false;
 
     public string $lockState = 'unlocked';
