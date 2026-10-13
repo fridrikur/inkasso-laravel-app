@@ -38,6 +38,8 @@ use Illuminate\Support\Facades\Broadcast;
 use Livewire\WithFileUploads;
 use App\Models\Dokument;
 use Carbon\Carbon;
+use App\Services\ToastService;
+use App\Models\HovedKonsulent;
 
 class SagEditor extends Component
 {
@@ -455,11 +457,10 @@ class SagEditor extends Component
         $this->form->n_mdlydelse        = $this->formatNumber($n_mdlydelse);
     }
 
-    public function save()
+    public function save(ToastService $toast)
     {
         try {
-            // I stedet for kun $validated, henter vi alt data fra formen
-            // Vi beholder valideringen, men bruger hele form-data til fill()
+            // Validering og hentning af data
             $this->form->validate(); 
             $allData = $this->form->all(); 
 
@@ -470,7 +471,15 @@ class SagEditor extends Component
                 $isNew = !$this->sag->exists;
             }
 
-            // Brug $allData i stedet for $validated
+            // 🟢 TILDEL HOVEDKONSULENT HVIS NY SAG OG INGEN KONSULENT ER VALGT
+            if (empty($this->form->konsulent)) {
+                $hoved = HovedKonsulent::current();
+                if ($hoved) {
+                    // Sæt værdien i formularen, så pivot-relationen fanger den ved updateRelation()
+                    $this->form->konsulent = $hoved->konsulent_id ?? $hoved->id; 
+                }
+            }
+
             $this->sag->fill($allData);
             $this->sag->save();
 
@@ -489,9 +498,19 @@ class SagEditor extends Component
                 }
 
                 $debitorId = $this->form->UpdateDebitor($this->sag);
-                if ($debitorId) $this->sag->debitor()->sync([$debitorId]);
+                if ($debitorId) {
+                    $this->sag->debitor()->sync([$debitorId]);
+                } else {
+                    $this->sag->debitor()->detach();
+                }
 
-                $kreditorId = $this->form->UpdateKreditor($this->sag);
+                // 🟢 KREDITOR RETTELSE: Slå kreditor op via lotusID og synkroniser korrekt
+                $kreditorId = null;
+                if (!empty($this->form->kreditor_lotusID)) {
+                    $kreditor = \App\Models\Kreditorer::where('lotusID', $this->form->kreditor_lotusID)->first();
+                    $kreditorId = $kreditor?->id;
+                }
+
                 if ($kreditorId) {
                     $this->sag->kreditor()->sync([$kreditorId]);
                 } else {
@@ -506,59 +525,87 @@ class SagEditor extends Component
                 }
             }
 
-            // 🟢 Marker at sagen er gemt (Viser grøn knap)
+            // Marker at sagen er gemt (Viser grøn knap)
             $this->savedRecently = true;
             $this->js('setTimeout(() => { $wire.savedRecently = false; }, 2500)');
 
-            // 🟢 SAMLET TOAST-LOGIK (Kun 1 samlet notifikation afsendes)
-            if ($this->sag->wasChanged('afsluttet')) {
-                if (!empty($this->form->afsluttet)) {
-                    $this->dispatch('toast', 
-                        message: 'Sagen er gemt og markeret som AFSLUTTET.', 
-                        type: 'success', 
-                        icon: 'check'
-                    );
-                } else {
-                    $this->dispatch('toast', 
-                        message: 'Afslutningsdatoen blev fjernet – sagen er nu aktiv igen.', 
-                        type: 'warning', 
-                        icon: 'warning'
-                    );
-                }
-            } elseif (!empty($this->form->afsluttet)) {
-                $this->dispatch('toast', 
-                    message: 'Sagen er gemt (AFSLUTTET).', 
-                    type: 'success', 
-                    icon: 'check'
-                );
-            } else {
-                $this->dispatch('toast', 
-                    message: 'Sagen er gemt.', 
-                    type: 'success', 
-                    icon: 'check'
-                );
+            // Opdater aktivitet og tjek lås FØR eventuel nulstilling (så $this->sag ikke er null)
+            if ($this->sag && $this->sag->id) {
+                SagActivity::where('sag_id', $this->sag->id)
+                    ->where('user_id', auth()->id())
+                    ->update([
+                        'last_edited_at' => now(),
+                    ]);
+
+                $currentsagLocked = SagLock::where('sag_id', $this->sag->id)->first();
             }
 
-            SagActivity::where('sag_id', $this->sag->id)
-                ->where('user_id', auth()->id())
-                ->update([
-                    'last_edited_at' => now(),
+            // 🟢 NULSTILLING OG TOAST FOR NYE SAGER
+            if ($isNew) {
+                $this->sag = new Sager();
+                $this->form->reset();
+                
+                // 1. Send toast'en med via sessionen, da vi skifter side
+                session()->flash('toast', $toast->success('Sagen blev oprettet med succes!'));
+
+                // Tjek om brugeren er admin eller medarbejder, og send dem til den korrekte rute
+                if (auth()->user()->hasRole('Admin')) {
+                    return redirect()->route('sager.index');
+                }
+
+                return redirect()->route('medarbejder.sager.index');
+            }
+
+            // 🟢 TOAST-LOGIK FOR EKSISTERENDE SAGER (Edit)
+            if ($this->sag->wasChanged('afsluttet')) {
+                if (!empty($this->form->afsluttet)) {
+                    $this->dispatch('toast', [
+                        'message' => 'Sagen er gemt og markeret som AFSLUTTET.',
+                        'type'    => 'success'
+                    ]);
+                } else {
+                    $this->dispatch('toast', [
+                        'message' => 'Afslutningsdatoen blev fjernet – sagen er nu aktiv igen.',
+                        'type'    => 'warning'
+                    ]);
+                }
+            } elseif (!empty($this->form->afsluttet)) {
+                $this->dispatch('toast', [
+                    'message' => 'Sagen er gemt (AFSLUTTET).',
+                    'type'    => 'success'
                 ]);
+            } else {
+                $toast = new ToastService();
+
+            // Når sagen gemmes succesfuldt:
+            $this->dispatch('toast', $toast->success('Sagen er gemt.'));
+            }
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            $this->dispatch('toast', message: 'Tjek dine inputfelter! Fejlbeskrivelse: '.$e->getMessage(), type: 'error', icon: 'error');
+            $this->dispatch('toast', [
+                'message' => 'Tjek dine inputfelter! Fejlbeskrivelse: '.$e->getMessage(),
+                'type'    => 'error'
+            ]);
         } catch (\Exception $e) {
             \Log::error("Sag save error: " . $e->getMessage());
-            $this->dispatch('toast', message: 'Der opstod en fejl ved gemning af sagen! Fejlbeskrivelse: '.$e->getMessage(), type: 'error', icon: 'error');
+            $this->dispatch('toast', [
+                'message' => 'Der opstod en fejl ved gemning af sagen!',
+                'type'    => 'error'
+            ]);
         }
     }
 
     public function render()
     {
-        $currentsagLocked = SagLock::where('sag_id', $this->sag->id)
-            ->where('user_id', auth()->id())
-            ->whereNotNull('locked_at')
-            ->exists();
+        $currentsagLocked = false;
+
+        // 🟢 Tjek kun for lås, hvis sagen eksisterer og har et ID (undgår fejl ved oprettelse og nulstilling)
+        if ($this->sag?->exists && $this->sag->id) {
+            $currentsagLocked = SagLock::where('sag_id', $this->sag->id)
+                ->where('user_id', auth()->id())
+                ->whereNotNull('locked_at')
+                ->exists();
+        }
 
         if ($this->showAcceptedModal && $this->acceptedModalUntil) {
             if (now()->timestamp >= $this->acceptedModalUntil) {

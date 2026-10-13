@@ -11,9 +11,16 @@ use App\Models\Postnr;
 use Illuminate\Support\Facades\Auth;
 use App\Livewire\Forms\SagForm;
 use App\Models\SagFieldSetting;
+use App\Models\Ktr;
+use App\Models\Udlaeg;
+use Livewire\WithFileUploads;
 
 class KreditorSagEditor extends Component
 {
+    use WithFileUploads;
+    
+    public $newDokument;
+    
     public ?Sager $sag = null;
     public SagForm $form;
 
@@ -27,26 +34,28 @@ class KreditorSagEditor extends Component
     public bool $readyForReview = false;
 
     public bool $sentSuccessfully = false;
-
     public bool $showSuccessModal = false;
 
+    public array $selectOptions = [];
+
     public array $fieldLabels = [
-
-    'sagsnr' => 'Sagsnummer',
-
-    'navn' => 'Debitor navn',
-    'adresse' => 'Adresse',
-    'postnr' => 'Postnr',
-    'by' => 'By',
-
-    'hovedstol' => 'Hovedstol',
-    'renter' => 'Renter',
-    'gebyr' => 'Gebyr',
-    'indbetalt' => 'Indbetalt',
-
-    'aktiv' => 'Aktiv',         
-    'cvr' => 'CPR / CVR',
-
+        'sagsnr'      => 'Sagsnummer',
+        'navn'        => 'Debitor navn',
+        'co'          => 'c/o',
+        'adresse'     => 'Adresse',
+        'postnr'      => 'Postnr',
+        'by'          => 'By',
+        'tlf'     => 'tlf',
+        'stelnr'      => 'Stelnummer',
+        'ktr'         => 'KTR',
+        'udlaeg'      => 'Udlæg',
+        'hovedstol'   => 'Hovedstol',
+        'renter'      => 'Renter',
+        'gebyr'       => 'Gebyr',
+        'n_mdlydelse' => 'Normal ydelse',
+        'indbetalt'   => 'Indbetalt',
+        'aktiv'       => 'Aktiv',         
+        'cvr'         => 'CVR',
     ];
 
     protected $listeners = ['closeModal' => 'closeModal'];
@@ -69,16 +78,22 @@ class KreditorSagEditor extends Component
         if ($settings && !empty($settings->allowed_fields)) {
             $this->allowedFields = $settings->allowed_fields;
         } else {
-            // Standard fallback-felter hvis databasen ikke har konfigureret nogen endnu
+            // Standard fallback-felter med små bogstaver, så de matcher fieldLabels
             $this->allowedFields = [
                 'sagsnr',
                 'navn',
+                'co',
                 'adresse',
                 'postnr',
                 'by',
+                'tlf',
+                'stelnr',
+                'ktr',
+                'udlaeg',
                 'hovedstol',
                 'renter',
                 'gebyr',
+                'n_mdlydelse',
                 'indbetalt',
                 'aktiv',
                 'cvr'
@@ -94,38 +109,29 @@ class KreditorSagEditor extends Component
             $this->sag = new Sager();
         }
 
-        // Attach form model
         $this->form->sag = $this->sag;
         $this->form->sag_id = $this->sag->id;
 
-        // Find kreditor belonging to user
         $kreditor = $user->kreditorer()->firstOrFail();
         $this->form->kreditor = $kreditor->id;
 
-        // Load sagsbehandlere belonging to this kreditor
         $this->sagsbehandlerOptions =
             Sagsbehandler::forKreditor($kreditor->id) ?? [];
+
+        $this->loadSelectOptions();
     }
 
-    /**
-     * Normalize a string/float/int into a float
-     */
     public function parseNumber(string|float|int|null $value): float
     {
         if ($value === null) return 0;
-
         if (is_numeric($value)) return (float) $value;
 
-        // Remove thousands separator and convert comma to dot
         $normalized = str_replace('.', '', $value);
         $normalized = str_replace(',', '.', $normalized);
 
         return (float) $normalized;
     }
 
-    /**
-     * Format a number into Danish style (2 decimals, comma)
-     */
     public function formatNumber(mixed $value): string
     {
         if ($value === null || $value === '') return '0,00';
@@ -148,7 +154,7 @@ class KreditorSagEditor extends Component
         try {
             $this->form->validate();
 
-            foreach (['hovedstol', 'renter', 'gebyr', 'indbetalt'] as $field) {
+            foreach (['hovedstol', 'renter', 'gebyr', 'indbetalt', 'n_mdlydelse'] as $field) {
                 if (property_exists($this->form, $field)) {
                     $this->form->$field = $this->formatNumber(
                         $this->parseNumber($this->form->$field)
@@ -170,20 +176,29 @@ class KreditorSagEditor extends Component
     public function confirmSave()
     {
         try {
-            // 🔒 Validerer formularen igen
             $this->form->validate();
-
             $data = $this->sanitizeFormData();
-
-            // 🟢 Sæt automatisk 'modtaget' til dags dato/tidstempel ved indsendelse
             $data['modtaget'] = now();
 
+            // 1. Opret sagen først, så vi har et sag->id
             $this->sag = Sager::create($data);
 
-            // 5️⃣ Opdater pivot-relationer (Kreditor, Sagsbehandler, Debitor osv.)
             if ($this->sag->exists) {
+                // 2. Hvis der er valgt et dokument, så brug din upload-logik her!
+                if ($this->newDokument) {
+                    $file = $this->newDokument;
+                    $path = $file->store('dokumenter/' . $this->sag->id, 'public');
 
-                // Kreditor pivot
+                    \App\Models\Dokument::create([
+                        'sag_id'        => $this->sag->id,
+                        'file_name'     => $file->getClientOriginalName(),
+                        'file_path'     => $path,
+                        'file_size'     => $file->getSize(),
+                        'uploaded_date' => now(),
+                    ]);
+                }
+
+                // Kreditor, Sagsbehandler, Debitor og øvrige relationer...
                 $kreditorId = $this->form->UpdateKreditor($this->sag);
                 if ($kreditorId) {
                     $this->sag->kreditor()->sync([$kreditorId]);
@@ -191,7 +206,6 @@ class KreditorSagEditor extends Component
                     $this->sag->kreditor()->detach();
                 }
 
-                // Sagsbehandler pivot
                 $sagsbehandlerId = $this->form->UpdateSagsbehandler();
                 if ($sagsbehandlerId) {
                     $this->sag->sagsbehandler()->sync([$sagsbehandlerId]);
@@ -199,7 +213,6 @@ class KreditorSagEditor extends Component
                     $this->sag->sagsbehandler()->detach();
                 }
 
-                // Debitor pivot
                 $debitorId = $this->form->UpdateDebitor($this->sag);
                 if ($debitorId) {
                     $this->sag->debitor()->sync([$debitorId]);
@@ -207,7 +220,6 @@ class KreditorSagEditor extends Component
                     $this->sag->debitor()->detach();
                 }
 
-                // Øvrige pivot-relationer
                 foreach (['status', 'bemaerkning', 'ktr', 'afslutning', 'udlaeg', 'konsulent'] as $relation) {
                     $this->form->updateRelation($relation, $this->sag->id);
                 }
@@ -222,20 +234,10 @@ class KreditorSagEditor extends Component
                 message: 'Din sag er nu sendt til DKG',
                 type: 'success'
             );
-        } 
-        catch (\Illuminate\Validation\ValidationException $e) {
-            $this->dispatch('toast',
-                message: 'Validering fejlede ved indsendelse!',
-                type: 'error'
-            );
-        } 
-        catch (\Exception $e) {
-            \Log::error("Sag confirm error: " . $e->getMessage());
 
-            $this->dispatch('toast',
-                message: 'Fejl ved indsendelse af sag',
-                type: 'error'
-            );
+        } catch (\Exception $e) {
+            \Log::error("Sag confirm error: " . $e->getMessage());
+            $this->dispatch('toast', message: 'Fejl ved indsendelse af sag', type: 'error');
         }
     }
 
@@ -245,14 +247,13 @@ class KreditorSagEditor extends Component
 
         $data['hovedstol'] = $this->normalizeDanishNumber($data['hovedstol'] ?? null);
         $data['renter'] = $this->normalizeDanishNumber($data['renter'] ?? null);
+        $data['n_mdlydelse'] = $this->normalizeDanishNumber($data['n_mdlydelse'] ?? null);
 
-        // Hent de dynamiske felter
         $allowed = collect($data)
             ->only($this->allowedFields)
             ->map(fn ($value) => $value === '' ? null : $value)
             ->toArray();
 
-        // 🟢 Sikr at 'modtaget' altid inkluderes i arrayet
         if (isset($data['modtaget'])) {
             $allowed['modtaget'] = $data['modtaget'];
         }
@@ -260,51 +261,30 @@ class KreditorSagEditor extends Component
         return $allowed;
     }
 
-    function dk_number($value)
-    {
-        if ($value === null) {
-            return null;
-        }
-
-        return number_format((float)$value, 2, ',', '.');
-    }
-
     protected function normalizeDanishNumber($value)
     {
         if (!$value) return null;
-
         $value = str_replace('.', '', $value);
         $value = str_replace(',', '.', $value);
-
         return $value;
     }
 
     public function goToReview()
     {
         $this->reviewMode = true;
-
         $this->dispatch('focus-review');
     }
 
     public function editAgain()
     {
         $this->reviewMode = false;
-
         $this->dispatch('focus-form');
     }
 
     public function resetForm()
     {
-        $this->reset([
-            'form',
-            'sag',
-            'reviewMode',
-            'readyForReview',
-            'sentSuccessfully',
-            'showSuccessModal'
-        ]);
-
-        $this->mount(); // re-init everything
+        $this->reset(['form', 'sag', 'reviewMode', 'readyForReview', 'sentSuccessfully', 'showSuccessModal']);
+        $this->mount();
     }
 
     public function updatedFormPostnr($value)
@@ -313,116 +293,73 @@ class KreditorSagEditor extends Component
             $this->form->by = null;
             return;
         }
-
-        $postnummer = \App\Models\Postnr::where('postnr', $value)->first();
-
+        $postnummer = Postnr::where('postnr', $value)->first();
         $this->form->by = $postnummer?->by;
     }
     
-    public function updatedFormHovedstol($value)
-    {
-        $this->form->hovedstol = $this->formatNumber(
-            $this->parseNumber($value)
-        );
-    }
-
-    public function updatedFormRenter($value)
-    {
-        $this->form->renter = $this->formatNumber(
-            $this->parseNumber($value)
-        );
-    }
-
-    public function updatedFormGebyr($value)
-    {
-        $this->form->gebyr = $this->formatNumber(
-            $this->parseNumber($value)
-        );
-    }
-
-    public function updatedFormIndbetalt($value)
-    {
-        $this->form->indbetalt = $this->formatNumber(
-            $this->parseNumber($value)
-        );
-    }
+    public function updatedFormHovedstol($value) { $this->form->hovedstol = $this->formatNumber($this->parseNumber($value)); }
+    public function updatedFormRenter($value) { $this->form->renter = $this->formatNumber($this->parseNumber($value)); }
+    public function updatedFormGebyr($value) { $this->form->gebyr = $this->formatNumber($this->parseNumber($value)); }
+    public function updatedFormIndbetalt($value) { $this->form->indbetalt = $this->formatNumber($this->parseNumber($value)); }
+    public function updatedFormNMdlydelse($value) { $this->form->n_mdlydelse = $this->formatNumber($this->parseNumber($value)); }
 
     protected function fuzzyScore(string $needle, string $haystack): int
     {
-        if (str_starts_with($haystack, $needle)) {
-            return 0;
-        }
-
-        if (str_contains($haystack, $needle)) {
-            return 5;
-        }
-
+        if (str_starts_with($haystack, $needle)) return 0;
+        if (str_contains($haystack, $needle)) return 5;
         $distance = levenshtein($needle, $haystack);
-
         return $distance < 10 ? 10 + $distance : 100;
     }
 
     public function updatedFormBy($value): void
     {
         $term = trim(mb_strtolower($value));
-
         $this->bySuggestions = [];
         $this->showByDropdown = false;
 
         if (mb_strlen($term) < 1) {
-            $this->form->postnr = ''; // Nulstil postnr hvis feltet tømmes
+            $this->form->postnr = '';
             return;
         }
 
-        $results = $this->getPostnrIndex()
-            ->map(function ($row) use ($term) {
-                $row['score'] = $this->fuzzyScore($term, $row['by_lc']);
-                return $row;
-            })
-            ->filter(fn ($row) => $row['score'] <= 25)
-            ->sortBy('score')
-            ->take(10)
-            ->values();
+        $results = Cache::rememberForever('postnr.index', function () {
+            return Postnr::select('by', 'postnr')->get()->map(fn ($r) => [
+                'by' => $r->by,
+                'by_lc' => mb_strtolower($r->by),
+                'postnr' => $r->postnr,
+            ]);
+        })->map(function ($row) use ($term) {
+            $row['score'] = $this->fuzzyScore($term, $row['by_lc']);
+            return $row;
+        })->filter(fn ($row) => $row['score'] <= 25)->sortBy('score')->take(10)->values();
 
-        if ($results->isEmpty()) {
-            return;
-        }
+        if ($results->isEmpty()) return;
 
-        // 🟢 NYT: Hvis der kun er 1 resultat, eller hvis top-resultatet er et 100% match
         if ($results->count() === 1 || $results->first()['by_lc'] === $term) {
             $match = $results->first();
             $this->form->postnr = $match['postnr'];
-            $this->form->by = $match['by']; // Sørg for pæn casing (f.eks. "Sønderborg" i stedet for "sønderborg")
+            $this->form->by = $match['by'];
             return;
         }
 
-        // Ellers vis dropdown med forslag som du plejer
         $this->bySuggestions = $results->toArray();
         $this->showByDropdown = true;
-    }
-
-    protected function getPostnrIndex(): Collection
-    {
-        return Cache::rememberForever('postnr.index', function () {
-            return Postnr::select('by', 'postnr')
-                ->get()
-                ->map(fn ($r) => [
-                    'by' => $r->by,
-                    'by_lc' => mb_strtolower($r->by),
-                    'postnr' => $r->postnr,
-                ]);
-        });
     }
     
     public function selectBy(string $by, string $postnr): void
     {
         $this->form->by = $by;
         $this->form->postnr = $postnr;
-
         $this->bySuggestions = [];
         $this->showByDropdown = false;
     }
-    
+
+    protected function loadSelectOptions(): void
+    {
+        $this->selectOptions['ktr'] = Cache::rememberForever('select.ktr', fn () => Ktr::pluck('tekst', 'id')->toArray());
+        $this->selectOptions['udlaeg'] = Cache::rememberForever('select.udlaeg', fn () => Udlaeg::pluck('tekst', 'id')->toArray());
+    }
+
     public function render()
     {
         return view('livewire.sager.kreditor-sag-editor');

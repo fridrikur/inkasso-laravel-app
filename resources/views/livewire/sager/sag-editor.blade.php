@@ -83,10 +83,12 @@
         class="rounded-2xl p-6 text-white shadow-sm transition-colors duration-200 flex items-center justify-between"
     >
         <div>
-            <span class="text-xs font-bold uppercase tracking-wider opacity-80">Sagsbehandling</span>
-            <h1 class="text-xl font-bold tracking-tight mt-0.5">
-                {{ $sag->exists ? 'Redigér Sag #' . $sag->sagsnr : 'Opret Ny Sag' }}
-            </h1>
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider opacity-80">Sagsbehandling</span>
+                <h1 class="text-xl font-bold tracking-tight mt-0.5">
+                    {{ ($sag && $sag->exists) ? 'Redigér Sag #' . $sag->sagsnr : 'Opret Ny Sag' }}
+                </h1>
+            </div>
         </div>
 
         <div class="flex items-center gap-2">

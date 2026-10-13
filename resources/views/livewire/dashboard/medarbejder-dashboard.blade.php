@@ -43,17 +43,17 @@
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         
         {{-- Ubehandlede sager --}}
-        <div class="rounded-2xl border p-5 shadow-sm transition {{ $unreadSagerCount > 0 ? 'border-rose-200 bg-rose-50/50' : 'border-slate-200 bg-white' }}">
+        <div class="rounded-2xl border p-5 shadow-sm transition {{ $ubehandledeSagerCount > 0 ? 'border-rose-200 bg-rose-50/50' : 'border-slate-200 bg-white' }}">
             <div class="flex items-center justify-between">
-                <p class="text-xs font-bold uppercase tracking-wider {{ $unreadSagerCount > 0 ? 'text-rose-700' : 'text-slate-400' }}">
+                <p class="text-xs font-bold uppercase tracking-wider {{ $ubehandledeSagerCount > 0 ? 'text-rose-700' : 'text-slate-400' }}">
                     Ubehandlede Sager
                 </p>
-                <div class="p-2 rounded-xl {{ $unreadSagerCount > 0 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500' }}">
+                <div class="p-2 rounded-xl {{ $ubehandledeSagerCount > 0 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
             </div>
-            <p class="mt-3 text-3xl font-extrabold {{ $unreadSagerCount > 0 ? 'text-rose-900' : 'text-slate-900' }}">
-                {{ $unreadSagerCount }}
+            <p class="mt-3 text-3xl font-extrabold {{ $ubehandledeSagerCount > 0 ? 'text-rose-900' : 'text-slate-900' }}">
+                {{ $ubehandledeSagerCount }}
             </p>
             <p class="mt-1 text-xs text-slate-500">Sager som afventer første behandling</p>
         </div>
@@ -182,10 +182,11 @@
                         @php
                             $debitor = $sag->debitor->first();
                             $kreditor = $sag->kreditor->first();
+                            $sagsbehandler = $sag->sagsbehandler->first(); // 🟢 Hent sagsbehandleren her
                         @endphp
 
                         <a href="{{ route('medarbejder.sager.klientinformation', $sag->id) }}" 
-                           class="flex items-center justify-between p-4 sm:px-6 hover:bg-slate-50/80 transition duration-150 group">
+                        class="flex items-center justify-between p-4 sm:px-6 hover:bg-slate-50/80 transition duration-150 group">
                             
                             <div class="space-y-1">
                                 <div class="flex items-center gap-2">
@@ -195,6 +196,13 @@
                                     <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/60">
                                         {{ $sag->unread_messages_count }} {{ $sag->unread_messages_count === 1 ? 'ny besked' : 'nye beskeder' }}
                                     </span>
+                                    
+                                    {{-- 🟢 Vis sagsbehandler som et lille mærke/badge her, hvis den har en --}}
+                                    @if($sagsbehandler)
+                                        <span class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                                            Sagsbehandler: {{ $sagsbehandler->navn }}
+                                        </span>
+                                    @endif
                                 </div>
 
                                 <div class="flex items-center gap-4 text-xs text-slate-500">
@@ -236,7 +244,7 @@
                 </div>
 
                 <div class="divide-y divide-slate-100">
-                    @forelse($unreadSager as $sag)
+                    @forelse($ubehandledeSager as $sag)
                         @php
                             $debitor = $sag->debitor->first();
                             $kreditor = $sag->kreditor->first();

@@ -17,10 +17,17 @@ class SagTabs extends Component
     public int $unreadBogholderi = 0;
 
     #[On('dialogUpdated')]
-    public function mount(?Sager $sag = null, string $activeTab = 'stamdata')
+    public function mount(?Sager $sag = null, ?string $activeTab = null)
     {
         $this->sag = $sag;
-        $this->activeTab = $activeTab;
+        
+        // 🟢 Behold den nuværende fane, hvis $activeTab ikke sendes med ved re-render
+        if ($activeTab !== null) {
+            $this->activeTab = $activeTab;
+        } elseif (empty($this->activeTab)) {
+            $this->activeTab = 'stamdata';
+        }
+
         $this->refreshBadges();
     }
 

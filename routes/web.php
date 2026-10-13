@@ -143,15 +143,30 @@ Route::middleware(['ip.whitelist'])->group(function () {
     $medarbejderUrl = $settings->get('login_url_medarbejder', '/login/medarbejder');
     $kreditorUrl    = $settings->get('login_url_kreditor', '/login/kreditor');
 
-    Route::get($adminUrl, function () {
+    // Hjælperfunktion til at tjekke om brugeren allerede er logget ind
+    $redirectToDashboardIfAuthenticated = function () {
+        if (auth()->check()) {
+            $user = auth()->user();
+            if ($user->hasRole('Kreditor')) {
+                return redirect()->route('kreditor.dashboard');
+            }
+            return redirect()->route('medarbejder.sager.index'); // eller jeres standard medarbejder/admin dashboard
+        }
+        return null;
+    };
+
+    Route::get($adminUrl, function () use ($redirectToDashboardIfAuthenticated) {
+        if ($redirect = $redirectToDashboardIfAuthenticated()) return $redirect;
         return view('auth.login', ['roleTarget' => 'Admin']);
     })->name('login.admin');
 
-    Route::get($medarbejderUrl, function () {
+    Route::get($medarbejderUrl, function () use ($redirectToDashboardIfAuthenticated) {
+        if ($redirect = $redirectToDashboardIfAuthenticated()) return $redirect;
         return view('auth.login', ['roleTarget' => 'Medarbejder']);
     })->name('login.medarbejder');
 
-    Route::get($kreditorUrl, function () {
+    Route::get($kreditorUrl, function () use ($redirectToDashboardIfAuthenticated) {
+        if ($redirect = $redirectToDashboardIfAuthenticated()) return $redirect;
         return view('auth.login', ['roleTarget' => 'Kreditor']);
     })->name('login.kreditor');
 });

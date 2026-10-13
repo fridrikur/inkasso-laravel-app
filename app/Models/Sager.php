@@ -42,6 +42,7 @@ class Sager extends Model
         'kort_bemaerkning',
         'kode',
         'dato',
+        'kreditor_oprettet'
     ];
 
     protected $casts = [

@@ -4,7 +4,7 @@ class="{{ request()->routeIs('kreditor.sager.klientinformation')
             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}
         whitespace-nowrap pb-2 border-b-2 font-medium text-sm flex items-center gap-2">
 
-    <span>Klientinformation</span>
+    <span>Dialog med DKG</span>
 
     @if($klientinformationUnread > 0)
         <span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-bounce">

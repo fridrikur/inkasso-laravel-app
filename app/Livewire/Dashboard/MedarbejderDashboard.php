@@ -13,8 +13,8 @@ class MedarbejderDashboard extends Component
 
     public $latestSager = [];
     public $sagerWithNewMessages = [];
-    public $unreadSager = [];
-    public $unreadSagerCount = 0;
+    public $ubehandledeSager = [];
+    public $ubehandledeSagerCount = 0;
     public $myActiveSagerCount = 0;
     public $activeTab = 'overview'; // 'overview', 'unread', 'messages'
 
@@ -56,49 +56,58 @@ class MedarbejderDashboard extends Component
     }
 
     public function loadData()
-{
-    $user = auth()->user();
+    {
+        $user = auth()->user();
 
-    // 🟢 Tjekker via pivot-tabellen (notifybrugere) om brugeren har fået aktiveret notifikationer
-    if ($user->receivesNotifications()) {
-        // 📄 Vis nyligt ankomne sager
-        $this->latestSager = Sager::with([
-                'debitor',
-                'kreditor',
-                'sagsbehandler'
-            ])
+        // 🟢 Tjekker via pivot-tabellen (notifybrugere) om brugeren har fået aktiveret notifikationer
+        if ($user->receivesNotifications()) {
+            // 📄 Vis nyligt ankomne sager
+            $this->latestSager = Sager::with([
+                    'debitor',
+                    'kreditor',
+                    'sagsbehandler'
+                ])
+                ->latest()
+                ->take(8)
+                ->get();
+        } else {
+            $this->latestSager = collect();
+        }
+
+        // --- Ulæste beskeder / dialoger (det som unreadForUser håndterer) ---
+        $unreadQuery = Sager::unreadForUser($user)->with(['debitor', 'kreditor']);
+        // Hvis du har en separat variabel til ulæste dialoger, f.eks. $this->unreadDialogsCount, 
+        // kan du opdatere den her i stedet for at røre ved ubehandlede sager.
+
+        // --- Ubehandlede sager (Sager oprettet af kreditorer, som mangler konsulent) ---
+        $ubehandledeQuery = Sager::with(['debitor', 'kreditor'])
+            ->has('kreditor')                      // Skal være oprettet/knyttet til en kreditor
+            ->whereDoesntHave('konsulent');        // Mangler en konsulent (hvilket udelukker medarbejder-sager, da de nu automatisk får hovedkonsulenten)
+
+        $this->ubehandledeSagerCount = $ubehandledeQuery->count();
+        $this->ubehandledeSager = $ubehandledeQuery->latest()->take(5)->get();
+
+        // --- Aktive sager ---
+        $this->myActiveSagerCount = Sager::whereNull('afsluttet')->count();
+
+        // --- Sager med nye beskeder ---
+        $this->sagerWithNewMessages = Sager::with(['debitor', 'kreditor', 'sagsbehandler']) // 🟢 Sørg for 'sagsbehandler' er her
+            ->whereHas('dialogs', function ($q) use ($user) {
+                $q->where('type', 'klientinformation')
+                ->whereHas('messages', function ($mq) use ($user) {
+                    $mq->whereNull('read_at')->where('sender_id', '!=', $user->id);
+                });
+            })
+            ->withCount(['dialogs as unread_messages_count' => function ($q) use ($user) {
+                $q->where('type', 'klientinformation')
+                ->whereHas('messages', function ($mq) use ($user) {
+                    $mq->whereNull('read_at')->where('sender_id', '!=', $user->id);
+                });
+            }])
             ->latest()
-            ->take(8)
+            ->take(6)
             ->get();
-    } else {
-        // 🟢 Sørg for at rydde listen fuldstændigt, hvis brugeren IKKE skal modtage notifikationer
-        $this->latestSager = collect();
     }
-
-    // --- Resten af data kører uændret ---
-    $this->sagerWithNewMessages = Sager::with(['debitor', 'kreditor', 'sagsbehandler'])
-        ->whereHas('dialogs', function ($q) use ($user) {
-            $q->where('type', 'klientinformation')
-            ->whereHas('messages', function ($mq) use ($user) {
-                $mq->whereNull('read_at')->where('sender_id', '!=', $user->id);
-            });
-        })
-        ->withCount(['dialogs as unread_messages_count' => function ($q) use ($user) {
-            $q->where('type', 'klientinformation')
-            ->whereHas('messages', function ($mq) use ($user) {
-                $mq->whereNull('read_at')->where('sender_id', '!=', $user->id);
-            });
-        }])
-        ->latest()
-        ->take(6)
-        ->get();
-
-    $unreadQuery = Sager::unreadForUser($user)->with(['debitor', 'kreditor']);
-    $this->unreadSagerCount = $unreadQuery->count();
-    $this->unreadSager = $unreadQuery->latest()->take(5)->get();
-
-    $this->myActiveSagerCount = Sager::whereNull('afsluttet')->count();
-}
 
     public function render()
     {

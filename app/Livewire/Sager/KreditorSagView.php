@@ -17,25 +17,31 @@ class KreditorSagView extends Component
 
     public $aktiv;
 
+    public $stelnr;
+
+    public $tlf;
+
     public $klientinformationUnread = 0;
 
     protected $listeners = ['klientinformationUpdated' => 'refreshBadge'];
 
     public function mount(Sager $sag)
-{
-    $this->sag = $sag->load([
-        'kreditor',
-        'sagsbehandler',
-        'debitor',
-        'dokumenter',
-    ]);
+    {
+        $this->sag = $sag->load([
+            'kreditor',
+            'sagsbehandler',
+            'debitor',
+            'dokumenter',
+            'ktr',    // Hvis KTR er en relation
+            'udlaeg', // Hvis Udlaeg er en relation (fjern hvis det er en rå kolonne)
+        ]);
 
-    $this->isEditMode = true;
+        $this->isEditMode = true;
 
-    $this->refreshBadge();
+        $this->refreshBadge();
 
-    $this->debitor = $this->sag->debitor->first();
-}
+        $this->debitor = $this->sag->debitor->first();
+    }
 
     public function refreshBadge()
     {

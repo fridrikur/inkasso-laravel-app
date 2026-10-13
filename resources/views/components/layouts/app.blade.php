@@ -131,7 +131,13 @@
                         <div>
                             <span class="font-bold text-base tracking-wide text-white block">{{ setting('app_name', 'InkassoApp') }}</span>
                             <span class="text-[10px] text-slate-400 uppercase tracking-wider block">
-                                @role('Admin') Admin Portal @else Medarbejder Portal @endrole
+                                @if(auth()->user()->hasRole('Admin'))
+                                    Admin Portal
+                                @elseif(auth()->user()->hasRole('Kreditor'))
+                                    Kreditor Portal
+                                @else
+                                    Medarbejder Portal
+                                @endif
                             </span>
                         </div>
                     </div>
@@ -567,5 +573,7 @@
         }
     }
     </script>
+    {{-- GLOBAL TOAST CONTAINER (Lytter automatisk på alle dispatches fra Livewire-komponenter) --}}
+<x-toaster />
 </body>
 </html>
