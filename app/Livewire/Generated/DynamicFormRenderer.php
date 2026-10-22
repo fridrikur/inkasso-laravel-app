@@ -12,7 +12,7 @@ use App\Models\Konsulenter;
 use App\Models\Status;
 use App\Models\Bemaerkning;
 use App\Models\afslutning;
-use App\Models\Ktr;
+use App\Models\KTR;
 use App\Livewire\Forms\SagForm;
 use Illuminate\Support\Str;
 
