@@ -444,55 +444,55 @@
     </div>
     <livewire:admin.quick-menu />
     @livewireScripts
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let warningDelay = 14 * 60 * 1000 + 30 * 1000; // 14 minutter og 30 sekunder før modalen vises (15 minutter totalt)
-        let countdownTime = 30; // 30 sekunder nedtælling i selve modalen
-        
-        let warningTimer;
-        let countdownInterval;
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    let warningDelay = 30 * 1000; // 30 sekunder til test
+    let countdownTime = 30; // 30 sekunder nedtælling
+    
+    let warningTimer;
+    let countdownInterval;
 
-        function startTimers() {
-            // Nulstil alt først
-            clearTimeout(warningTimer);
-            clearInterval(countdownInterval);
+    function startTimers() {
+        // Nulstil alt først
+        clearTimeout(warningTimer);
+        clearInterval(countdownInterval);
 
-            // Start timeren, der viser modalen efter 30 sekunder
-            warningTimer = setTimeout(showModal, warningDelay);
+        // Start timeren, der viser modalen efter 30 sekunder
+        warningTimer = setTimeout(showModal, warningDelay);
+    }
+
+    function showModal() {
+        const modal = document.getElementById('session-warning');
+        const countdownEl = document.getElementById('countdown');
+        let timeLeft = countdownTime;
+
+        if (modal) {
+            modal.style.display = 'flex';
         }
 
-        function showModal() {
-            const modal = document.getElementById('session-warning');
-            const countdownEl = document.getElementById('countdown');
-            let timeLeft = countdownTime;
-
-            if (modal) {
-                modal.style.display = 'flex';
+        clearInterval(countdownInterval);
+        countdownInterval = setInterval(() => {
+            timeLeft--;
+            if (countdownEl) {
+                countdownEl.innerText = timeLeft;
             }
 
-            clearInterval(countdownInterval);
-            countdownInterval = setInterval(() => {
-                timeLeft--;
-                if (countdownEl) {
-                    countdownEl.innerText = timeLeft;
-                }
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+                // Send brugeren direkte til logud-ruten på serveren
+                window.location.href = '/internal/force-logout';
+            }
+        }, 1000);
+    }
 
-                if (timeLeft <= 0) {
-                    clearInterval(countdownInterval);
-                    // Send brugeren direkte til logud-ruten på serveren
-                    window.location.href = '/internal/force-logout';
-                }
-            }, 1000);
-        }
+    // Nulstil timeren ved museklik eller tastetryk
+    window.addEventListener('click', startTimers);
+    window.addEventListener('keypress', startTimers);
 
-        // Nulstil timeren ved museklik eller tastetryk
-        window.addEventListener('click', startTimers);
-        window.addEventListener('keypress', startTimers);
-
-        // Start timeren med det samme siden indlæses
-        startTimers();
-    });
-    </script>
+    // Start timeren med det samme siden indlæses
+    startTimers();
+});
+</script>
     {{-- GLOBAL TOAST CONTAINER (Lytter automatisk på alle dispatches fra Livewire-komponenter) --}}
 <x-toaster />
 </body>
