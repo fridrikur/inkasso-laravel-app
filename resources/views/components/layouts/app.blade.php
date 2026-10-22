@@ -446,7 +446,8 @@
     @livewireScripts
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    let warningDelay = 30 * 1000; // 30 sekunder til test
+    
+    let warningDelay = 900 * 1000; // 30 sekunder til test
     let countdownTime = 30; // 30 sekunder nedtælling
     
     let warningTimer;
