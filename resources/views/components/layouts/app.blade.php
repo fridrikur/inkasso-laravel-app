@@ -444,94 +444,55 @@
     </div>
     <livewire:admin.quick-menu />
     @livewireScripts
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-        let idleTimeout = 1 * 60 * 1000; // 1 minut til test (ændres til 15 * 60 * 1000 senere)
-        let countdownInterval;
-        let warningTimer;
-        let isLockedOut = false;
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    let warningDelay = 30 * 1000; // 30 sekunder til test
+    let countdownTime = 30; // 30 sekunder nedtælling
+    
+    let warningTimer;
+    let countdownInterval;
 
-        function resetIdleTimers() {
-            if (isLockedOut) return;
+    function startTimers() {
+        // Nulstil alt først
+        clearTimeout(warningTimer);
+        clearInterval(countdownInterval);
 
-            clearTimeout(warningTimer);
-            clearInterval(countdownInterval);
-
-            const warningModal = document.getElementById('session-warning');
-            const stepWarning = document.getElementById('modal-step-warning');
-            const stepReauth = document.getElementById('modal-step-reauth');
-
-            if (warningModal) warningModal.style.display = 'none';
-            if (stepWarning) stepWarning.style.display = 'block';
-            if (stepReauth) stepReauth.style.display = 'none';
-
-            warningTimer = setTimeout(showWarningModal, idleTimeout - 30000);
-        }
-
-        function showWarningModal() {
-            if (isLockedOut) return;
-
-            const modal = document.getElementById('session-warning');
-            const countdownEl = document.getElementById('countdown');
-            let timeLeft = 30;
-
-            if (modal) modal.style.display = 'flex';
-            if (countdownEl) countdownEl.innerText = timeLeft;
-
-            clearInterval(countdownInterval);
-            countdownInterval = setInterval(() => {
-                timeLeft--;
-                if (countdownEl) countdownEl.innerText = timeLeft;
-
-                if (timeLeft <= 0) {
-                    clearInterval(countdownInterval);
-                    triggerLockout();
-                }
-            }, 1000);
-        }
-
-        function triggerLockout() {
-            isLockedOut = true;
-            clearInterval(countdownInterval);
-            clearTimeout(warningTimer);
-
-            const stepWarning = document.getElementById('modal-step-warning');
-            const stepReauth = document.getElementById('modal-step-reauth');
-            const modal = document.getElementById('session-warning');
-
-            if (stepWarning) stepWarning.style.display = 'none';
-            if (stepReauth) stepReauth.style.display = 'block';
-            if (modal) modal.style.display = 'flex';
-        }
-
-        window.extendSession = function() {
-            if (isLockedOut) return;
-            resetIdleTimers();
-        };
-
-        // Lyttere til inaktivitet
-        window.addEventListener('mousemove', resetIdleTimers);
-        window.addEventListener('mousedown', resetIdleTimers);
-        window.addEventListener('keypress', resetIdleTimers);
-        window.addEventListener('scroll', resetIdleTimers);
-        window.addEventListener('touchstart', resetIdleTimers);
-
-        resetIdleTimers();
-    });
-
-    // Genindlognings-funktion til modalen
-    async function reAuthenticate(event) {
-        event.preventDefault();
-        const btn = document.getElementById('re-auth-btn');
-
-        btn.disabled = true;
-        btn.innerText = 'Sender til login...';
-
-        // Da sessionen er udløbet, genindlæser vi blot siden. 
-        // Laravel vil opdage den manglende session og omdirigere til login.
-        window.location.reload();
+        // Start timeren, der viser modalen efter 30 sekunder
+        warningTimer = setTimeout(showModal, warningDelay);
     }
-    </script>
+
+    function showModal() {
+        const modal = document.getElementById('session-warning');
+        const countdownEl = document.getElementById('countdown');
+        let timeLeft = countdownTime;
+
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+
+        clearInterval(countdownInterval);
+        countdownInterval = setInterval(() => {
+            timeLeft--;
+            if (countdownEl) {
+                countdownEl.innerText = timeLeft;
+            }
+
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+                // Send brugeren direkte til logud-ruten på serveren
+                window.location.href = '/internal/force-logout';
+            }
+        }, 1000);
+    }
+
+    // Nulstil timeren ved museklik eller tastetryk
+    window.addEventListener('click', startTimers);
+    window.addEventListener('keypress', startTimers);
+
+    // Start timeren med det samme siden indlæses
+    startTimers();
+});
+</script>
     {{-- GLOBAL TOAST CONTAINER (Lytter automatisk på alle dispatches fra Livewire-komponenter) --}}
 <x-toaster />
 </body>

@@ -22,7 +22,7 @@
         <x-validation-errors class="mb-4" />
 
         @session('status')
-            <div class="mb-4 font-medium text-sm text-green-600">
+            <div class="mb-4 rounded-md bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200">
                 {{ $value }}
             </div>
         @endsession

@@ -116,6 +116,24 @@ use App\Livewire\Imports\DataImporter;
 use App\Livewire\Admin\SystemSecuritySetup;
 use App\Livewire\Admin\OnboardingWizard; 
 
+Route::get('/internal/force-logout', function (Illuminate\Http\Request $request) {
+    $roleTarget = session('active_role_target', 'Medarbejder');
+    $settings = app(\App\Services\SettingsService::class);
+
+    $redirectUrl = match($roleTarget) {
+        'Admin'    => $settings->get('login_url_admin', '/login/admin'),
+        'Kreditor' => $settings->get('login_url_kreditor', '/login/kreditor'),
+        default    => $settings->get('login_url_medarbejder', '/login/medarbejder'),
+    };
+
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    // Send brugeren til login med en besked i sessionen
+    return redirect($redirectUrl)->with('status', 'Din session er udløbet på grund af inaktivitet. Log venligst ind igen.');
+});
+
 /*
 |--------------------------------------------------------------------------
 | LÅST STANDARD /LOGIN (GIVER 403 FORBIDDEN)
