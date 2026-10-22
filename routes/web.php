@@ -120,19 +120,21 @@ Route::get('/internal/force-logout', function (Illuminate\Http\Request $request)
     $roleTarget = session('active_role_target', 'Medarbejder');
     $settings = app(\App\Services\SettingsService::class);
 
+    // Find den korrekte skjulte login-url ud fra rollen
     $redirectUrl = match($roleTarget) {
         'Admin'    => $settings->get('login_url_admin', '/login/admin'),
         'Kreditor' => $settings->get('login_url_kreditor', '/login/kreditor'),
         default    => $settings->get('login_url_medarbejder', '/login/medarbejder'),
     };
 
+    // Log af på serveren og ryd sessionen totalt
     Auth::logout();
     $request->session()->invalidate();
     $request->session()->regenerateToken();
 
-    // Send brugeren til login med en besked i sessionen
+    // Send brugeren direkte til den skjulte login-side med en statusbesked
     return redirect($redirectUrl)->with('status', 'Din session er udløbet på grund af inaktivitet. Log venligst ind igen.');
-});
+})->middleware(['auth']);
 
 /*
 |--------------------------------------------------------------------------
