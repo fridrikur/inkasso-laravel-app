@@ -446,8 +446,8 @@
     @livewireScripts
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    let warningDelay = 30 * 1000; // 30 sekunder til test
-    let countdownTime = 30; // 30 sekunder nedtælling
+    let warningDelay = 14 * 60 * 1000 + 30 * 1000; // 14 minutter og 30 sekunder før modalen vises (15 minutter totalt)
+    let countdownTime = 30; // 30 sekunder nedtælling i selve modalen
     
     let warningTimer;
     let countdownInterval;
