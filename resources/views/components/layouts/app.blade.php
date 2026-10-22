@@ -445,24 +445,25 @@
     <livewire:admin.quick-menu />
     @livewireScripts
     <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let idleTimeout = 15 * 60 * 1000;
+        document.addEventListener("DOMContentLoaded", function () {
+        let idleTimeout = 1 * 60 * 1000; // 1 minut til test (ændres til 15 * 60 * 1000 senere)
         let countdownInterval;
         let warningTimer;
-        let reauthTimer; // 👈 DEFINERET HER
-        let isLockedOut = false; // Flag der holder styr på om vi er låst ude
+        let isLockedOut = false;
 
         function resetIdleTimers() {
-            // Hvis vi er nået til adgangskode-trinnet, må mus og tastatur IKKE nulstille timeren
             if (isLockedOut) return;
 
             clearTimeout(warningTimer);
-            clearTimeout(reauthTimer);
             clearInterval(countdownInterval);
 
-            document.getElementById('session-warning').style.display = 'none';
-            document.getElementById('modal-step-warning').style.display = 'block';
-            document.getElementById('modal-step-reauth').style.display = 'none';
+            const warningModal = document.getElementById('session-warning');
+            const stepWarning = document.getElementById('modal-step-warning');
+            const stepReauth = document.getElementById('modal-step-reauth');
+
+            if (warningModal) warningModal.style.display = 'none';
+            if (stepWarning) stepWarning.style.display = 'block';
+            if (stepReauth) stepReauth.style.display = 'none';
 
             warningTimer = setTimeout(showWarningModal, idleTimeout - 30000);
         }
@@ -474,12 +475,13 @@
             const countdownEl = document.getElementById('countdown');
             let timeLeft = 30;
 
-            modal.style.display = 'flex';
-            countdownEl.innerText = timeLeft;
+            if (modal) modal.style.display = 'flex';
+            if (countdownEl) countdownEl.innerText = timeLeft;
 
+            clearInterval(countdownInterval);
             countdownInterval = setInterval(() => {
                 timeLeft--;
-                countdownEl.innerText = timeLeft;
+                if (countdownEl) countdownEl.innerText = timeLeft;
 
                 if (timeLeft <= 0) {
                     clearInterval(countdownInterval);
@@ -488,89 +490,46 @@
             }, 1000);
         }
 
-        function extendSession() {
-            if (isLockedOut) return;
-            fetch('/_ignition/health-check', { method: 'GET' }).catch(() => {});
-            resetIdleTimers();
-        }
-
         function triggerLockout() {
-            isLockedOut = true; // Låser systemet, så mus/tastatur ignoreres
+            isLockedOut = true;
             clearInterval(countdownInterval);
             clearTimeout(warningTimer);
 
-            document.getElementById('modal-step-warning').style.display = 'none';
-            document.getElementById('modal-step-reauth').style.display = 'block';
-            document.getElementById('session-warning').style.display = 'flex';
-            
-            // Fjerner det automatiske logout herfra, så sessionen bibeholdes indtil adgangskoden tastes
+            const stepWarning = document.getElementById('modal-step-warning');
+            const stepReauth = document.getElementById('modal-step-reauth');
+            const modal = document.getElementById('session-warning');
+
+            if (stepWarning) stepWarning.style.display = 'none';
+            if (stepReauth) stepReauth.style.display = 'block';
+            if (modal) modal.style.display = 'flex';
         }
 
-        window.extendSession = extendSession;
+        window.extendSession = function() {
+            if (isLockedOut) return;
+            resetIdleTimers();
+        };
 
         // Lyttere til inaktivitet
         window.addEventListener('mousemove', resetIdleTimers);
         window.addEventListener('mousedown', resetIdleTimers);
-        window.addEventListener('keypress', function(e) {
-            resetIdleTimers();
-        });
+        window.addEventListener('keypress', resetIdleTimers);
         window.addEventListener('scroll', resetIdleTimers);
         window.addEventListener('touchstart', resetIdleTimers);
 
         resetIdleTimers();
     });
 
+    // Genindlognings-funktion til modalen
     async function reAuthenticate(event) {
         event.preventDefault();
-        const password = document.getElementById('re-auth-password').value;
-        const errorEl = document.getElementById('re-auth-error');
         const btn = document.getElementById('re-auth-btn');
 
         btn.disabled = true;
-        btn.innerText = 'Logger ind...';
-        errorEl.style.display = 'none';
+        btn.innerText = 'Sender til login...';
 
-        try {
-            // 1. Hent et friskt CSRF-token fra serveren for at undgå mismatch
-            const tokenResponse = await fetch('/sanctum/csrf-cookie', { method: 'GET' }).catch(() => {});
-            
-            // Alternativt kan vi læse cookien hvis Sanctum ikke bruges, 
-            // men vi kan også blot hente forsiden eller en dertiskabelse. 
-            // Den sikreste standard-Laravel metode uden Sanctum er at hente tokenet fra en meta-tag eller opdatere det.
-            
-            // Lad os udlede CSRF-tokenet direkte fra sidens meta-tag, 
-            // eller endnu bedre: lade Laravel modtage det. 
-            // Hvis sessionen er udløbet helt, skal vi gengenerere et nyt token via et hurtigt ancall:
-            
-            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-            let csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '{{ csrf_token() }}';
-
-            // Send login-request afsted med det opdaterede token
-            const response = await fetch('/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: '{{ auth()->user()?->email ?? "" }}',
-                    password: password
-                })
-            });
-
-            if (response.ok) {
-                window.location.reload();
-            } else {
-                const data = await response.json();
-                throw new Error(data.message || 'Forkert adgangskode.');
-            }
-        } catch (error) {
-            errorEl.innerText = error.message || 'CSRF token mismatch eller fejl i adgangskode.';
-            errorEl.style.display = 'block';
-            btn.disabled = false;
-            btn.innerText = 'Lås op og fortsæt';
-        }
+        // Da sessionen er udløbet, genindlæser vi blot siden. 
+        // Laravel vil opdage den manglende session og omdirigere til login.
+        window.location.reload();
     }
     </script>
     {{-- GLOBAL TOAST CONTAINER (Lytter automatisk på alle dispatches fra Livewire-komponenter) --}}

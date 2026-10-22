@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
 use App\Services\SettingsService;
 use App\Livewire\Sager\SagerIndex;
 use App\Livewire\Admin\Dialogfelter\ManageDialogfelter;
@@ -147,26 +148,31 @@ Route::middleware(['ip.whitelist'])->group(function () {
     $redirectToDashboardIfAuthenticated = function () {
         if (auth()->check()) {
             $user = auth()->user();
-            if ($user->hasRole('Kreditor')) {
+            if ($user->hasRole('Kreditor') || $user->hasRole('kreditor')) {
                 return redirect()->route('kreditor.dashboard');
+            } elseif ($user->hasRole('Admin') || $user->hasRole('admin')) {
+                return redirect()->route('admin.dashboard');
             }
-            return redirect()->route('medarbejder.sager.index'); // eller jeres standard medarbejder/admin dashboard
+            return redirect()->route('medarbejder.dashboard'); // <--- Opdateret til medarbejder dashboard
         }
         return null;
     };
 
     Route::get($adminUrl, function () use ($redirectToDashboardIfAuthenticated) {
         if ($redirect = $redirectToDashboardIfAuthenticated()) return $redirect;
+        session(['active_role_target' => 'Admin']);
         return view('auth.login', ['roleTarget' => 'Admin']);
     })->name('login.admin');
 
     Route::get($medarbejderUrl, function () use ($redirectToDashboardIfAuthenticated) {
         if ($redirect = $redirectToDashboardIfAuthenticated()) return $redirect;
+        session(['active_role_target' => 'Medarbejder']);
         return view('auth.login', ['roleTarget' => 'Medarbejder']);
     })->name('login.medarbejder');
 
     Route::get($kreditorUrl, function () use ($redirectToDashboardIfAuthenticated) {
         if ($redirect = $redirectToDashboardIfAuthenticated()) return $redirect;
+        session(['active_role_target' => 'Kreditor']);
         return view('auth.login', ['roleTarget' => 'Kreditor']);
     })->name('login.kreditor');
 });
