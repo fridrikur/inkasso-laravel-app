@@ -43,6 +43,7 @@ use App\Models\HovedKonsulent;
 
 class SagEditor extends Component
 {
+
     use WithFileUploads; // Gør det muligt at uploade filer med Livewire
 
     public string $activeTab = 'stamdata';
@@ -486,7 +487,7 @@ class SagEditor extends Component
             $this->sag->save();
 
             if ($isNew) {
-                $token = Tokens::create([
+                 $token = Tokens::create([
                     'token' => bin2hex(random_bytes(16)),
                     'created_at' => now(),
                 ]);
@@ -591,7 +592,7 @@ class SagEditor extends Component
         } catch (\Exception $e) {
             \Log::error("Sag save error: " . $e->getMessage());
             $this->dispatch('toast', [
-                'message' => 'Der opstod en fejl ved gemning af sagen!',
+                'message' => $e->getMessage(),
                 'type'    => 'error'
             ]);
         }
@@ -599,8 +600,6 @@ class SagEditor extends Component
 
     public function render()
     {
-        $currentsagLocked = false;
-
         // 🟢 Tjek kun for lås, hvis sagen eksisterer og har et ID (undgår fejl ved oprettelse og nulstilling)
         if ($this->sag?->exists && $this->sag->id) {
             $currentsagLocked = SagLock::where('sag_id', $this->sag->id)
@@ -1019,6 +1018,11 @@ class SagEditor extends Component
 
     public function lockcurrentsag(): void
     {
+        if (!$this->sag || !$this->sag->exists || !$this->sag->id) {
+            $this->dispatch('toast', message: 'Du skal gemme sagen, før du kan holde kaffepause.', type: 'warning');
+            return;
+        }
+
         SagLock::updateOrCreate(
             [
                 'sag_id' => $this->sag->id,
@@ -1614,5 +1618,49 @@ class SagEditor extends Component
         $this->syncLockState();
 
         $this->dispatch('toast', message: "Sagen er nu tildelt og låst til {$userName}.", type: 'success');
+    }
+
+    public function fillDummyData()
+    {
+        // 1. Sæt generelle stamdata-felter på formen
+        $this->form->sagsnr = 'TEST-' . rand(1000, 9999);
+        $this->form->hovedstol = '150000';
+        $this->form->navn = 'Test Testesen';
+        $this->form->adresse = 'Testvej 123';
+        $this->form->postnr = '6400';
+        $this->form->by = 'Sønderborg';
+        $this->form->co = 'C/O Testfirma';
+        $this->form->pnr = '123456-7890';
+        
+        // 2. Kontaktfelter (inkl. de nye felter)
+        $this->form->email = 'test1@example.com';
+        $this->form->email2 = 'test2@example.com';
+        $this->form->tlf = '12345678';
+        $this->form->tlf2 = '87654321';
+        $this->form->mobil = '11223344'; // Hvor tlf3 = mobil
+        
+        // 3. Økonomi- og beløbsfelter
+        $this->form->renter = '5000';
+        $this->form->gebyr = '500';
+        $this->form->startgebyr = '250';
+        $this->form->restgaeld_dkg = '155750';
+        $this->form->restgaeld_kreditor = '150000';
+        $this->form->indbetalt = '10000';
+        $this->form->resterende = '145750';
+        $this->form->n_mdlydelse = '1500';
+        
+        // 4. Datoer og tekstfelter
+        $this->form->modtaget = now()->format('Y-m-d');
+        $this->form->fakturadato = now()->format('Y-m-d');
+        $this->form->stelnr = 'STEL123456789';
+        $this->form->fakturanr = 'FKT-9988';
+        $this->form->kort_bemaerkning = 'Dette er en kort testbemærkning.';
+        $this->form->kontakt_bemaerkning = 'Kontakt venligst efter kl. 14.';
+        
+        // Vis en bekræftelse via en toast
+        $this->dispatch('toast', [
+            'message' => 'Dummy-data er indsat i formularen!',
+            'type'    => 'success'
+        ]);
     }
 }

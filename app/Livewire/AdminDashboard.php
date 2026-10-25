@@ -15,6 +15,7 @@ use Spatie\Permission\Models\Role;
 use App\Services\Gdpr\SagerGdprService;
 use App\Services\Dashboard\SagerChartService;
 use Spatie\Activitylog\Models\Activity;
+use App\Models\SagLock;
 
 class AdminDashboard extends Component
 {
@@ -363,5 +364,18 @@ class AdminDashboard extends Component
     public function dismissWelcomeModal(): void
     {
         session()->forget('show_welcome_modal');
+    }
+
+    public function getActiveLocksProperty()
+    {
+        return SagLock::with(['sag', 'user'])
+            ->where('currentsag_locked', 1)
+            ->whereNotNull('locked_at')
+            ->latest('locked_at')
+            ->get()
+            ->reject(function ($lock) {
+                // Sorter GDPR-udløbte sager fra
+                return $lock->sag && $lock->sag->isEligibleForGdprDeletion();
+            });
     }
 }

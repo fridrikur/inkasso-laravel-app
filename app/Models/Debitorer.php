@@ -18,7 +18,9 @@ class Debitorer extends Model
         'adresse',
         'postnr',
         'email',
+        'email2', // 👈 Tilføjet
         'tlf',
+        'tlf2',   // 👈 Tilføjet
         'mobil',
         'adropl',
         'pnr',

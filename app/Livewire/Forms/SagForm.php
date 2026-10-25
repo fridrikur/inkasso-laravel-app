@@ -42,12 +42,24 @@ class SagForm extends Form
     public $kreditor_navn;    
 
     
+    // 🧾 Debitor fields (must exist because they’re used in UpdateDebitor)
+    #[Validate('nullable|string')]
+    public $email;
+    #[Validate('nullable|string')]
+    public $email2;
+
+    #[Validate('nullable|string')]
     public $tlf;
-    public $mobil;
+    #[Validate('nullable|string')]
+    public $tlf2;
+
+    #[Validate('nullable|string')]
+    public $mobil; //samme som tlf#2
+    
     public $postnr;
     public $co;
     public $pnr;
-    public $by = 'Odense';
+    public $by = 'Tryk pil ned for at vælge by eller skriv en værdi i postnummer feltet!';
 
     #[Validate('nullable|string')]
     public $stelnr = '';
@@ -120,11 +132,6 @@ class SagForm extends Form
 
     public array $readonlyFields = [];
 
-
-    // 🧾 Debitor fields (must exist because they’re used in UpdateDebitor)
-    
-    public $email;
-    
     public $kreditor;
     #[Validate('nullable|string')]
     public $kort_bemaerkning='';
@@ -179,23 +186,17 @@ class SagForm extends Form
     {
         if (!$sag) return;
 
-        $debitor = $sag->debitor->first();
+        $debitor = $sag->debitor?->first();
         if (!$debitor) return;
 
         $this->debitor = $debitor;
 
-        // Copy values into dynamic form data array
-        $this->navn = $debitor->navn;
-        $this->adresse = $debitor->adresse;
-        $this->pnr = $debitor->pnr;
-        $this->tlf = $debitor->tlf;
-        $this->mobil = $debitor->mobil;
-        $this->email = $debitor->email;
-        $this->postnr = $debitor->postnr;
-        $this->co = $debitor->co;
-        $this->kontakt_bemaerkning = $debitor->kontakt_bemaerkning;
-        $this->adropl = $debitor->adropl;
-        $this->by = $debitor->by;
+        // Fyld formularen automatisk med felter der matcher
+        $this->fill($debitor->only([
+            'navn', 'adresse', 'pnr', 'tlf', 'tlf2', 'tlf3', 
+            'mobil', 'email', 'email2', 'postnr', 'co', 
+            'kontakt_bemaerkning', 'adropl', 'by'
+        ]));
     }
     
     public function setRelation(string $relation, Sager $sag = null): void
@@ -230,13 +231,17 @@ class SagForm extends Form
         \Log::debug("setRelation: {$relation} => " . ($this->$property ?? 'null') . " from table {$relatedTable}");
     }
 
-    public function updateRelation(string $property, int $sagId): ?array
+    public function updateRelation(string $property, int|Sager|null $sag = null): ?array
     {
-        // Find the Sager object
-        $sag = Sager::find($sagId);
+        // 🟢 Hvis $sag er sendt som et ID (heltal), så hent Sager-modellen
+        if (is_int($sag)) {
+            $sag = Sager::find($sag);
+        } else {
+            $sag = $sag ?? $this->sag;
+        }
 
         if (!$sag) {
-            \Log::debug("updateRelation: No sag found with ID {$sagId}");
+            \Log::debug("updateRelation: No sag found with ID/instance provided");
             return null;
         }
 
@@ -246,7 +251,6 @@ class SagForm extends Form
             return null;
         }
 
-        // 🟢 Brug selve property-navnet direkte (f.eks. 'ktr', 'status', 'udlaeg', etc.)
         $relationMethod = $property;
         
         if (!method_exists($sag, $relationMethod)) {
@@ -273,24 +277,18 @@ class SagForm extends Form
             return;
         }
 
-        // ✅ Load sag with kreditor relation
-        $sag = Sager::with('kreditor')->find($sag->id);
-        if (!$sag || $sag->kreditor->isEmpty()) {
+        // Tjek om relationen allerede er loadet, ellers hent den via relationen (ikke en ny Sager-find)
+        $kreditor = $sag->relationLoaded('kreditor') 
+            ? $sag->kreditor->first() 
+            : $sag->kreditor()->first();
+
+        if (!$kreditor) {
             return;
         }
 
-        // ✅ Get the first related Kreditor
-        $kreditor = $sag->kreditor->first();
-
-        if ($kreditor) {
-            // Optional: eager load counts or other relations
-            $kreditor = Kreditorer::withCount('sager')->find($kreditor->id);
-
-            // ✅ Assign the kreditor ID to the form property
-            $this->kreditor = $kreditor->id;
-            $this->kreditor_lotusID = $kreditor->lotusID;
-            $this->kreditor_navn = $kreditor->navn;    
-        }
+        $this->kreditor = $kreditor->id;
+        $this->kreditor_lotusID = $kreditor->lotusID;
+        $this->kreditor_navn = $kreditor->navn;    
     }
 
    /**
@@ -317,26 +315,47 @@ class SagForm extends Form
         return $this->sag?->sagsbehandler->first()?->id ?? null;
         }
     
-
-    
-    public function CreateDebitor()
+    public function CreateDebitor(): ?int
     {
-        $debitor = Debitorer::create($this->only(['navn', 'adresse','pnr','tlf','mobil','email','postnr','co','kontakt_bemaerkning','adresse_soegning','adropl']));
-        $id = $debitor->id;
-        return $id;
+        // Valider og rens data (så får du alle felter, inkl. de nye, med automatisk)
+        $validated = $this->validateDebitor();
+
+        $debitor = Debitorer::create($validated);
+
+        return $debitor?->id;
     }
    
     public function validateDebitor(): array
     {
         $this->postnr = $this->postnr ?: null;
         $this->tlf    = $this->tlf ?: null;
+        $this->tlf2   = $this->tlf2 ?: null;   // 👈 Tilføjet
         $this->mobil  = $this->mobil ?: null;
         $this->email  = $this->email ?: null;
+        $this->email2 = $this->email2 ?: null; // 👈 Tilføjet
         $this->adresse = $this->adresse ?: null;
         $this->pnr    = $this->pnr ?: null;
         $this->co     = $this->co ?: null;
         $this->kontakt_bemaerkning     = $this->kontakt_bemaerkning ?: null;
         $this->adropl     = $this->adropl ?: null;
+
+        // 🟢 TJEK FOR DUBLETTER PÅ TELEFONNUMRE
+        // 🟢 TJEK FOR DUBLETTER PÅ TELEFONNUMRE (Inkl. mobil/tlf3)
+        $phones = array_filter([$this->tlf, $this->tlf2, $this->mobil]);
+        if (count($phones) !== count(array_unique($phones))) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'mobil' => 'Du kan ikke angive det samme telefonnummer flere gange.',
+            ]);
+        }
+
+        // 🟢 TJEK FOR DUBLETTER PÅ E-MAILS
+        $emails = array_filter([$this->email, $this->email2]);
+        if (count($emails) !== count(array_unique($emails))) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email2' => 'Du kan ikke angive den samme e-mailadresse flere gange.',
+            ]);
+        }
+
         return $this->validate([
             'navn'    => 'required|string|max:255',
             'adresse' => 'nullable|string|max:255',
@@ -344,129 +363,47 @@ class SagForm extends Form
             'postnr'  => 'nullable|max:10',
             'pnr'     => 'nullable|max:50',
             'tlf'     => 'nullable|regex:/^[0-9]+$/|max:50',
+            'tlf2'    => 'nullable|regex:/^[0-9]+$/|max:50', // 👈 Tilføjet
             'mobil'   => 'nullable|regex:/^[0-9]+$/|max:50',
             'email'   => 'nullable|email|max:255',
+            'email2'  => 'nullable|email|max:255',           // 👈 Tilføjet
             'kontakt_bemaerkning'  => 'nullable|string|max:255',
-            'adropl'     => 'nullable|date|max:255',
+            'adropl'     => 'nullable|date',                // (Bemærk: fjern '|max:255' på en dato-regel, da det kan give advarsler)
         ]);
     }
 
-
     public function UpdateDebitor(?Sager $sag): ?int
-{
-    if (!$sag) {
-        \Log::error('UpdateDebitor called with null $sag');
-        return null;
-    }
-
-    // Validate debitor data
-    $validated = $this->validateDebitor();
-
-    // Load related Debitor(s)
-    $sag->load('debitor');
-    $existingDebitor = $sag->debitor->first();
-
-    if ($existingDebitor) {
-        $existingDebitor->update($validated);
-        $sag->debitor()->sync([$existingDebitor->id]); // sync ensures only this debitor
-        return $existingDebitor->id;
-    }
-
-    // Create a new Debitor if none exists
-    $newDebitor = Debitorer::create($validated);
-
-    if (!$newDebitor) {
-        \Log::error('Failed to create new Debitor');
-        return null;
-    }
-
-    $sag->debitor()->sync([$newDebitor->id]);
-    return $newDebitor->id;
-}
-
-    public function SelectStatus()
     {
-        // Hvis der er valgt en status, tjek om den findes (inkl. antal sager via 'sager'-relationen)
-        if (!empty($this->status)) {
-            $status = Status::withCount('sager')->find($this->status);
-            
-            if ($status) {
-                return $this->status = $status->id;
-            }
+        if (!$sag) {
+            \Log::error('UpdateDebitor called with null $sag');
+            return null;
         }
 
-        // Fallback: Hvis intet er valgt, tag den første i tabellen
-        $fallbackStatus = Status::withCount('sager')->first();
+        // Validate debitor data
+        $validated = $this->validateDebitor();
 
-        if ($fallbackStatus) {
-            return $this->status = $fallbackStatus->id;
+        // Load related Debitor(s)
+        $sag->load('debitor');
+        $existingDebitor = $sag->debitor->first();
+
+        if ($existingDebitor) {
+            $existingDebitor->update($validated);
+            $sag->debitor()->sync([$existingDebitor->id]); // sync ensures only this debitor
+            return $existingDebitor->id;
         }
 
-        return null;
+        // Create a new Debitor if none exists
+        $newDebitor = Debitorer::create($validated);
+
+        if (!$newDebitor) {
+            \Log::error('Failed to create new Debitor');
+            return null;
+        }
+
+        $sag->debitor()->sync([$newDebitor->id]);
+        return $newDebitor->id;
     }
-    
-    
 
-
-    public function SelectBemaerkning(){
-        $bemaerkning_id = $this->bemaerkning;
-        if($bemaerkning_id != null){
-            $bemaerkning = bemaerkning::withCount('sagerbemaerkning')->where('id',$bemaerkning_id)->first();
-            $this->bemaerkning = $bemaerkning;
-            $this->bemaerkning = $bemaerkning->id;
-            return($this->bemaerkning = $bemaerkning->id);
-        }
-        else{
-            $bemaerkning = bemaerkning::withCount('sagerbemaerkning')->first();
-            if($bemaerkning != null){
-                $find_bemaerkning = $this->bemaerkning = bemaerkning::find($bemaerkning->id);
-                $this->bemaerkning = $find_bemaerkning->id;
-                return($this->bemaerkning = $find_bemaerkning->id);
-            }
-        }
-    }
-    
-    
-    public function Selectafslutning(){
-        $afslutning_id = $this->afslutning;
-        if($afslutning_id != null){
-            $afslutning = afslutning::withCount('afslutning')->where('id',$afslutning_id)->first();
-            $this->afslutning = $afslutning;
-            $this->afslutning = $afslutning->id;
-            return($this->afslutning = $afslutning->id);
-        }
-        else{
-            $afslutning = afslutning::withCount('afslutning')->first();
-            if($afslutning != null){
-                $find_afslutning = $this->afslutning = afslutning::find($afslutning->id);
-                $this->afslutning = $find_afslutning->id;
-                return($this->afslutning = $find_afslutning->id);
-            }
-        }
-    }
-    
-    
-
-
-
-
-    public function SelectKtr(){
-        $ktr_id = $this->ktr;
-        if($ktr_id != null){
-            $ktr = ktr::withCount('ktr')->where('id',$ktr_id)->first();
-            $this->ktr = $ktr;
-            $this->ktr = $ktr->id;
-            return($this->ktr = $ktr->id);
-        }
-        else{
-            $ktr = ktr::withCount('ktr')->first();
-            if($ktr != null){
-                $find_ktr = $this->ktr = ktr::find($ktr->id);
-                $this->ktr = $find_ktr->id;
-                return($this->ktr = $find_ktr->id);
-            }
-        }
-    }
     
     /**
      * Called from SagEditor — applies validated data to model

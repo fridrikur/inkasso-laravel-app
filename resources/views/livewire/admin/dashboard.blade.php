@@ -289,7 +289,104 @@
                             </div>
                         </div>
 
-                        {{-- Lazy section loader --}}
+                        {{-- BIRDVIEW: Låste sager & Overtagelses-anmodninger side om side --}}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                            
+                            {{-- Sektion: Aktive låste sager --}}
+                            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+                                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                        Låste sager (Under behandling)
+                                    </h3>
+                                    <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
+                                        {{ $this->activeLocks->count() }} aktive
+                                    </span>
+                                </div>
+
+                                <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
+                                    @forelse($this->activeLocks as $lock)
+                                        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3" wire:key="lock-view-{{ $lock->id }}">
+                                            <div class="space-y-1">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                                                        ID: {{ $lock->sag_id }}
+                                                    </span>
+                                                    <span class="text-xs font-semibold text-slate-800 truncate max-w-[180px]">
+                                                        {{ $lock->sag?->titel ?? 'Uden titel' }}
+                                                    </span>
+                                                </div>
+                                                <p class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                                                    <span>Låst af: <strong class="text-slate-700">{{ $lock->user?->name ?? 'Ukendt bruger' }}</strong></span>
+                                                </p>
+                                            </div>
+
+                                            <div class="text-right shrink-0">
+                                                <span class="text-[10px] font-medium text-slate-400 block" title="{{ $lock->locked_at }}">
+                                                    {{ $lock->locked_at?->diffForHumans() ?? 'Ukendt tid' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="text-center py-8 text-slate-400 text-xs">
+                                            Ingen gyldige eller aktive låse fundet.
+                                        </div>
+                                    @endforelse
+                                </div>
+                            </div>
+
+                            {{-- Sektion: Aktive overtagelses-anmodninger --}}
+                            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+                                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                                        Aktive overtagelses-anmodninger
+                                    </h3>
+                                    <span class="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
+                                        {{ \App\Models\SagEditRequest::where('status', 'pending')->count() }} udestående
+                                    </span>
+                                </div>
+
+                                <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
+                                    @php
+                                        $pendingReqs = \App\Models\SagEditRequest::where('status', 'pending')
+                                            ->with(['sag', 'requester'])
+                                            ->latest()
+                                            ->get();
+                                    @endphp
+
+                                    @forelse($pendingReqs as $req)
+                                        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3" wire:key="req-view-{{ $req->id }}">
+                                            <div class="space-y-1">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
+                                                        Sag ID: {{ $req->sag_id }}
+                                                    </span>
+                                                    <span class="text-xs font-semibold text-slate-800 truncate max-w-[150px]">
+                                                        {{ $req->sag?->titel ?? 'Uden titel' }}
+                                                    </span>
+                                                </div>
+                                                <p class="text-[11px] text-slate-500">
+                                                    Ønskes overtaget af: <strong class="text-slate-700">{{ $req->requester?->name ?? 'Kollega' }}</strong>
+                                                </p>
+                                            </div>
+                                            <div class="text-right shrink-0">
+                                                <span class="text-[10px] text-slate-400">
+                                                    {{ $req->created_at?->diffForHumans() }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="text-center py-8 text-slate-400 text-xs">
+                                            Ingen aktive overtagelses-anmodninger lige nu.
+                                        </div>
+                                    @endforelse
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {{-- Lazy section loader (Flyttet helt ned i bunken) --}}
                         <div class="rounded-2xl border border-slate-200 bg-white p-5">
                             <div class="mb-4 flex items-center justify-between">
                                 <div>

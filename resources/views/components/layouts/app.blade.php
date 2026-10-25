@@ -496,5 +496,6 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
     {{-- GLOBAL TOAST CONTAINER (Lytter automatisk på alle dispatches fra Livewire-komponenter) --}}
 <x-toaster />
+@livewire('active-locks-manager')
 </body>
 </html>
