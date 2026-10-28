@@ -11,13 +11,15 @@ use App\Models\Postnr;
 use Illuminate\Support\Facades\Auth;
 use App\Livewire\Forms\SagForm;
 use App\Models\SagFieldSetting;
-use App\Models\KTR;
+
 use App\Models\udlaeg;
 use Livewire\WithFileUploads;
 
 class KreditorSagEditor extends Component
 {
     use WithFileUploads;
+
+    public $klientinformation = '';
     
     public $newDokument;
     
@@ -55,7 +57,7 @@ class KreditorSagEditor extends Component
         'n_mdlydelse' => 'Normal ydelse',
         'indbetalt'   => 'Indbetalt',
         'aktiv'       => 'Aktiv',         
-        'cvr'         => 'CVR',
+        'pnr'         => 'CVR/CPR',
     ];
 
     protected $listeners = ['closeModal' => 'closeModal'];
@@ -91,12 +93,9 @@ class KreditorSagEditor extends Component
                 'ktr',
                 'udlaeg',
                 'hovedstol',
-                'renter',
-                'gebyr',
                 'n_mdlydelse',
-                'indbetalt',
                 'aktiv',
-                'cvr'
+                'pnr'
             ];
         }
 
@@ -173,6 +172,7 @@ class KreditorSagEditor extends Component
         }
     }
 
+
     public function confirmSave()
     {
         try {
@@ -180,11 +180,24 @@ class KreditorSagEditor extends Component
             $data = $this->sanitizeFormData();
             $data['modtaget'] = now();
 
-            // 1. Opret sagen først, så vi har et sag->id
+            // 1. Opret sagen først
             $this->sag = Sager::create($data);
 
             if ($this->sag->exists) {
-                // 2. Hvis der er valgt et dokument, så brug din upload-logik her!
+                // 2. Opret klientinformation som første dialog-besked, hvis feltet er udfyldt
+                if (!empty($this->klientinformation)) {
+                    $dialog = $this->sag->dialogs()->firstOrCreate([
+                        'type' => 'klientinformation',
+                    ]);
+
+                    $dialog->messages()->create([
+                        'sender_id' => auth()->id(),
+                        'tekst'     => $this->klientinformation,
+                        'dato'      => now(),
+                    ]);
+                }
+
+                // 3. Håndter øvrige relationer (dokumenter, debitor, sagsbehandler mv.)
                 if ($this->newDokument) {
                     $file = $this->newDokument;
                     $path = $file->store('dokumenter/' . $this->sag->id, 'public');
@@ -198,7 +211,6 @@ class KreditorSagEditor extends Component
                     ]);
                 }
 
-                // Kreditor, Sagsbehandler, Debitor og øvrige relationer...
                 $kreditorId = $this->form->UpdateKreditor($this->sag);
                 if ($kreditorId) {
                     $this->sag->kreditor()->sync([$kreditorId]);

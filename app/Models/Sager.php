@@ -432,4 +432,16 @@ class Sager extends Model
     {
         return $this->status()->first();
     }
+
+    // Henter automatisk den første sagsbehandler uden rå PHP i Blade
+    public function getFirstSagsbehandlerAttribute()
+    {
+        return $this->sagsbehandler->first();
+    }
+
+    // Henter automatisk den første konsulent knyttet til sagen
+    public function getFirstKonsulentAttribute()
+    {
+        return $this->konsulent->first();
+    }
 }

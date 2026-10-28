@@ -97,7 +97,7 @@
             @error('form.renter') <span class="error">{{ $message }}</span> @enderror
             </div>
             <div>
-                <label for="gebyr">Gebyr</label>
+                <label for="gebyr">Gebyrssssssssssss</label>
                 <div><input type="text" class="addThis field-sizing-content md:field-sizing-fixed " placeholder="gebyr" name="gebyr" id="gebyr" wire:model="form.gebyr" x-mask:dynamic="$money($input, ',')" wire:change="$js.addThis('gebyr')" x-format-number></div>
                 @error('form.gebyr') <span class="error">{{ $message }}</span> @enderror
             </div>

@@ -107,7 +107,7 @@ FORM MODE
                     </select>
 
                 {{-- Danish number fields --}}
-                @elseif(in_array($field, ['hovedstol', 'renter', 'gebyr', 'indbetalt', 'N_ydelse']))
+                @elseif(in_array($field, ['hovedstol', 'N_ydelse']))
                     <input
                         type="text"
                         wire:model.blur="form.{{ $field }}"
@@ -129,6 +129,19 @@ FORM MODE
             </div>
 
         @endforeach
+    </div>
+
+    {{-- KLIENTINFORMATION / DIALOG VED OPRETTELSE --}}
+    <div class="mt-4">
+        <label class="block text-sm font-medium">
+            Klientinformation / Dialog med DKG
+        </label>
+        <textarea
+            wire:model="klientinformation"
+            rows="3"
+            class="mt-1 w-full rounded-md border-gray-300"
+            placeholder="Skriv eventuelle indledende oplysninger eller bemærkninger til sagsbehandleren her..."
+        ></textarea>
     </div>
 
     {{-- Upload dokument ved oprettelse --}}
@@ -214,7 +227,7 @@ REVIEW MODE
 
     {{-- Dynamiske felter med tekst-opslag for ktr og udlaeg --}}
     @foreach($allowedFields as $field)
-        @if(!in_array($field, ['hovedstol', 'renter', 'gebyr', 'indbetalt', 'N_ydelse']))
+        @if(!in_array($field, ['hovedstol', 'N_ydelse']))
             <div class="review-row">
                 <div class="review-label">
                     {{ $fieldLabels[$field] ?? ucfirst($field) }}
@@ -232,6 +245,13 @@ REVIEW MODE
         @endif
     @endforeach
 
+    @if(!empty($klientinformation))
+        <div class="review-row">
+            <div class="review-label">Klientinformation</div>
+            <div class="review-value whitespace-pre-wrap">{{ $klientinformation }}</div>
+        </div>
+    @endif
+
     <h3 class="review-section">Økonomi</h3>
 
     <div class="review-row">
@@ -240,23 +260,8 @@ REVIEW MODE
     </div>
 
     <div class="review-row">
-        <div class="review-label">Renter</div>
-        <div class="review-value">{{ $form->renter ?? '0,00' }} kr.</div>
-    </div>
-
-    <div class="review-row">
-        <div class="review-label">Gebyr</div>
-        <div class="review-value">{{ $form->gebyr ?? '0,00' }} kr.</div>
-    </div>
-
-    <div class="review-row">
         <div class="review-label">Nye ydelse</div>
         <div class="review-value">{{ $form->N_ydelse ?? '0,00' }} kr.</div>
-    </div>
-
-    <div class="review-row">
-        <div class="review-label">Indbetalt</div>
-        <div class="review-value">{{ $form->indbetalt ?? '0,00' }} kr.</div>
     </div>
 
     {{-- Vis vedhæftet dokument under review, hvis der er valgt et --}}
@@ -273,6 +278,18 @@ REVIEW MODE
     @endif
 
 </div>
+
+{{-- HVIS SAGEN ER OPRETTET / KAN VISES MED DIALOG STUB --}}
+@if(isset($sag) && $sag->exists)
+    <div class="mt-6 bg-white p-5 rounded-xl border border-slate-200">
+        <h3 class="text-sm font-bold text-slate-700 mb-3">Dialog med DKG</h3>
+        @include('components.sag-tabs.klientinformation-tab', [
+            'sag' => $sag,
+            'klientinformationUnread' => $klientinformationUnread ?? 0,
+            'label' => 'Dialog med DKG'
+        ])
+    </div>
+@endif
 
 <div class="mt-6 flex gap-4">
     <button
@@ -328,7 +345,7 @@ SUCCESS MODAL
 
                 {{-- Dynamiske felter --}}
                 @foreach($allowedFields as $field)
-                    @if(!in_array($field, ['hovedstol', 'renter', 'gebyr', 'indbetalt', 'N_ydelse']))
+                    @if(!in_array($field, ['hovedstol', 'N_ydelse']))
                         <div class="review-row">
                             <div class="review-label">
                                 {{ $fieldLabels[$field] ?? ucfirst($field) }}
@@ -353,23 +370,8 @@ SUCCESS MODAL
                 </div>
 
                 <div class="review-row">
-                    <div class="review-label">Renter</div>
-                    <div class="review-value">{{ $form->renter ?? '0,00' }} kr.</div>
-                </div>
-
-                <div class="review-row">
-                    <div class="review-label">Gebyr</div>
-                    <div class="review-value">{{ $form->gebyr ?? '0,00' }} kr.</div>
-                </div>
-
-                <div class="review-row">
                     <div class="review-label">Nye ydelse</div>
                     <div class="review-value">{{ $form->N_ydelse ?? '0,00' }} kr.</div>
-                </div>
-
-                <div class="review-row">
-                    <div class="review-label">Indbetalt</div>
-                    <div class="review-value">{{ $form->indbetalt ?? '0,00' }} kr.</div>
                 </div>
 
             </div>

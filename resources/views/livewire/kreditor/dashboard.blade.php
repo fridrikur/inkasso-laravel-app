@@ -28,7 +28,7 @@
     </div>
 
     {{-- HOVED NØGLETAL (KPI CARDS) --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         
         {{-- AKTIVE SAGER --}}
         <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex items-center justify-between">
@@ -39,20 +39,6 @@
             </div>
             <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg">
                 📂
-            </div>
-        </div>
-
-        {{-- SAMLET HOVEDSTOL --}}
-        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Aktiv hovedstol</p>
-                <p class="text-2xl font-bold text-emerald-600 mt-1">
-                    {{ number_format($this->totalHovedstol, 2, ',', '.') }} kr.
-                </p>
-                <p class="text-[11px] text-slate-400 mt-0.5">Tilgodehavende i alt</p>
-            </div>
-            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">
-                💰
             </div>
         </div>
 
@@ -68,8 +54,8 @@
             </div>
         </div>
 
-        {{-- HURTIG SØGNING / SKIFT --}}
-        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
+        {{-- HURTIG FILTRERING --}}
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between sm:col-span-2 lg:col-span-1">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Hurtig filtrering</p>
             <div class="flex items-center gap-2 mt-2">
                 <a href="{{ route('kreditor.sager.index') }}?status=aktive" class="flex-1 py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition text-center">
@@ -86,7 +72,7 @@
 
     </div>
 
-    {{-- SØGEBAR OG HURTIGGENVEJE --}}
+    {{-- SØGEBAR --}}
     <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm">
         <form action="{{ route('kreditor.search') }}" method="GET" class="flex gap-3">
             <div class="relative flex-1">
@@ -126,41 +112,38 @@
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider text-[10px] bg-slate-50/30">
-                                <th class="py-3 px-6">Sagsnr.</th>
-                                <th class="py-3 px-6">Debitor</th>
-                                <th class="py-3 px-6">Hovedstol</th>
-                                <th class="py-3 px-6">Oprettet</th>
-                                <th class="py-3 px-6">Status</th>
-                                <th class="py-3 px-6 text-right">Handling</th>
+                                <th class="py-3 px-5 sm:px-6">Sagsnr.</th>
+                                <th class="py-3 px-5 sm:px-6">Debitor</th>
+                                <th class="py-3 px-5 sm:px-6">Kontrakttype</th>
+                                <th class="py-3 px-5 sm:px-6">Modtaget</th>
+                                <th class="py-3 px-5 sm:px-6 text-right">Handling</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             @forelse($this->recentSager as $sag)
                                 <tr class="hover:bg-slate-50/60 transition">
-                                    <td class="py-3.5 px-6 font-bold text-slate-900 font-mono">
+                                    {{-- SAGSNR --}}
+                                    <td class="py-3.5 px-5 sm:px-6 font-bold text-slate-900 font-mono">
                                         #{{ $sag->sagsnr }}
                                     </td>
-                                    <td class="py-3.5 px-6 font-medium">
+
+                                    {{-- DEBITOR --}}
+                                    <td class="py-3.5 px-5 sm:px-6 font-medium">
                                         {{ $sag->debitor->first()?->navn ?? 'Ingen debitor' }}
                                     </td>
-                                    <td class="py-3.5 px-6 font-semibold text-slate-900">
-                                        {{ number_format($sag->hovedstol, 2, ',', '.') }} kr.
+
+                                    {{-- KONTRAKTTYPE --}}
+                                    <td class="py-3.5 px-5 sm:px-6 text-slate-600">
+                                        {{ $sag->ktr->first()?->tekst ?? '-' }}
                                     </td>
-                                    <td class="py-3.5 px-6 text-slate-400">
-                                        {{ $sag->created_at->format('d/m-Y') }}
+
+                                    {{-- MODTAGET --}}
+                                    <td class="py-3.5 px-5 sm:px-6 text-slate-400">
+                                        {{ optional($sag->modtaget ?? $sag->created_at)->format('d/m-Y') }}
                                     </td>
-                                    <td class="py-3.5 px-6">
-                                        @if($sag->afsluttet)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold text-[10px]">
-                                                Afsluttet
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold text-[10px]">
-                                                Aktiv
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td class="py-3.5 px-6 text-right">
+
+                                    {{-- HANDLING --}}
+                                    <td class="py-3.5 px-5 sm:px-6 text-right">
                                         <a 
                                             href="{{ route('kreditor.sag.view', $sag->id) }}" 
                                             class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 text-indigo-600 font-bold text-[11px] transition"
@@ -171,7 +154,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="py-8 text-center text-slate-400 italic">
+                                    <td colspan="5" class="py-8 text-center text-slate-400 italic">
                                         Du har ingen sager registreret i systemet endnu.
                                     </td>
                                 </tr>
@@ -187,7 +170,7 @@
             <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                        Tilnyttede sagsbehandlere
+                        Tilknyttede sagsbehandlere
                     </h2>
                     <span class="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
                         {{ $kreditor->sagsbehandlere->count() }}
@@ -222,7 +205,7 @@
                             </div>
                             <div class="text-[11px] text-slate-500">
                                 @if($sb->email) <span>{{ $sb->email }}</span> @endif
-                                @if($sb->tlf) <span class="ml-2">• {{ $sb->tlf }}</span> @endif
+                                @if($sb->tlf) <span class="ml-2">{{ $sb->tlf }}</span> @endif
                             </div>
                         </div>
                     @empty

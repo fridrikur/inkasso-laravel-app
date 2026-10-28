@@ -82,11 +82,100 @@
         </div>
 
         <div>
-            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Sagsbehandler</label>
-            <p class="mt-1 font-semibold text-slate-800">
-                {{ $sag->sagsbehandler->first()?->navn ?? '-' }}
-            </p>
-        </div>
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Sagsbehandler</label>
+        
+        @if($sag->first_sagsbehandler)
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2">
+                {{-- Navn --}}
+                <div class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <span>👤</span>
+                    <span>{{ $sag->first_sagsbehandler->navn }}</span>
+                </div>
+
+                <div class="grid grid-cols-1 gap-1 text-xs text-slate-600 border-t border-slate-100 pt-2">
+                    {{-- E-mail --}}
+                    @if($sag->first_sagsbehandler->email)
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-400">✉️</span>
+                            <a href="mailto:{{ $sag->first_sagsbehandler->email }}" class="text-indigo-600 hover:underline">
+                                {{ $sag->first_sagsbehandler->email }}
+                            </a>
+                        </div>
+                    @endif
+
+                    {{-- Telefon --}}
+                    @if($sag->first_sagsbehandler->tlf)
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-400">📞</span>
+                            <a href="tel:{{ $sag->first_sagsbehandler->tlf }}" class="hover:underline">
+                                {{ $sag->first_sagsbehandler->tlf }}
+                            </a>
+                        </div>
+                    @endif
+
+                    {{-- Mobil --}}
+                    @if($sag->first_sagsbehandler->mobil)
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-400">📱</span>
+                            <a href="tel:{{ $sag->first_sagsbehandler->mobil }}" class="hover:underline">
+                                {{ $sag->first_sagsbehandler->mobil }}
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @else
+            <p class="mt-1 font-semibold text-slate-400">-</p>
+        @endif
+    </div>
+
+    <div>
+    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">DKG sagsbehandler</label>
+    
+        @if($sag->first_konsulent)
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2">
+                {{-- Navn --}}
+                <div class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <span>👤</span>
+                    <span>{{ $sag->first_konsulent->navn }}</span>
+                </div>
+
+                <div class="grid grid-cols-1 gap-1 text-xs text-slate-600 border-t border-slate-100 pt-2">
+                    {{-- E-mail --}}
+                    @if($sag->first_konsulent->email)
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-400">✉️</span>
+                            <a href="mailto:{{ $sag->first_konsulent->email }}" class="text-indigo-600 hover:underline">
+                                {{ $sag->first_konsulent->email }}
+                            </a>
+                        </div>
+                    @endif
+
+                    {{-- Telefon --}}
+                    @if($sag->first_konsulent->tlf)
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-400">📞</span>
+                            <a href="tel:{{ $sag->first_konsulent->tlf }}" class="hover:underline">
+                                {{ $sag->first_konsulent->tlf }}
+                            </a>
+                        </div>
+                    @endif
+
+                    {{-- Mobil --}}
+                    @if($sag->first_konsulent->mobil)
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-400">📱</span>
+                            <a href="tel:{{ $sag->first_konsulent->mobil }}" class="hover:underline">
+                                {{ $sag->first_konsulent->mobil }}
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @else
+            <p class="mt-1 font-semibold text-slate-400">-</p>
+        @endif
+    </div>
 
         <div>
             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Modtaget dato</label>

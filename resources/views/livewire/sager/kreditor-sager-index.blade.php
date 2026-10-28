@@ -59,7 +59,7 @@
             @endif
         </div>
 
-        {{-- 🟢 FUNNEL / STATUS FANER (TRAGT) --}}
+        {{-- 🟢 FUNNEL / STATUS FANER (TRAGT) MED TÆLLERE --}}
         <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             <button
                 type="button"
@@ -67,6 +67,9 @@
                 class="px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-2 {{ ($statusFilter ?? 'all') === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
             >
                 <span>📋 Alle sager</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($statusFilter ?? 'all') === 'all' ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-600' }}">
+                    {{ $countAll ?? 0 }}
+                </span>
             </button>
 
             <button
@@ -75,6 +78,20 @@
                 class="px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-2 {{ ($statusFilter ?? 'all') === 'active' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
             >
                 <span>🟢 Aktive sager</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($statusFilter ?? 'all') === 'active' ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-100 text-slate-600' }}">
+                    {{ $countActive ?? 0 }}
+                </span>
+            </button>
+
+            <button
+                type="button"
+                wire:click="$set('statusFilter', 'pending')"
+                class="px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-2 {{ ($statusFilter ?? 'all') === 'pending' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
+            >
+                <span>⏳ Afventer DKG</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($statusFilter ?? 'all') === 'pending' ? 'bg-amber-700 text-amber-100' : 'bg-slate-100 text-slate-600' }}">
+                    {{ $countPending ?? 0 }}
+                </span>
             </button>
 
             <button
@@ -83,6 +100,9 @@
                 class="px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-2 {{ ($statusFilter ?? 'all') === 'closed' ? 'bg-slate-900 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
             >
                 <span>🏁 Afsluttede sager</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($statusFilter ?? 'all') === 'closed' ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-600' }}">
+                    {{ $countClosed ?? 0 }}
+                </span>
             </button>
         </div>
 
@@ -103,8 +123,8 @@
                         <tr class="border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider text-[10px] bg-slate-50/30">
                             <th class="py-3 px-6">Sagsnr.</th>
                             <th class="py-3 px-6">Debitor</th>
-                            <th class="py-3 px-6">Hovedstol</th>
-                            <th class="py-3 px-6">Oprettet</th>
+                            <th class="py-3 px-6">Kontrakttype</th>
+                            <th class="py-3 px-6">Modtaget</th>
                             <th class="py-3 px-6">Status</th>
                             <th class="py-3 px-6 text-right">Handling</th>
                         </tr>
@@ -115,29 +135,67 @@
                                 id="sag-row-{{ $sag->id }}"
                                 class="hover:bg-slate-50/60 transition"
                             >
+                                {{-- SAGSNR --}}
                                 <td class="py-3.5 px-6 font-bold text-slate-900 font-mono">
                                     #{{ $sag->sagsnr }}
                                 </td>
+
+                                {{-- DEBITOR --}}
                                 <td class="py-3.5 px-6 font-medium">
                                     {{ $sag->debitor->first()?->navn ?? 'Ingen debitor' }}
                                 </td>
-                                <td class="py-3.5 px-6 font-semibold text-slate-900">
-                                    {{ number_format($sag->hovedstol, 2, ',', '.') }} kr.
+
+                                {{-- KONTRAKTTYPE --}}
+                                <td class="py-3.5 px-6 text-slate-600">
+                                    {{ $sag->ktr->first()?->tekst ?? '-' }}
                                 </td>
+
+                                {{-- MODTAGET --}}
                                 <td class="py-3.5 px-6 text-slate-400">
-                                    {{ optional($sag->created_at)->format('d/m-Y') }}
+                                    {{ optional($sag->modtaget ?? $sag->created_at)->format('d/m-Y') }}
                                 </td>
-                                <td class="py-3.5 px-6">
-                                    @if($sag->afsluttet)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold text-[10px]">
-                                            Afsluttet
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold text-[10px]">
-                                            Aktiv
-                                        </span>
-                                    @endif
-                                </td>
+
+                                {{-- STATUS (Samlet og professionelt udtryk for afslutning, dato og bemærkning med labels) --}}
+<td class="py-3.5 px-6">
+    <div class="space-y-1 text-xs text-slate-700">
+        
+        {{-- 1. Afslutningsårsag med label --}}
+        @if($sag->afslutning->isNotEmpty())
+            <div>
+                <span class="text-slate-400 font-medium">Afslutning:</span> 
+                <span class="text-slate-900 font-semibold">{{ $sag->afslutning->first()->tekst }}</span>
+            </div>
+        @elseif($sag->afsluttet)
+            <div>
+                <span class="text-slate-400 font-medium">Status:</span> 
+                <span class="text-slate-600 font-semibold">Afsluttet</span>
+            </div>
+        @else
+            <div>
+                <span class="text-slate-400 font-medium">Status:</span> 
+                <span class="text-emerald-700 font-medium">Aktiv</span>
+            </div>
+        @endif
+
+        {{-- 2. Afsluttet dato med label (hvis den findes) --}}
+        @if($sag->afsluttet)
+            <div class="text-[11px] text-slate-500">
+                <span class="text-slate-400">Afsluttet:</span> 
+                <span class="font-mono text-slate-600">{{ \Carbon\Carbon::parse($sag->afsluttet)->format('d/m-Y') }}</span>
+            </div>
+        @endif
+
+        {{-- 3. Bemærkning med label (hvis den er udfyldt) --}}
+        @if($sag->bemaerkning->isNotEmpty() && $sag->bemaerkning->first()->tekst !== 'Ingen')
+            <div class="text-[11px] text-slate-500 max-w-xs truncate" title="{{ $sag->bemaerkning->first()->tekst }}">
+                <span class="text-slate-400">Bemærkning:</span> {{ $sag->bemaerkning->first()->tekst }}
+            </div>
+        @endif
+
+    </div>
+</td>
+
+                                {{-- HANDLING --}}
                                 <td class="py-3.5 px-6 text-right">
                                     <a 
                                         href="{{ route('kreditor.sag.view', $sag->id) }}" 
