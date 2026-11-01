@@ -50,11 +50,11 @@ class="space-y-3 relative">
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+                <p class="text-sm font-bold text-indigo-900 flex items-center gap-1.5">
                     <span>Note gemt & kopi oprettet i Klientinformation</span>
                     <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                 </p>
-                <p class="text-[11px] text-indigo-700">
+                <p class="text-xs text-indigo-700">
                     Kreditor kan nu se beskeden direkte under Klientinformation-fanen.
                 </p>
             </div>
@@ -71,11 +71,11 @@ class="space-y-3 relative">
 
     {{-- OVERSKRIFT & DROPDOWN --}}
     <div class="flex items-center justify-between">
-        <label class="text-xs font-bold text-slate-700">Skriv intern historik / note</label>
+        <label class="text-sm font-bold text-slate-700">Skriv intern historik / note</label>
 
         <select 
             @change="insertAtCursor($event)"
-            class="text-xs rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-600 focus:border-indigo-500 outline-none cursor-pointer"
+            class="text-sm rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-600 focus:border-indigo-500 outline-none cursor-pointer"
         >
             <option value="">⚡ Indsæt autotekst ved markør...</option>
             @foreach(\App\Models\Autotekster::orderBy('id', 'desc')->get() as $autotekst)
@@ -91,19 +91,19 @@ class="space-y-3 relative">
         x-ref="historikInput"
         wire:model.live="messageText" 
         rows="3" 
-        class="w-full rounded-2xl border border-slate-200 p-3 text-xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition"
+        class="w-full rounded-2xl border border-slate-200 p-3.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition"
         placeholder="Skriv note her..."
     ></textarea>
 
-    {{-- GEM-KNAP --}}
+    {{-- GEM-KNAP MED KORREKT PADDING OG STØRRELSE --}}
     <div class="flex justify-end">
         <button 
             type="button" 
             wire:click="saveNote"
             wire:loading.attr="disabled"
-            class="px-4 py-2 font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer {{ $isAutotekstSelected ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-700 hover:bg-slate-800 text-white' }}"
+            class="px-6 py-3 font-bold text-sm rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer {{ $isAutotekstSelected ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-700 hover:bg-slate-800 text-white' }}"
         >
-            <svg wire:loading class="w-3.5 h-3.5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+            <svg wire:loading class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -123,7 +123,7 @@ class="space-y-3 relative">
         @forelse($messages as $msg)
             @include('livewire.sager.partials.message-item', ['msg' => $msg])
         @empty
-            <p class="text-xs text-slate-400 italic">Ingen historiknotater oprettet endnu.</p>
+            <p class="text-sm text-slate-400 italic">Ingen historiknotater oprettet endnu.</p>
         @endforelse
     </div>
 
@@ -134,7 +134,7 @@ class="space-y-3 relative">
                 <button 
                     type="button" 
                     wire:click="$set('showDeleteMessageModal', false)" 
-                    class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                    class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition cursor-pointer text-lg"
                 >
                     &times;
                 </button>
@@ -149,7 +149,7 @@ class="space-y-3 relative">
                         <h3 class="text-lg font-bold text-slate-900">
                             Flyt besked til papirkurv?
                         </h3>
-                        <p class="text-xs text-slate-500">
+                        <p class="text-sm text-slate-500">
                             Beskeden fjernes, men kan gendannes, hvis du fortryder.
                         </p>
                     </div>
@@ -159,14 +159,14 @@ class="space-y-3 relative">
                     <button 
                         type="button" 
                         wire:click="$set('showDeleteMessageModal', false)" 
-                        class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                        class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                     >
                         Annuller
                     </button>
                     <button 
                         type="button" 
                         wire:click="executeDeleteMessage" 
-                        class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition cursor-pointer"
+                        class="px-4 py-2 text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition cursor-pointer"
                     >
                         Flyt til papirkurv
                     </button>
@@ -179,9 +179,9 @@ class="space-y-3 relative">
     @if($this->trashMessages->isNotEmpty())
         <div class="mt-8 pt-6 border-t border-slate-200/80">
             <div class="flex items-center justify-between mb-3">
-                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                     <span>🗑 Papirkurv for slettede noter</span>
-                    <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px]">
+                    <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-xs">
                         {{ $this->trashMessages->count() }}
                     </span>
                 </h3>
@@ -192,14 +192,14 @@ class="space-y-3 relative">
                     <div class="p-3.5 rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 flex items-center justify-between gap-4">
                         <div class="min-w-0 flex-1 space-y-1">
                             <div class="flex items-center gap-2">
-                                <span class="text-xs font-bold text-slate-600 line-through">
+                                <span class="text-sm font-bold text-slate-600 line-through">
                                     👤 {{ $trashMsg->sender?->name ?? 'System' }}
                                 </span>
-                                <span class="text-[10px] text-rose-600 font-medium">
+                                <span class="text-xs text-rose-600 font-medium">
                                     Slettet: {{ \Carbon\Carbon::parse($trashMsg->deleted_at)->format('d-m-Y H:i') }}
                                 </span>
                             </div>
-                            <p class="text-xs text-slate-500 italic line-clamp-2">
+                            <p class="text-sm text-slate-500 italic line-clamp-2">
                                 "{{ $trashMsg->tekst }}"
                             </p>
                         </div>
@@ -207,7 +207,7 @@ class="space-y-3 relative">
                         <button 
                             type="button" 
                             wire:click="restoreMessage({{ $trashMsg->id }})"
-                            class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0 cursor-pointer"
+                            class="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-sm rounded-xl transition flex items-center gap-1.5 shrink-0 cursor-pointer"
                             title="Gendan note"
                         >
                             <span>♻️ Gendan</span>

@@ -59,54 +59,126 @@
             @endif
         </div>
 
-        {{-- 🟢 FUNNEL / STATUS FANER (TRAGT) MED TÆLLERE --}}
-        <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-            <button
-                type="button"
-                wire:click="$set('statusFilter', 'all')"
-                class="px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-2 {{ ($statusFilter ?? 'all') === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
-            >
-                <span>📋 Alle sager</span>
-                <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($statusFilter ?? 'all') === 'all' ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-600' }}">
-                    {{ $countAll ?? 0 }}
-                </span>
-            </button>
+        {{-- FUNNEL / STATUS FANER MED TOGGLE TIL AFSLUTNINGER OG BEMÆRKNINGER --}}
+        <div x-data="{ showAfslutninger: {{ (str_starts_with($statusFilter ?? '', 'afslutning_') || str_starts_with($statusFilter ?? '', 'bemaerkning_')) ? 'true' : 'false' }} }" class="space-y-3">
+            
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                
+                {{-- Alle sager --}}
+                <button
+                    type="button"
+                    wire:click="$set('statusFilter', 'all'); showAfslutninger = false;"
+                    class="px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-2 {{ ($statusFilter ?? 'all') === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
+                >
+                    <span>📋 Alle sager</span>
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($statusFilter ?? 'all') === 'all' ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-600' }}">
+                        {{ $countAll ?? 0 }}
+                    </span>
+                </button>
 
-            <button
-                type="button"
-                wire:click="$set('statusFilter', 'active')"
-                class="px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-2 {{ ($statusFilter ?? 'all') === 'active' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
-            >
-                <span>🟢 Aktive sager</span>
-                <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($statusFilter ?? 'all') === 'active' ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-100 text-slate-600' }}">
-                    {{ $countActive ?? 0 }}
-                </span>
-            </button>
+                {{-- Aktive sager --}}
+                <button
+                    type="button"
+                    wire:click="$set('statusFilter', 'active'); showAfslutninger = false;"
+                    class="px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-2 {{ ($statusFilter ?? 'all') === 'active' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
+                >
+                    <span>🟢 Aktive sager</span>
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($statusFilter ?? 'all') === 'active' ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-100 text-slate-600' }}">
+                        {{ $countActive ?? 0 }}
+                    </span>
+                </button>
 
-            <button
-                type="button"
-                wire:click="$set('statusFilter', 'pending')"
-                class="px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-2 {{ ($statusFilter ?? 'all') === 'pending' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
-            >
-                <span>⏳ Afventer DKG</span>
-                <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($statusFilter ?? 'all') === 'pending' ? 'bg-amber-700 text-amber-100' : 'bg-slate-100 text-slate-600' }}">
-                    {{ $countPending ?? 0 }}
-                </span>
-            </button>
+                {{-- Afventer DKG --}}
+                <button
+                    type="button"
+                    wire:click="$set('statusFilter', 'pending'); showAfslutninger = false;"
+                    class="px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-2 {{ ($statusFilter ?? 'all') === 'pending' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
+                >
+                    <span>⏳ Afventer DKG</span>
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($statusFilter ?? 'all') === 'pending' ? 'bg-amber-700 text-amber-100' : 'bg-slate-100 text-slate-600' }}">
+                        {{ $countPending ?? 0 }}
+                    </span>
+                </button>
 
-            <button
-                type="button"
-                wire:click="$set('statusFilter', 'closed')"
-                class="px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-2 {{ ($statusFilter ?? 'all') === 'closed' ? 'bg-slate-900 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
+                {{-- AFSLUTTEDE SAGER (TOGGLE) --}}
+                @php
+                    $isClosedActive = ($statusFilter ?? '') === 'closed' || str_starts_with($statusFilter ?? '', 'afslutning_') || str_starts_with($statusFilter ?? '', 'bemaerkning_');
+                @endphp
+                <button
+                    type="button"
+                    @click="showAfslutninger = !showAfslutninger"
+                    wire:click="$set('statusFilter', 'closed')"
+                    class="px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-2 {{ $isClosedActive ? 'bg-slate-900 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
+                >
+                    <span>🏁 Afsluttede sager</span>
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ $isClosedActive ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-600' }}">
+                        {{ $countClosed ?? 0 }}
+                    </span>
+                    <svg class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': showAfslutninger }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+
+            </div>
+
+            {{-- UNDER-PANEL: UDFOLDELIGE KNAPPER NÅR AFSLUTTEDE SAGER ER AKTIVERET --}}
+            <div 
+                x-show="showAfslutninger" 
+                x-cloak 
+                class="space-y-3 pt-2 pb-3 px-4 bg-slate-50 rounded-2xl border border-slate-200/80 transition-all duration-200"
             >
-                <span>🏁 Afsluttede sager</span>
-                <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ ($statusFilter ?? 'all') === 'closed' ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-600' }}">
-                    {{ $countClosed ?? 0 }}
-                </span>
-            </button>
+                {{-- Afslutningsårsager --}}
+                <div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Afslutningsårsag:</span>
+                    <div class="flex flex-wrap items-center gap-2">
+                        @foreach($afslutningsTyper as $type)
+                            @php
+                                $filterKey = 'afslutning_' . $type->id;
+                                $isTypeActive = ($statusFilter ?? '') === $filterKey;
+                            @endphp
+                            <button
+                                type="button"
+                                wire:click="$set('statusFilter', '{{ $filterKey }}')"
+                                class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-2 {{ $isTypeActive ? 'bg-indigo-600 text-white shadow-sm font-bold' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200/60' }}"
+                            >
+                                <span>{{ $type->tekst }}</span>
+                                <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ $isTypeActive ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-100 text-slate-500' }}">
+                                    {{ $countsAfslutning[$type->id] ?? 0 }}
+                                </span>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Bemærkninger / Status --}}
+                @if(isset($bemaerkningTyper) && $bemaerkningTyper->isNotEmpty())
+                    <div class="border-t border-slate-200/60 pt-2.5">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Bemærkning:</span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            @foreach($bemaerkningTyper as $bem)
+                                @php
+                                    $bemFilterKey = 'bemaerkning_' . $bem->id;
+                                    $isBemActive = ($statusFilter ?? '') === $bemFilterKey;
+                                @endphp
+                                <button
+                                    type="button"
+                                    wire:click="$set('statusFilter', '{{ $bemFilterKey }}')"
+                                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-2 {{ $isBemActive ? 'bg-slate-900 text-white shadow-sm font-bold' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200/60' }}"
+                                >
+                                    <span>{{ $bem->tekst }}</span>
+                                    @if(isset($countsBemaerkning[$bem->id]))
+                                        <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ $isBemActive ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-500' }}">
+                                            {{ $countsBemaerkning[$bem->id] }}
+                                        </span>
+                                    @endif
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            </div>
+
         </div>
 
-        {{-- DATATABEL --}}
+        {{-- SAAS-STYLE DATATABEL --}}
         <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                 <h2 class="text-xs font-bold text-slate-900 uppercase tracking-wider">
@@ -120,90 +192,94 @@
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider text-[10px] bg-slate-50/30">
-                            <th class="py-3 px-6">Sagsnr.</th>
-                            <th class="py-3 px-6">Debitor</th>
-                            <th class="py-3 px-6">Kontrakttype</th>
-                            <th class="py-3 px-6">Modtaget</th>
-                            <th class="py-3 px-6">Status</th>
-                            <th class="py-3 px-6 text-right">Handling</th>
+                        <tr class="border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider text-[10px] bg-slate-50/40">
+                            <th class="py-3.5 px-6">Sagsnr.</th>
+                            <th class="py-3.5 px-6">Debitor</th>
+                            <th class="py-3.5 px-6">Kontrakttype</th>
+                            <th class="py-3.5 px-6">Modtaget</th>
+                            <th class="py-3.5 px-6">Status</th>
+                            <th class="py-3.5 px-6 text-right">Handling</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                    <tbody class="divide-y divide-slate-100/80 text-slate-700">
                         @forelse($sager as $sag)
                             <tr
                                 id="sag-row-{{ $sag->id }}"
-                                class="hover:bg-slate-50/60 transition"
+                                class="hover:bg-indigo-50/30 transition-colors duration-150 group"
                             >
                                 {{-- SAGSNR --}}
-                                <td class="py-3.5 px-6 font-bold text-slate-900 font-mono">
+                                <td class="py-4 px-6 font-bold text-slate-900 font-mono tracking-tight">
                                     #{{ $sag->sagsnr }}
                                 </td>
 
                                 {{-- DEBITOR --}}
-                                <td class="py-3.5 px-6 font-medium">
+                                <td class="py-4 px-6 font-medium text-slate-900">
                                     {{ $sag->debitor->first()?->navn ?? 'Ingen debitor' }}
                                 </td>
 
                                 {{-- KONTRAKTTYPE --}}
-                                <td class="py-3.5 px-6 text-slate-600">
+                                <td class="py-4 px-6 text-slate-600">
                                     {{ $sag->ktr->first()?->tekst ?? '-' }}
                                 </td>
 
                                 {{-- MODTAGET --}}
-                                <td class="py-3.5 px-6 text-slate-400">
+                                <td class="py-4 px-6 text-slate-500 font-mono text-[11px]">
                                     {{ optional($sag->modtaget ?? $sag->created_at)->format('d/m-Y') }}
                                 </td>
 
-                                {{-- STATUS (Samlet og professionelt udtryk for afslutning, dato og bemærkning med labels) --}}
-<td class="py-3.5 px-6">
-    <div class="space-y-1 text-xs text-slate-700">
-        
-        {{-- 1. Afslutningsårsag med label --}}
-        @if($sag->afslutning->isNotEmpty())
-            <div>
-                <span class="text-slate-400 font-medium">Afslutning:</span> 
-                <span class="text-slate-900 font-semibold">{{ $sag->afslutning->first()->tekst }}</span>
-            </div>
-        @elseif($sag->afsluttet)
-            <div>
-                <span class="text-slate-400 font-medium">Status:</span> 
-                <span class="text-slate-600 font-semibold">Afsluttet</span>
-            </div>
-        @else
-            <div>
-                <span class="text-slate-400 font-medium">Status:</span> 
-                <span class="text-emerald-700 font-medium">Aktiv</span>
-            </div>
-        @endif
+                                {{-- STATUS --}}
+                                <td class="py-4 px-6">
+                                    <div class="space-y-1 text-xs text-slate-700">
+                                        @if($sag->afslutning->isNotEmpty())
+                                            <div>
+                                                <span class="text-slate-400 font-medium">Afslutning:</span> 
+                                                <span class="text-slate-900 font-semibold">{{ $sag->afslutning->first()->tekst }}</span>
+                                            </div>
+                                        @elseif($sag->afsluttet)
+                                            <div>
+                                                <span class="text-slate-400 font-medium">Status:</span> 
+                                                <span class="text-slate-600 font-semibold">Afsluttet</span>
+                                            </div>
+                                        @else
+                                            <div>
+                                                @if($sag->konsulent->isEmpty())
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/60 font-semibold text-[10px]">
+                                                        Afventer DKG
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold text-[10px]">
+                                                        Aktiv
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        @endif
 
-        {{-- 2. Afsluttet dato med label (hvis den findes) --}}
-        @if($sag->afsluttet)
-            <div class="text-[11px] text-slate-500">
-                <span class="text-slate-400">Afsluttet:</span> 
-                <span class="font-mono text-slate-600">{{ \Carbon\Carbon::parse($sag->afsluttet)->format('d/m-Y') }}</span>
-            </div>
-        @endif
+                                        @if($sag->afsluttet)
+                                            <div class="text-[11px] text-slate-500">
+                                                <span class="text-slate-400">Afsluttet:</span> 
+                                                <span class="font-mono text-slate-600">{{ \Carbon\Carbon::parse($sag->afsluttet)->format('d/m-Y') }}</span>
+                                            </div>
+                                        @endif
 
-        {{-- 3. Bemærkning med label (hvis den er udfyldt) --}}
-        @if($sag->bemaerkning->isNotEmpty() && $sag->bemaerkning->first()->tekst !== 'Ingen')
-            <div class="text-[11px] text-slate-500 max-w-xs truncate" title="{{ $sag->bemaerkning->first()->tekst }}">
-                <span class="text-slate-400">Bemærkning:</span> {{ $sag->bemaerkning->first()->tekst }}
-            </div>
-        @endif
-
-    </div>
-</td>
-
-                                {{-- HANDLING --}}
-                                <td class="py-3.5 px-6 text-right">
-                                    <a 
-                                        href="{{ route('kreditor.sag.view', $sag->id) }}" 
-                                        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 text-indigo-600 font-bold text-[11px] transition"
-                                    >
-                                        <span>Åbn</span>
-                                    </a>
+                                        @if($sag->bemaerkning->isNotEmpty() && $sag->bemaerkning->first()->tekst !== 'Ingen')
+                                            <div class="text-[11px] text-slate-500 max-w-xs truncate" title="{{ $sag->bemaerkning->first()->tekst }}">
+                                                <span class="text-slate-400">Bemærkning:</span> {{ $sag->bemaerkning->first()->tekst }}
+                                            </div>
+                                        @endif
+                                    </div>
                                 </td>
+
+                            {{-- HANDLING --}}
+                            <td class="py-4 px-6 text-right">
+                                <button 
+                                    type="button"
+                                    wire:click="openSag({{ $sag->id }})"
+                                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-200/80 bg-white hover:border-indigo-500 hover:bg-indigo-50 text-indigo-600 font-bold text-[11px] shadow-2xs transition-all duration-150 cursor-pointer"
+                                >
+                                    <span>Åbn</span>
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                </button>
+                            </td>
                             </tr>
                         @empty
                             <tr>
@@ -221,48 +297,7 @@
         <div class="mt-6">
             {{ $sager->links() }}
         </div>
-
     </div>
-
-    {{-- SCRIPTS OG STYLING --}}
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const created = urlParams.get('created');
-        const sagId = urlParams.get('sag_id');
-
-        if (created === '1') {
-            Livewire.dispatch('toast', {
-                message: 'Sagen blev oprettet og sendt til DKG',
-                type: 'success'
-            });
-
-            if (sagId) {
-                setTimeout(() => {
-                    const row = document.getElementById('sag-row-' + sagId);
-                    if (row) {
-                        row.classList.add('highlight-row');
-                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        setTimeout(() => {
-                            row.classList.remove('highlight-row');
-                        }, 4000);
-                    }
-                }, 300);
-            }
-
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    });
-    </script>
-
-    <style>
-        .highlight-row {
-            animation: highlightFade 4s ease;
-        }
-        @keyframes highlightFade {
-            0%   { background-color: #86efac; }
-            50%  { background-color: #dcfce7; }
-            100% { background-color: transparent; }
-        }
-    </style>
+    {{-- Indsæt slide-over drawer partial --}}
+    @include('livewire.sager.partials.drawer')
 </div>

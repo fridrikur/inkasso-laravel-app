@@ -1,9 +1,9 @@
-<div class="pt-3 text-xs">
+<div class="pt-3 text-sm">
     <div class="flex items-center justify-between text-slate-400 mb-1">
         <span class="font-bold text-slate-700">{{ $msg->sender?->name ?? 'System' }}</span>
         
         <div class="flex items-center gap-3">
-            <span>{{ \Carbon\Carbon::parse($msg->dato ?? $msg->created_at)->format('d/m-Y H:i') }}</span>
+            <span class="text-xs">{{ \Carbon\Carbon::parse($msg->dato ?? $msg->created_at)->format('d/m-Y H:i') }}</span>
             
             @if($editingMessageId !== $msg->id)
                 <button 
@@ -32,28 +32,28 @@
             <textarea 
                 wire:model="editingText" 
                 rows="3" 
-                class="w-full rounded-xl border border-indigo-300 p-2.5 text-xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10"
+                class="w-full rounded-xl border border-indigo-300 p-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10"
             ></textarea>
             
             <div class="flex justify-end gap-2">
                 <button 
                     type="button" 
                     wire:click="cancelEdit" 
-                    class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-lg transition cursor-pointer"
+                    class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm rounded-lg transition cursor-pointer"
                 >
                     Annuller
                 </button>
                 <button 
                     type="button" 
                     wire:click="updateMessage" 
-                    class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg shadow-sm transition cursor-pointer"
+                    class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-lg shadow-sm transition cursor-pointer"
                 >
                     Gem ændringer
                 </button>
             </div>
         </div>
     @else
-        <p class="text-slate-800 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100">
+        <p class="text-slate-800 whitespace-pre-line bg-slate-50 p-3.5 rounded-xl border border-slate-100">
             {!! $msg->tekst !!}
         </p>
     @endif

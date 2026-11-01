@@ -1,10 +1,11 @@
 <div class="bg-white rounded-2xl border border-slate-200 p-2 shadow-sm flex flex-wrap justify-between items-center gap-4">
-    <nav class="flex flex-wrap gap-1 items-center">
+    <nav class="flex flex-wrap gap-1 items-center" wire:loading.class="opacity-75 pointer-events-none">
         
         {{-- 1. SAGSSTAMME --}}
         <button
             type="button"
             wire:click="selectTab('stamdata')"
+            wire:loading.attr="disabled"
             class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer select-none
                 {{ $activeTab === 'stamdata' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
         >
@@ -15,6 +16,7 @@
         <button
             type="button"
             wire:click="selectTab('breve')"
+            wire:loading.attr="disabled"
             class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer select-none
                 {{ $activeTab === 'breve' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
         >
@@ -25,6 +27,7 @@
         <button
             type="button"
             wire:click="selectTab('klientinformation')"
+            wire:loading.attr="disabled"
             class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer select-none
                 {{ $activeTab === 'klientinformation' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
         >
@@ -40,6 +43,7 @@
         <button
             type="button"
             wire:click="selectTab('historik')"
+            wire:loading.attr="disabled"
             class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer select-none
                 {{ $activeTab === 'historik' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
         >
@@ -55,6 +59,7 @@
         <button
             type="button"
             wire:click="selectTab('bogholderi')"
+            wire:loading.attr="disabled"
             class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer select-none
                 {{ $activeTab === 'bogholderi' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
         >
@@ -66,13 +71,14 @@
             @endif
         </button>
 
-        {{-- 6. DOKUMENTER (Henter direkte via $sag->dokumenter()->count()) --}}
+        {{-- 6. DOKUMENTER --}}
         @php
             $docCount = $sag ? $sag->dokumenter()->count() : 0;
         @endphp
         <button
             type="button"
             wire:click="selectTab('dokumenter')"
+            wire:loading.attr="disabled"
             class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer select-none
                 {{ $activeTab === 'dokumenter' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
         >
@@ -87,9 +93,8 @@
 
     </nav>
 
-    {{-- HØJRE SIDE: Handlingsknapper (Download alt + Udskriv sag) --}}
+    {{-- HØJRE SIDE: Handlingsknapper --}}
     <div class="flex items-center gap-2">
-        {{-- Download alt-knap (vises når man er på dokument-fanen og der er filer) --}}
         @if($activeTab === 'dokumenter' && $docCount > 0)
             <a href="{{ route('sager.dokumenter.downloadAll', $sag) }}"
                class="px-3.5 py-2 bg-slate-800 text-white rounded-xl text-xs font-semibold hover:bg-slate-700 transition flex items-center gap-2 shadow-sm">
@@ -97,7 +102,6 @@
             </a>
         @endif
 
-        {{-- 🟢 UDSKRIV SAG KNAP (Åbner print-siden i ny fane, hvis sagen eksisterer) --}}
         @if($sag && $sag->exists)
             <a href="{{ route('sager.print', $sag) }}" 
                target="_blank"
