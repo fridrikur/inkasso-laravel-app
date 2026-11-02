@@ -157,7 +157,7 @@ public function openSag($sagId)
         $search = trim($this->search ?? '');
 
         $afslutningsTyper = \App\Models\afslutning::all();
-        $bemaerkningTyper = \App\Models\Bemaerkning::all();
+        $bemaerkningTyper = \App\Models\bemaerkning::all();
 
         $allKreditorSager = Sager::query()
             ->whereHas('kreditor', function ($q) use ($kreditor) {
