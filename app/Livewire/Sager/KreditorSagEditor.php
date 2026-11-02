@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Livewire\Forms\SagForm;
 use App\Models\SagFieldSetting;
 
+use App\Models\KTR;
 use App\Models\udlaeg;
 use Livewire\WithFileUploads;
 
