@@ -156,7 +156,7 @@ public function openSag($sagId)
 
         $search = trim($this->search ?? '');
 
-        $afslutningsTyper = \App\Models\Afslutning::all();
+        $afslutningsTyper = \App\Models\afslutning::all();
         $bemaerkningTyper = \App\Models\Bemaerkning::all();
 
         $allKreditorSager = Sager::query()
