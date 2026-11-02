@@ -279,18 +279,6 @@ REVIEW MODE
 
 </div>
 
-{{-- HVIS SAGEN ER OPRETTET / KAN VISES MED DIALOG STUB --}}
-@if(isset($sag) && $sag->exists)
-    <div class="mt-6 bg-white p-5 rounded-xl border border-slate-200">
-        <h3 class="text-sm font-bold text-slate-700 mb-3">Dialog med DKG</h3>
-        @include('components.sag-tabs.klientinformation-tab', [
-            'sag' => $sag,
-            'klientinformationUnread' => $klientinformationUnread ?? 0,
-            'label' => 'Dialog med DKG'
-        ])
-    </div>
-@endif
-
 <div class="mt-6 flex gap-4">
     <button
         wire:click="editAgain"

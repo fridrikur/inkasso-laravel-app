@@ -372,12 +372,6 @@ class KreditorSagEditor extends Component
         $this->selectOptions['udlaeg'] = Cache::rememberForever('select.udlaeg', fn () => Udlaeg::pluck('tekst', 'id')->toArray());
     }
 
-    public function refreshBadge()
-    {
-        // Tilføj evt. logik her, hvis der er data, der skal genindlæses,
-        // eller lad den være tom for blot at undgå "method not found"-fejlen.
-    }
-    
     public function render()
     {
         return view('livewire.sager.kreditor-sag-editor');
