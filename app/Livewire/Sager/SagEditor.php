@@ -48,6 +48,7 @@ class SagEditor extends Component
 
     public string $activeTab = 'stamdata';
     
+    
     public $newDokument; // Binder til inputfeltet i formen
     
     public bool $showDeleteOptionsModal = false;
@@ -600,9 +601,12 @@ class SagEditor extends Component
 
     public function render()
     {
-        // 🟢 Tjek kun for lås, hvis sagen eksisterer og har et ID (undgår fejl ved oprettelse og nulstilling)
+        // 🟢 Sæt standardværdi
+        $this->currentsagLocked = false;
+
+        // Tjek kun for lås, hvis sagen eksisterer og har et ID
         if ($this->sag?->exists && $this->sag->id) {
-            $currentsagLocked = SagLock::where('sag_id', $this->sag->id)
+            $this->currentsagLocked = SagLock::where('sag_id', $this->sag->id)
                 ->where('user_id', auth()->id())
                 ->whereNotNull('locked_at')
                 ->exists();
@@ -620,7 +624,7 @@ class SagEditor extends Component
         }
 
         return view('livewire.sager.sag-editor', [
-            'currentsagLocked' => $currentsagLocked,
+            'currentsagLocked' => $this->currentsagLocked,
         ]);
     }
 
