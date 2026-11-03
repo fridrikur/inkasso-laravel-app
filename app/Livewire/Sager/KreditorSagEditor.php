@@ -250,7 +250,7 @@ class KreditorSagEditor extends Component
 
         } catch (\Exception $e) {
             \Log::error("Sag confirm error: " . $e->getMessage());
-            $this->dispatch('toast', message: 'Fejl ved indsendelse af sag', type: 'error');
+            $this->dispatch('toast', message: $e->getMessage().'Fejl ved indsendelse af sag', type: 'error');
         }
     }
 
