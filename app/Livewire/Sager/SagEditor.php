@@ -152,7 +152,6 @@ class SagEditor extends Component
     public bool $showUnlockModal = false;
     public string $unlock_code = '';
     
-    public bool $currentsagLocked = false;
     public string $unlockCode = '';
 
     public bool $showTakeoverModal = false;
