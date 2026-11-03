@@ -1,6 +1,48 @@
 <x-layouts.app title="Dokumenter - Sag {{ $sag->sagsnr }}">
 
+        {{-- TOP NAVIGATION / TILBAGE KNAPPER --}}
+    <div class="flex items-center justify-between gap-4 pb-2 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2">
+    {{-- Tilbage til selve sagen --}}
+    @role('Kreditor')
+        <a 
+            href="{{ route('kreditor.sag.view', $sag->id) }}"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs"
+        >
+            <span>&larr; Tilbage til sag</span>
+        </a>
+    @else
+        <a 
+            href="{{ route('medarbejder.sager.edit', $sag->id) }}"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs"
+        >
+            <span>&larr; Tilbage til sag</span>
+        </a>
+    @endrole
+
+    {{-- Tilbage til sagsoversigten --}}
+    @role('Kreditor')
+        <a 
+            href="{{ route('kreditor.sager.index') }}"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs"
+        >
+            <span>📂 Sagsoversigt</span>
+        </a>
+    @else
+        <a 
+            href="{{ route('medarbejder.sager.index') }}"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs"
+        >
+            <span>📂 Sagsoversigt</span>
+        </a>
+    @endrole
+</div></div></div>
+
+
 <div class="max-w-5xl mx-auto">
+
+    
 
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold">

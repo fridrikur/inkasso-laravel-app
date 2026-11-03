@@ -34,6 +34,7 @@ class KreditorSagView extends Component
             'dokumenter',
             'ktr',    // Hvis KTR er en relation
             'udlaeg', // Hvis Udlaeg er en relation (fjern hvis det er en rå kolonne)
+            'status',
         ]);
 
         $this->isEditMode = true;

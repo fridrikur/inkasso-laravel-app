@@ -1,4 +1,43 @@
 <div class="space-y-4">
+    {{-- TOP NAVIGATION / TILBAGE KNAPPER --}}
+    <div class="flex items-center justify-between gap-4 pb-2 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2">
+    {{-- Tilbage til selve sagen --}}
+    @role('Kreditor')
+        <a 
+            href="{{ route('kreditor.sag.view', $sag->id) }}"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs"
+        >
+            <span>&larr; Tilbage til sag</span>
+        </a>
+    @else
+        <a 
+            href="{{ route('medarbejder.sager.edit', $sag->id) }}"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs"
+        >
+            <span>&larr; Tilbage til sag</span>
+        </a>
+    @endrole
+
+    {{-- Tilbage til sagsoversigten --}}
+    @role('Kreditor')
+        <a 
+            href="{{ route('kreditor.sager.index') }}"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs"
+        >
+            <span>📂 Sagsoversigt</span>
+        </a>
+    @else
+        <a 
+            href="{{ route('medarbejder.sager.index') }}"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs"
+        >
+            <span>📂 Sagsoversigt</span>
+        </a>
+    @endrole
+</div></div></div>
+
     <div class="flex items-center justify-between mb-2">
         <div>
             <h2 class="text-xl font-bold text-slate-800">Klientinformation</h2>
@@ -144,7 +183,6 @@
                 </div>
 
                 <div class="space-y-2 pt-2">
-                    {{-- Generel fejlbesked ved knapperne --}}
                     @if ($errors->any())
                         <div class="text-red-500 text-xs font-medium text-right">
                             Udfyld venligst alle felter før oprettelse.
