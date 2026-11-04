@@ -165,6 +165,63 @@
         {{-- VENSTRE KOLONNE: NYE BESKEDER & UBEHANDLEDE SAGER (Udvider sig automatisk hvis højre kolonne mangler) --}}
         <div class="@if(auth()->user()->receivesNotifications()) lg:col-span-2 @else lg:col-span-2 @endif space-y-6">
 
+            {{-- 🔴 UBEHANDLEDE SAGER SEKTION --}}
+            <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Ubehandlede Sager</h2>
+                        <p class="text-xs text-slate-500">Nye sager der endnu ikke er behandlet</p>
+                    </div>
+                    
+                    <a href="{{ route('medarbejder.sager.index') }}" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
+                        Se alle &rarr;
+                    </a>
+                </div>
+
+                <div class="divide-y divide-slate-100">
+                    @forelse($ubehandledeSager as $sag)
+                        @php
+                            $debitor = $sag->debitor->first();
+                            $kreditor = $sag->kreditor->first();
+                        @endphp
+
+                        <a href="{{ route('medarbejder.sager.edit', $sag->id) }}" 
+                           class="flex items-center justify-between p-4 sm:px-6 hover:bg-slate-50/80 transition duration-150 group">
+                            
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono font-bold text-slate-900 group-hover:text-indigo-600 transition">
+                                        #{{ $sag->display_number ?? $sag->sagsnr ?? $sag->id }}
+                                    </span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60 uppercase">
+                                        Ubehandlet
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center gap-4 text-xs text-slate-500">
+                                    <span>Debitor: <strong class="text-slate-700">{{ $debitor->navn ?? '-' }}</strong></span>
+                                    <span>•</span>
+                                    <span>Kreditor: <strong class="text-slate-700">{{ $kreditor->navn ?? '-' }}</strong></span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs text-slate-400 font-mono">
+                                    {{ $sag->created_at->format('d/m H:i') }}
+                                </span>
+                                <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="p-8 text-center text-slate-400 text-xs">
+                            Ingen ubehandlede sager fundet.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
             {{-- ✉️ NYE BESKEDER SEKTION --}}
             <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
@@ -229,64 +286,6 @@
                     @endforelse
                 </div>
             </div>
-
-            {{-- 🔴 UBEHANDLEDE SAGER SEKTION --}}
-            <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                    <div>
-                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Ubehandlede Sager</h2>
-                        <p class="text-xs text-slate-500">Nye sager der endnu ikke er behandlet</p>
-                    </div>
-                    
-                    <a href="{{ route('medarbejder.sager.index') }}" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
-                        Se alle &rarr;
-                    </a>
-                </div>
-
-                <div class="divide-y divide-slate-100">
-                    @forelse($ubehandledeSager as $sag)
-                        @php
-                            $debitor = $sag->debitor->first();
-                            $kreditor = $sag->kreditor->first();
-                        @endphp
-
-                        <a href="{{ route('medarbejder.sager.edit', $sag->id) }}" 
-                           class="flex items-center justify-between p-4 sm:px-6 hover:bg-slate-50/80 transition duration-150 group">
-                            
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-mono font-bold text-slate-900 group-hover:text-indigo-600 transition">
-                                        #{{ $sag->display_number ?? $sag->sagsnr ?? $sag->id }}
-                                    </span>
-                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60 uppercase">
-                                        Ubehandlet
-                                    </span>
-                                </div>
-
-                                <div class="flex items-center gap-4 text-xs text-slate-500">
-                                    <span>Debitor: <strong class="text-slate-700">{{ $debitor->navn ?? '-' }}</strong></span>
-                                    <span>•</span>
-                                    <span>Kreditor: <strong class="text-slate-700">{{ $kreditor->navn ?? '-' }}</strong></span>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-3">
-                                <span class="text-xs text-slate-400 font-mono">
-                                    {{ $sag->created_at->format('d/m H:i') }}
-                                </span>
-                                <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                </svg>
-                            </div>
-                        </a>
-                    @empty
-                        <div class="p-8 text-center text-slate-400 text-xs">
-                            Ingen ubehandlede sager fundet.
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-
         </div>
 
         {{-- HØJRE KOLONNE: SENESTE OPRETTEDE SAGER (KUN SYNLIG HVIS BRUGEREN MODTAGER NOTIFIKATIONER) --}}

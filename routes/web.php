@@ -430,6 +430,13 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
                 Route::post('/session/{session}/rollback', [ImportExecuteController::class, 'rollback'])->name('session.rollback');
             });
 
+            // Tilføj denne i din rute-fil, hvis den ikke findes
+            Route::get('/sager/import', function() {
+                // F.eks. send videre til den første kreditor eller en vælger-side
+                $kreditor = \App\Models\Kreditorer::first(); 
+                return redirect()->route('sager.import.form', $kreditor?->id ?? 1);
+            })->name('sager.import');
+
         Route::get('/admin/doctor-norton', SagDoctorDashboard::class)->name('sager.doctor');
         Route::get('/sager/breve/rediger', BrevManager::class)->name('admin.breve.rediger');
 

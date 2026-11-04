@@ -212,6 +212,10 @@
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('sager.index') || request()->routeIs('sager.edit') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>📂</span> Alle sager
                                     </a>
+                                    <a href="{{ route('sager.import') }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('sager.import')}}">
+                                        <span>📥</span> Importer sager
+                                    </a>
                                     <a href="{{ route('debitorer.index') }}" 
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('debitorer.*') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>👥</span> Debitorer
