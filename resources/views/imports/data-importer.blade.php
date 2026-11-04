@@ -43,10 +43,12 @@
             🚀 Lynfast Systemimport
         </button>
 
-        <div>
-            <label class="block text-[10px] font-bold text-slate-600 mb-1">Breve SQL</label>
-            <input type="text" wire:model="brevFile" @if($isImportingSystem) disabled @endif class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
-        </div>
+        <button type="button" 
+            @click="activeTab = 'brev-import'" 
+            :class="activeTab === 'brev-import' ? 'border-indigo-600 text-indigo-600 font-bold bg-indigo-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 font-medium'"
+            class="px-4 py-2.5 text-xs border-b-2 transition rounded-t-xl cursor-pointer whitespace-nowrap">
+            ✉️ Brev import
+        </button>
 
         <button type="button" 
             @click="activeTab = 'csv-import'" 
@@ -125,6 +127,29 @@
                     </div>
                 </div>
             @endif
+        </div>
+    </div>
+
+    {{-- ========================================== --}}
+    {{-- FANE: BREV IMPORT                          --}}
+    {{-- ========================================== --}}
+    <div x-show="activeTab === 'brev-import'" class="space-y-6">
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div>
+                <h3 class="text-xs font-bold text-slate-800 mb-1">Import af Brev-skabeloner</h3>
+                <p class="text-[11px] text-slate-500">Importer gamle brev-skabeloner fra <code>storage/</code> mappen (titel, brevpos, emne og tekst).</p>
+            </div>
+
+            <div class="max-w-xs">
+                <label class="block text-[10px] font-bold text-slate-600 mb-1">Brev SQL Fil</label>
+                <input type="text" wire:model="brevFile" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
+            </div>
+
+            <div class="pt-2 flex justify-end">
+                <button type="button" wire:click="runBrevImport" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer">
+                    Start brev-import ✉️
+                </button>
+            </div>
         </div>
     </div>
 
