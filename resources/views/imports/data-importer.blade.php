@@ -43,6 +43,11 @@
             🚀 Lynfast Systemimport
         </button>
 
+        <div>
+            <label class="block text-[10px] font-bold text-slate-600 mb-1">Breve SQL</label>
+            <input type="text" wire:model="brevFile" @if($isImportingSystem) disabled @endif class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-slate-50/50 outline-none">
+        </div>
+
         <button type="button" 
             @click="activeTab = 'csv-import'" 
             :class="activeTab === 'csv-import' ? 'border-indigo-600 text-indigo-600 font-bold bg-indigo-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 font-medium'"

@@ -25,6 +25,7 @@ class DataImporter extends Component
     public string $sagsbehandlerFile = 'sagsbehandlere.sql';    
     public string $dialogFile = 'dialoger.sql';
     public string $dokumenterFile = 'file_records.sql';
+    public string $brevFile = 'breve.sql';
     
     public string $importType = 'sager';
     public $file;
@@ -486,7 +487,8 @@ class DataImporter extends Component
             escapeshellarg($this->konsulentFile),
             escapeshellarg($this->sagsbehandlerFile),
             escapeshellarg($this->debitorFile),
-            escapeshellarg($this->sagerFile)
+            escapeshellarg($this->sagerFile),
+            escapeshellarg($this->brevFile)
         );
 
         exec($cmd);
