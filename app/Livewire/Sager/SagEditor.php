@@ -266,97 +266,76 @@ class SagEditor extends Component
     }
 
     public function mount($sag = null, $isSearchMode = false)
-    {
-        
-        $this->loading = true;
+{
+    $this->loading = true;
 
-        // 🟢 Hvis sagen er slettet (ligger i papirkurven), skal den ikke kunne redigeres
-        if ($sag instanceof Sager && $sag->trashed()) {
-            abort(403, 'Denne sag er i papirkurven og kan ikke redigeres.');
-        }
-        // 🟢 Hvis sagen er slettet eller ikke findes, opret en tom instans for at undgå crash
-        if ($sag instanceof Sager && $sag->exists) {
-            $this->sag = $sag;
-        } else {
-            $this->sag = new Sager();
-        }
+    // 🟢 Hvis sagen er slettet (ligger i papirkurven), skal den ikke kunne redigeres
+    if ($sag instanceof Sager && $sag->trashed()) {
+        abort(403, 'Denne sag er i papirkurven og kan ikke redigeres.');
+    }
 
+    // 🟢 Hvis sagen findes, sæt den, ellers opret en ny tom instans
+    if ($sag instanceof Sager && $sag->exists) {
+        $this->sag = $sag;
+    } else {
+        $this->sag = new Sager();
+    }
+
+    // 🟢 Kun load relationer hvis sagen rent faktisk findes i databasen!
+    if ($this->sag->exists) {
         $this->sag->load([
             'kreditor',
             'sagsbehandler',
             'debitor'
         ]);
+    }
 
-        $this->isEditMode = $this->sag->exists;
+    $this->isEditMode = $this->sag->exists;
 
-        if ($this->isEditMode) {
-            $lock = SagLock::where('sag_id', $this->sag->id)->first();
+    // 🟢 ALT LÅSE- OG REDIGERINGSLOGIK KUN FOR EKSISTERENDE SAGER
+    if ($this->isEditMode) {
+        $lock = SagLock::where('sag_id', $this->sag->id)->first();
 
-            if ($lock) {
-                if ($lock->user_id === auth()->id()) {
-                    $this->hasLock = true;
-                    $this->isLockedByOther = false;
-                } else {
-                    $this->hasLock = false;
-                    $this->isLockedByOther = true;
-                    $this->lock = [
-                        'user_name' => $lock->user?->name ?? 'Ukendt',
-                    ];
-                }
+        if ($lock) {
+            if ($lock->user_id === auth()->id()) {
+                $this->hasLock = true;
+                $this->isLockedByOther = false;
             } else {
                 $this->hasLock = false;
-                $this->isLockedByOther = false;
-            }
-
-            $kreditor = $this->sag->kreditor->first();
-            if ($kreditor) {
-                $this->hydrateFromKreditor($kreditor);
-                $this->selectOptions['sagsbehandler'] = \App\Models\Sagsbehandler::forKreditor($kreditor->id) ?? [];
-            } else {
-                $this->selectOptions['sagsbehandler'] = [];
+                $this->isLockedByOther = true;
+                $this->lock = [
+                    'user_name' => $lock->user?->name ?? 'Ukendt',
+                ];
             }
         } else {
-            $this->form->konsulent = null;
-            $this->loadKonsulentOptions();
+            $this->hasLock = false;
+            $this->isLockedByOther = false;
+        }
+
+        $kreditor = $this->sag->kreditor->first();
+        if ($kreditor) {
+            $this->hydrateFromKreditor($kreditor);
+            $this->selectOptions['sagsbehandler'] = \App\Models\Sagsbehandler::forKreditor($kreditor->id) ?? [];
+        } else {
             $this->selectOptions['sagsbehandler'] = [];
         }
 
-        if ($this->isEditMode) {
-            $this->acquireLock();
-            $this->refreshBadge();
-        }
+        $this->acquireLock();
+        $this->refreshBadge();
 
-        $this->loadFormRelations();
-        $this->loadSelectOptions();
+        SagActivity::updateOrCreate(
+            [
+                'sag_id' => $this->sag->id,
+                'user_id' => auth()->id(),
+            ],
+            [
+                'last_viewed_at' => now(),
+                'heartbeat_at' => now(),
+                'is_editing' => true,
+            ]
+        );
 
-        // 🟢 Beregn og formater alle tal ved opstart
-        $this->calculateTotals();
-
-        $this->databaseValuePostnr();
-
-        $this->kreditorSuggestions = [];
-        $this->showKreditorDropdown = false;
-        $this->isSearchMode = $isSearchMode;
-
-        if ($this->isEditMode) {
-            SagActivity::updateOrCreate(
-                [
-                    'sag_id' => $this->sag->id,
-                    'user_id' => auth()->id(),
-                ],
-                [
-                    'last_viewed_at' => now(),
-                    'heartbeat_at' => now(),
-                    'is_editing' => true,
-                ]
-            );
-
-            $this->syncLockState();
-        }
-
-        $this->loading = false;
-        $this->pendingRequests = collect();
-
+        $this->syncLockState();
         $this->loadMyTakeoverRequest();
 
         $myLock = SagLock::where('sag_id', $this->sag->id)
@@ -366,7 +345,28 @@ class SagEditor extends Component
         if ($myLock?->currentsag_locked) {
             $this->currentsagLocked = true;
         }
+    } else {
+        // Logik for NY sag (ingen låse, intet tjek på SagLock)
+        $this->form->konsulent = null;
+        $this->loadKonsulentOptions();
+        $this->selectOptions['sagsbehandler'] = [];
     }
+
+    // Fælles initialisering for både nye og eksisterende sager
+    $this->loadFormRelations();
+    $this->loadSelectOptions();
+
+    // 🟢 Beregn og formater alle tal ved opstart
+    $this->calculateTotals();
+    $this->databaseValuePostnr();
+
+    $this->kreditorSuggestions = [];
+    $this->showKreditorDropdown = false;
+    $this->isSearchMode = $isSearchMode;
+
+    $this->loading = false;
+    $this->pendingRequests = collect();
+}
     
 
     public function parseNumber(string|float|int|null $value): float
@@ -600,31 +600,25 @@ class SagEditor extends Component
     }
 
     public function render()
-    {
-        $this->currentsagLocked = false;    
-        // 🟢 Tjek kun for lås, hvis sagen eksisterer og har et ID (undgår fejl ved oprettelse og nulstilling)
-        if ($this->sag?->exists && $this->sag->id) {
-            $currentsagLocked = SagLock::where('sag_id', $this->sag->id)
-                ->where('user_id', auth()->id())
-                ->whereNotNull('locked_at')
-                ->exists();
-        }
-
-        if ($this->showAcceptedModal && $this->acceptedModalUntil) {
-            if (now()->timestamp >= $this->acceptedModalUntil) {
-                $this->showAcceptedModal = false;
-                $this->acceptedModalUntil = null;
-            }
-        }
-
-        if ($this->sag?->exists && $this->sag->isEligibleForGdprDeletion()) {
-            abort(403, 'Adgang nægtet: Sagen har overskredet GDPR 5-års grænsen og er låst for visning indtil anonymisering/sletning.');
-        }
-
-        return view('livewire.sager.sag-editor', [
-            'currentsagLocked' => $currentsagLocked,
-        ]);
+{
+    // Sørg for at synkronisere låsetilstanden, hvis sagen eksisterer
+    if ($this->sag?->exists && $this->sag->id) {
+        $this->syncLockState();
     }
+
+    if ($this->showAcceptedModal && $this->acceptedModalUntil) {
+        if (now()->timestamp >= $this->acceptedModalUntil) {
+            $this->showAcceptedModal = false;
+            $this->acceptedModalUntil = null;
+        }
+    }
+
+    if ($this->sag?->exists && $this->sag->isEligibleForGdprDeletion()) {
+        abort(403, 'Adgang nægtet: Sagen har overskredet GDPR 5-års grænsen og er låst for visning indtil anonymisering/sletning.');
+    }
+
+    return view('livewire.sager.sag-editor');
+}
 
     protected function loadKonsulentOptions(): void
     {
@@ -931,14 +925,27 @@ class SagEditor extends Component
     {
         if (!$this->sag?->id) return;
 
-        $lock = SagLock::where('sag_id', $this->sag->id)->first();
+        $existingLock = SagLock::where('sag_id', $this->sag->id)->first();
 
-        if (!$lock) {
-            SagLock::create([
-                'sag_id' => $this->sag->id,
-                'user_id' => auth()->id(),
-                'locked_at' => now(),
-            ]);
+        // Hvis der er en aktiv lås, men den tilhører en anden...
+        if ($existingLock && $existingLock->user_id !== auth()->id()) {
+            // Hvis den indloggede bruger er Admin, overrule kaffepausen/låsen automatisk
+            if (auth()->user()->hasRole('Admin')) {
+                $existingLock->update([
+                    'user_id' => auth()->id(),
+                    'currentsag_locked' => false, // Nulstil evt. kaffepause for admin
+                    'locked_at' => now(),
+                ]);
+            }
+        } else {
+            // Ellers kør standard updateOrCreate
+            SagLock::updateOrCreate(
+                ['sag_id' => $this->sag->id],
+                [
+                    'user_id' => auth()->id(),
+                    'locked_at' => now(),
+                ]
+            );
         }
 
         $this->syncLockState();
@@ -1025,18 +1032,20 @@ class SagEditor extends Component
             return;
         }
 
-        SagLock::updateOrCreate(
-            [
-                'sag_id' => $this->sag->id,
-                'user_id' => auth()->id(),
-            ],
-            [
-                'locked_at' => now(),
-                'currentsag_locked' => true,
-            ]
-        );
+        // Hent eksisterende eller opret ny
+        $lock = SagLock::firstOrNew([
+            'sag_id' => $this->sag->id,
+        ]);
+
+        $lock->user_id = auth()->id();
+        $lock->currentsag_locked = true; // Sættes eksplizit til sand
+        $lock->locked_at = now();
+        $lock->save(); // Gemmer sikkert til databasen
 
         $this->currentsagLocked = true;
+        $this->syncLockState();
+
+        $this->dispatch('toast', message: 'Skærmen er låst (Kaffepause aktiv).', type: 'success');
     }
 
     public function unlockcurrentsag(): void
@@ -1230,22 +1239,33 @@ class SagEditor extends Component
             $this->lockState = 'unlocked';
             $this->hasLock = false;
             $this->isLockedByOther = false;
+            $this->currentsagLocked = false;
             return;
+        }
+
+        // 🟢 HVIS BRUGEREN ER ADMIN, SKAL KAFFEPAUSE-LÅSEN OVERSKRIVES (IGNORERES)
+        if (auth()->user()->hasRole('Admin')) {
+            $this->currentsagLocked = false;
+        } else {
+            $myLock = SagLock::where('sag_id', $this->sag->id)
+                ->where('user_id', auth()->id())
+                ->first();
+                
+            $this->currentsagLocked = (bool) ($myLock?->currentsag_locked ?? false);
         }
 
         $lock = SagLock::where('sag_id', $this->sag->id)->first();
 
         if ($lock) {
-            // 🟢 AUTOMATISK FRIGIVELSE: Hvis låsen er ældre end 3 minutter uden opdatering (bruger er logget af / væk)
+            // AUTOMATISK FRIGIVELSE: Hvis låsen er ældre end 3 minutter uden opdatering
             if ($lock->locked_at && Carbon::parse($lock->locked_at)->lt(now()->subMinutes(3))) {
                 $lock->delete();
                 SagEditRequest::where('sag_id', $this->sag->id)->where('status', 'pending')->update(['status' => 'rejected']);
                 
-                $lock = null; // Sæt til null da den nu er slettet
+                $lock = null; 
             }
         }
 
-        // 🟢 VIGTIGT: Hent KUN anmodninger fra ANDRE brugere!
         $this->pendingRequests = SagEditRequest::where('sag_id', $this->sag->id)
             ->where('requested_by', '!=', auth()->id())
             ->where('status', 'pending')
@@ -1266,6 +1286,7 @@ class SagEditor extends Component
             return;
         }
 
+        // 🟢 Hvis en almindelig medarbejder prøver at tilgå en sag, der er sat på kaffepause af en anden
         $this->lockState = 'foreign';
         $this->hasLock = false;
         $this->isLockedByOther = true;

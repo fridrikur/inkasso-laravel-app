@@ -1,4 +1,65 @@
 <div class="relative min-h-[60vh]">
+
+    @if($this->urgentRequests->isNotEmpty())
+    <div wire:poll.10s class="mb-6 rounded-3xl border-2 border-amber-400 bg-amber-50/90 p-6 shadow-lg backdrop-blur-md space-y-4 animate-pulse-slow">
+        <div class="flex items-center justify-between border-b border-amber-200 pb-3">
+            <div class="flex items-center gap-3">
+                <span class="flex h-3 w-3 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                </span>
+                <h2 class="text-base font-bold text-amber-900">
+                    ⚠️ Udestående overtagelses-anmodninger kræver handling!
+                </h2>
+            </div>
+            <span class="px-3 py-1 rounded-full bg-amber-200 text-amber-900 text-xs font-bold shadow-xs">
+                {{ $this->urgentRequests->count() }} stk.
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            @foreach($this->urgentRequests as $req)
+                <div class="bg-white rounded-2xl p-4 border border-amber-200 shadow-sm flex items-center justify-between gap-4" wire:key="urgent-req-{{ $req->id }}">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                                Sag #{{ $req->sag?->sagsnr ?? $req->sag_id }}
+                            </span>
+                            <span class="text-xs font-bold text-slate-800 truncate max-w-[180px]">
+                                {{ $req->sag?->titel ?? 'Uden titel' }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-600">
+                            Medarbejder <strong class="text-slate-900">{{ $req->requester?->name ?? 'Kollega' }}</strong> anmoder om adgang til at redigere.
+                        </p>
+                        <p class="text-[10px] text-slate-400">
+                            Sendt {{ $req->created_at?->diffForHumans() }}
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col gap-2 shrink-0">
+                        <button 
+                            type="button" 
+                            wire:click="adminApproveTakeover({{ $req->id }})"
+                            class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-1"
+                        >
+                            <span>✓</span> Godkend
+                        </button>
+                        <button 
+                            type="button" 
+                            wire:click="adminRejectTakeover({{ $req->id }})"
+                            class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer text-center"
+                        >
+                            Afvis
+                        </button>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+@endif
+
+
     {{-- WELCOME / SUCCESS MODAL (Læser direkte fra session) --}}
     @if(session()->has('show_welcome_modal'))
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-300" x-data="{ isLoading: false }">
@@ -290,101 +351,190 @@
                         </div>
 
                         {{-- BIRDVIEW: Låste sager & Overtagelses-anmodninger side om side --}}
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                            
-                            {{-- Sektion: Aktive låste sager --}}
-                            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-                                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                        Låste sager (Under behandling)
-                                    </h3>
-                                    <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
-                                        {{ $this->activeLocks->count() }} aktive
-                                    </span>
-                                </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    
+    {{-- 📂 BOKS 1: ÅBNE SAGER (UNDER REDIGERING) --}}
+    <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">📂</span>
+                <h3 class="text-sm font-bold text-slate-900">Åbne sager (Under arbejde)</h3>
+            </div>
+            <span class="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
+                {{ $this->activeEditingLocks->count() }} åbne
+            </span>
+        </div>
 
-                                <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
-                                    @forelse($this->activeLocks as $lock)
-                                        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3" wire:key="lock-view-{{ $lock->id }}">
-                                            <div class="space-y-1">
-                                                <div class="flex items-center gap-2">
-                                                    <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
-                                                        ID: {{ $lock->sag_id }}
-                                                    </span>
-                                                    <span class="text-xs font-semibold text-slate-800 truncate max-w-[180px]">
-                                                        {{ $lock->sag?->titel ?? 'Uden titel' }}
-                                                    </span>
-                                                </div>
-                                                <p class="text-[11px] text-slate-500 flex items-center gap-1.5">
-                                                    <span>Låst af: <strong class="text-slate-700">{{ $lock->user?->name ?? 'Ukendt bruger' }}</strong></span>
-                                                </p>
-                                            </div>
-
-                                            <div class="text-right shrink-0">
-                                                <span class="text-[10px] font-medium text-slate-400 block" title="{{ $lock->locked_at }}">
-                                                    {{ $lock->locked_at?->diffForHumans() ?? 'Ukendt tid' }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    @empty
-                                        <div class="text-center py-8 text-slate-400 text-xs">
-                                            Ingen gyldige eller aktive låse fundet.
-                                        </div>
-                                    @endforelse
-                                </div>
+        @if($this->activeEditingLocks->isEmpty())
+            <p class="text-xs text-slate-400 py-6 text-center">Ingen sager er åbnet i øjeblikket.</p>
+        @else
+            <div class="divide-y divide-slate-100 overflow-hidden">
+                @foreach($this->activeEditingLocks as $lock)
+                    <div class="py-3 flex items-center justify-between gap-4">
+                        <div class="space-y-0.5">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-slate-800">
+                                    Sag #{{ $lock->sag?->sagsnr ?? $lock->sag_id }}
+                                </span>
+                                <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">
+                                    ✍️ Redigerer
+                                </span>
                             </div>
+                            <p class="text-[11px] text-slate-500">
+                                Medarbejder: <span class="font-medium text-slate-700">{{ $lock->user?->name ?? 'Ukendt' }}</span> 
+                                <span class="text-slate-300">•</span> {{ $lock->locked_at?->diffForHumans() }}
+                            </p>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            @if($lock->sag)
+                                <a 
+                                    href="{{ route('sager.edit', $lock->sag->id) }}" 
+                                    target="_blank"
+                                    class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                                >
+                                    Se
+                                </a>
+                            @endif
+
+                            <button 
+                                type="button" 
+                                wire:click="adminReleaseLock({{ $lock->sag_id }})"
+                                class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition cursor-pointer"
+                                title="Frigiv lås"
+                            >
+                                Frigiv
+                            </button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+
+    {{-- ☕ BOKS 2: KAFFEPAUSE / LÅSTE SKÆRME --}}
+    <div class="bg-white rounded-3xl p-6 shadow-sm border border-amber-100 space-y-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm">☕</span>
+                <h3 class="text-sm font-bold text-slate-900">Sager på Kaffepause</h3>
+            </div>
+            <span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
+                {{ $this->activeCoffeeLocks->count() }} på pause
+            </span>
+        </div>
+
+        @if($this->activeCoffeeLocks->isEmpty())
+            <p class="text-xs text-slate-400 py-6 text-center">Ingen medarbejdere holder kaffepause i øjeblikket.</p>
+        @else
+            <div class="divide-y divide-amber-50 overflow-hidden">
+                @foreach($this->activeCoffeeLocks as $lock)
+                    <div class="py-3 flex items-center justify-between gap-4">
+                        <div class="space-y-0.5">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-slate-800">
+                                    Sag #{{ $lock->sag?->sagsnr ?? $lock->sag_id }}
+                                </span>
+                                <span class="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold">
+                                    ☕ Kaffepause
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500">
+                                Medarbejder: <span class="font-medium text-slate-700">{{ $lock->user?->name ?? 'Ukendt' }}</span> 
+                                <span class="text-slate-300">•</span> {{ $lock->locked_at?->diffForHumans() }}
+                            </p>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            @if($lock->sag)
+                                <a 
+                                    href="{{ route('sager.edit', $lock->sag->id) }}" 
+                                    target="_blank"
+                                    class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                                >
+                                    Se
+                                </a>
+                            @endif
+
+                            <button 
+                                type="button" 
+                                wire:click="adminReleaseLock({{ $lock->sag_id }})"
+                                class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition cursor-pointer"
+                                title="Tving frigivelse af lås"
+                            >
+                                Frigiv
+                            </button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+
+</div>
 
                             {{-- Sektion: Aktive overtagelses-anmodninger --}}
-                            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-                                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                                        Aktive overtagelses-anmodninger
-                                    </h3>
-                                    <span class="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
-                                        {{ \App\Models\SagEditRequest::where('status', 'pending')->count() }} udestående
-                                    </span>
-                                </div>
+<div wire:poll.10s="checkPendingRequests" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+            Aktive overtagelses-anmodninger
+        </h3>
+        <span class="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
+            {{ \App\Models\SagEditRequest::where('status', 'pending')->count() }} udestående
+        </span>
+    </div>
 
-                                <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
-                                    @php
-                                        $pendingReqs = \App\Models\SagEditRequest::where('status', 'pending')
-                                            ->with(['sag', 'requester'])
-                                            ->latest()
-                                            ->get();
-                                    @endphp
+    <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
+        @php
+            $pendingReqs = \App\Models\SagEditRequest::where('status', 'pending')
+                ->with(['sag', 'requester'])
+                ->latest()
+                ->get();
+        @endphp
 
-                                    @forelse($pendingReqs as $req)
-                                        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3" wire:key="req-view-{{ $req->id }}">
-                                            <div class="space-y-1">
-                                                <div class="flex items-center gap-2">
-                                                    <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
-                                                        Sag ID: {{ $req->sag_id }}
-                                                    </span>
-                                                    <span class="text-xs font-semibold text-slate-800 truncate max-w-[150px]">
-                                                        {{ $req->sag?->titel ?? 'Uden titel' }}
-                                                    </span>
-                                                </div>
-                                                <p class="text-[11px] text-slate-500">
-                                                    Ønskes overtaget af: <strong class="text-slate-700">{{ $req->requester?->name ?? 'Kollega' }}</strong>
-                                                </p>
-                                            </div>
-                                            <div class="text-right shrink-0">
-                                                <span class="text-[10px] text-slate-400">
-                                                    {{ $req->created_at?->diffForHumans() }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    @empty
-                                        <div class="text-center py-8 text-slate-400 text-xs">
-                                            Ingen aktive overtagelses-anmodninger lige nu.
-                                        </div>
-                                    @endforelse
-                                </div>
-                            </div>
+        @forelse($pendingReqs as $req)
+            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3" wire:key="req-view-{{ $req->id }}">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
+                            Sag ID: {{ $req->sag_id }}
+                        </span>
+                        <span class="text-xs font-semibold text-slate-800 truncate max-w-[150px]">
+                            {{ $req->sag?->titel ?? 'Uden titel' }}
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-slate-500">
+                        Ønskes overtaget af: <strong class="text-slate-700">{{ $req->requester?->name ?? 'Kollega' }}</strong>
+                        <span class="text-slate-300">•</span> {{ $req->created_at?->diffForHumans() }}
+                    </p>
+                </div>
 
-                        </div>
+                {{-- 🟢 Direkte admin-handlinger --}}
+                <div class="flex items-center gap-2 shrink-0">
+                    <button 
+                        type="button" 
+                        wire:click="adminApproveTakeover({{ $req->id }})"
+                        class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer shadow-xs"
+                    >
+                        Godkend
+                    </button>
+                    <button 
+                        type="button" 
+                        wire:click="adminRejectTakeover({{ $req->id }})"
+                        class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition cursor-pointer"
+                    >
+                        Afvis
+                    </button>
+                </div>
+            </div>
+        @empty
+            <div class="text-center py-8 text-slate-400 text-xs">
+                Ingen aktive overtagelses-anmodninger lige nu.
+            </div>
+        @endforelse
+    </div>
+</div>
 
                         {{-- Lazy section loader (Flyttet helt ned i bunken) --}}
                         <div class="rounded-2xl border border-slate-200 bg-white p-5">

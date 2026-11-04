@@ -16,6 +16,7 @@ use App\Services\Gdpr\SagerGdprService;
 use App\Services\Dashboard\SagerChartService;
 use Spatie\Activitylog\Models\Activity;
 use App\Models\SagLock;
+use App\Models\SagEditRequest; // 🟢 Tilføj denne linje
 
 class AdminDashboard extends Component
 {
@@ -58,6 +59,7 @@ class AdminDashboard extends Component
     public int $loadedSections = 0;
     public int $totalSections = 4;
 
+    public int $previousPendingCount = 0;
 
     /**
      * 🔥 Livewire 3 Event Listeners
@@ -366,7 +368,21 @@ class AdminDashboard extends Component
         session()->forget('show_welcome_modal');
     }
 
-    public function getActiveLocksProperty()
+    #[Computed]
+    public function activeEditingLocks()
+    {
+        return SagLock::with(['sag', 'user'])
+            ->where('currentsag_locked', 0)
+            ->whereNotNull('locked_at')
+            ->latest('locked_at')
+            ->get()
+            ->reject(function ($lock) {
+                return $lock->sag && $lock->sag->isEligibleForGdprDeletion();
+            });
+    }
+
+    #[Computed]
+    public function activeCoffeeLocks()
     {
         return SagLock::with(['sag', 'user'])
             ->where('currentsag_locked', 1)
@@ -374,8 +390,83 @@ class AdminDashboard extends Component
             ->latest('locked_at')
             ->get()
             ->reject(function ($lock) {
-                // Sorter GDPR-udløbte sager fra
                 return $lock->sag && $lock->sag->isEligibleForGdprDeletion();
             });
+    }
+
+    #[Computed]
+    public function urgentRequests()
+    {
+        return \App\Models\SagEditRequest::where('status', 'pending')
+            ->with(['sag', 'requester'])
+            ->latest()
+            ->get();
+    }
+    public function adminApproveTakeover(int $requestId): void
+{
+    if (!auth()->user()->hasRole('Admin')) {
+        $this->dispatch('toast', message: 'Kun administratorer kan godkende overtagelser.', type: 'error');
+        return;
+    }
+
+    $request = SagEditRequest::findOrFail($requestId);
+
+    // 1. Slet enhver eksisterende lås på sagen
+    \App\Models\SagLock::where('sag_id', $request->sag_id)->delete();
+
+    // 2. Opret ny lås til den medarbejder der anmodede
+    \App\Models\SagLock::create([
+        'sag_id' => $request->sag_id,
+        'user_id' => $request->requested_by,
+        'locked_at' => now(),
+    ]);
+
+    // 3. Markér anmodningen som accepteret
+    $request->update([
+        'status' => 'accepted',
+        'responded_at' => now(),
+    ]);
+
+    $this->dispatch('toast', message: 'Overtagelsen er godkendt, og sagen er overdraget.', type: 'success');
+}
+
+    public function adminRejectTakeover(int $requestId): void
+    {
+        if (!auth()->user()->hasRole('Admin')) {
+            $this->dispatch('toast', message: 'Kun administratorer kan afvise overtagelser.', type: 'error');
+            return;
+        }
+
+        SagEditRequest::where('id', $requestId)->update([
+            'status' => 'rejected',
+            'responded_at' => now(),
+        ]);
+
+        $this->dispatch('toast', message: 'Overtagelses-anmodningen blev afvist.', type: 'info');
+    }
+
+    public function adminReleaseLock(int $sagId): void
+    {
+        if (!auth()->user()->hasRole('Admin')) {
+            $this->dispatch('toast', message: 'Kun administratorer kan frigive låste sager.', type: 'error');
+            return;
+        }
+
+        SagLock::where('sag_id', $sagId)->delete();
+        
+        $this->dispatch('toast', message: 'Sagens lås er blevet frigivet af administrator.', type: 'success');
+    }
+
+    public function checkPendingRequests()
+    {
+        $currentCount = \App\Models\SagEditRequest::where('status', 'pending')->count();
+
+        // Hvis der er kommet FLERE anmodninger siden sidst
+        if ($currentCount > $this->previousPendingCount && $this->previousPendingCount !== 0) {
+            $this->dispatch('play-knock-sound'); // Spil en lille notifikationslyd (hvis du har det setup)
+            $this->dispatch('toast', message: 'Ny anmodning om overtagelse af sag modtaget!', type: 'warning');
+        }
+
+        $this->previousPendingCount = $currentCount;
     }
 }

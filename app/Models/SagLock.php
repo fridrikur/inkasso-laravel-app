@@ -11,12 +11,13 @@ class SagLock extends Model
     protected $fillable = [
         'sag_id',
         'user_id',
-        'currentsag_locked',
+        'currentsag_locked', // 🟢 Skal stå her
         'locked_at',
     ];
 
     protected $casts = [
         'locked_at' => 'datetime',
+        'currentsag_locked' => 'boolean', // 🟢 Sikrer at 1/0 bliver håndzet korrekt som bool
     ];
 
     public function user()

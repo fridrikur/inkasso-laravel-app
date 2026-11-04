@@ -92,17 +92,49 @@
         </div>
 
         <div class="flex items-center gap-2">
-            {{-- KAFFEPAUSE KNAP --}}
-            @if($sag->exists && !$isLockedByOther)
-                <button 
-                    type="button" 
-                    wire:click="lockcurrentsag" 
-                    class="px-3 py-1.5 rounded-xl bg-slate-900/60 hover:bg-slate-900 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer border border-white/10"
-                    title="Lås skærmen mens du holder kaffepause"
-                >
-                    <span>☕</span> Lås adgang
-                </button>
-            @endif
+            {{-- KAFFEPAUSE KNAP OG LÅSESKÆRM --}}
+@if($sag && $sag->exists)
+    @if(!$isLockedByOther)
+        <button 
+            type="button" 
+            wire:click="lockcurrentsag" 
+            class="px-3 py-1.5 rounded-xl bg-slate-900/60 hover:bg-slate-900 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer border border-white/10"
+            title="Lås skærmen mens du holder kaffepause"
+        >
+            <span>☕</span> Lås adgang
+        </button>
+    @endif
+    {{-- KAFFEPAUSE / LÅSESKÆRM OVERLAY --}}
+    @if($currentsagLocked)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+            <div class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl text-center space-y-4 border border-slate-100">
+                <div class="mx-auto w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 text-2xl shadow-inner">
+                    ☕
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Skærmen er låst (Kaffepause)</h3>
+                    <p class="text-xs text-slate-500 mt-1">Indtast systemets globale unlock-kode for at låse op og fortsætte.</p>
+                </div>
+
+                <div class="space-y-3 pt-2">
+                    <input 
+                        type="password" 
+                        wire:model="unlockCode" 
+                        placeholder="Indtast låsekode..." 
+                        class="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-center outline-none focus:border-indigo-500 font-mono"
+                    >
+                    <button 
+                        type="button" 
+                        wire:click="unlockcurrentsag"
+                        class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs cursor-pointer transition"
+                    >
+                        Lås op
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+@endif
 
             {{-- INTERAKTIV STATUS DROPDOWN I HEADEREN --}}
             <div class="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3 py-1 rounded-xl text-xs font-bold text-white border border-white/10">
@@ -488,41 +520,9 @@
     @endif
 </div>
             
-
     {{-- MODAL: PÅMINDELSE OM AFSLUTNINGSDATO ELLER -ÅRSAG --}}
     @if($showAfsluttetDateReminder)
         @include('livewire.sager.partials.afslutning-modal')
-    @endif
-
-    {{-- KAFFEPAUSE / LÅSESKÆRM OVERLAY --}}
-    @if($currentsagLocked)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
-            <div class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl text-center space-y-4 border border-slate-100">
-                <div class="mx-auto w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 text-2xl shadow-inner">
-                    ☕
-                </div>
-                <div>
-                    <h3 class="text-base font-bold text-slate-900">Skærmen er låst (Kaffepause)</h3>
-                    <p class="text-xs text-slate-500 mt-1">Indtast systemets globale unlock-kode for at låse op og fortsætte.</p>
-                </div>
-
-                <div class="space-y-3 pt-2">
-                    <input 
-                        type="password" 
-                        wire:model="unlockCode" 
-                        placeholder="Indtast låsekode..." 
-                        class="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-center outline-none focus:border-indigo-500 font-mono"
-                    >
-                    <button 
-                        type="button" 
-                        wire:click="unlockcurrentsag"
-                        class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs cursor-pointer transition"
-                    >
-                        Lås op
-                    </button>
-                </div>
-            </div>
-        </div>
     @endif
 
 </div>
