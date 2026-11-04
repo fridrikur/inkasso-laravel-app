@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `breve`;
 -- phpMyAdmin SQL Dump
 -- version 5.2.3-1.el8.remi
 -- https://www.phpmyadmin.net/

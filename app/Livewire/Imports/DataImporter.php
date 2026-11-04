@@ -741,11 +741,9 @@ class DataImporter extends Component
 
         try {
             DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+            DB::statement('SET NAMES utf8mb4;');
 
-            // Hvis filen er et SQL-dump, kan vi køre den direkte via DB::unprepared
             $sql = file_get_contents($filePath);
-            
-            // Alternativt, hvis det er et råt SQL-script med INSERT statements:
             DB::unprepared($sql);
 
             DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
@@ -753,7 +751,12 @@ class DataImporter extends Component
             session()->flash('success', '🎉 Brev-skabeloner blev importeret succesfuldt!');
         } catch (\Throwable $e) {
             DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
-            session()->flash('error', 'Fejl ved import af breve: ' . $e->getMessage());
+            
+            if (str_contains($e->getMessage(), 'already exists')) {
+                session()->flash('error', 'Tabellen "breve" eksisterer allerede. Tilføj "DROP TABLE IF EXISTS breve;" i toppen af din SQL-fil.');
+            } else {
+                session()->flash('error', 'Fejl ved import af breve: ' . $e->getMessage());
+            }
         }
     }
     
