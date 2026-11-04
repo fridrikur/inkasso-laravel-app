@@ -925,27 +925,35 @@ class SagEditor extends Component
     {
         if (!$this->sag?->id) return;
 
-        $existingLock = SagLock::where('sag_id', $this->sag->id)->first();
+        $lock = SagLock::where('sag_id', $this->sag->id)->first();
 
-        // Hvis der er en aktiv lås, men den tilhører en anden...
-        if ($existingLock && $existingLock->user_id !== auth()->id()) {
-            // Hvis den indloggede bruger er Admin, overrule kaffepausen/låsen automatisk
-            if (auth()->user()->hasRole('Admin')) {
-                $existingLock->update([
-                    'user_id' => auth()->id(),
-                    'currentsag_locked' => false, // Nulstil evt. kaffepause for admin
+        if ($lock) {
+            // Hvis låsen tilhører en medarbejder...
+            if ($lock->user_id !== auth()->id()) {
+                if (auth()->user()->hasRole('Admin')) {
+                    // Hvis medarbejderen IKKE har sat kaffepause, kan admin overtage låsen. 
+                    // Hvis medarbejderen HAR sat kaffepause, skal admin IKKE tvinge den væk automatisk, 
+                    // men blot kunne kigge på den uden kaffepause-blokering.
+                    if (!$lock->currentsag_locked) {
+                        $lock->update([
+                            'user_id' => auth()->id(),
+                            'locked_at' => now(),
+                        ]);
+                    }
+                }
+            } else {
+                // Hvis det er admin selv der ejer låsen i forvejen, opdater blot tidspunktet
+                $lock->update([
                     'locked_at' => now(),
                 ]);
             }
         } else {
-            // Ellers kør standard updateOrCreate
-            SagLock::updateOrCreate(
-                ['sag_id' => $this->sag->id],
-                [
-                    'user_id' => auth()->id(),
-                    'locked_at' => now(),
-                ]
-            );
+            // Ingen lås findes – opret en til den nuværende bruger (admin)
+            SagLock::create([
+                'sag_id' => $this->sag->id,
+                'user_id' => auth()->id(),
+                'locked_at' => now(),
+            ]);
         }
 
         $this->syncLockState();
@@ -1234,67 +1242,70 @@ class SagEditor extends Component
     }
 
     protected function syncLockState(): void
-    {
-        if (!$this->sag?->id) {
-            $this->lockState = 'unlocked';
-            $this->hasLock = false;
-            $this->isLockedByOther = false;
-            $this->currentsagLocked = false;
-            return;
-        }
-
-        // 🟢 HVIS BRUGEREN ER ADMIN, SKAL KAFFEPAUSE-LÅSEN OVERSKRIVES (IGNORERES)
-        if (auth()->user()->hasRole('Admin')) {
-            $this->currentsagLocked = false;
-        } else {
-            $myLock = SagLock::where('sag_id', $this->sag->id)
-                ->where('user_id', auth()->id())
-                ->first();
-                
-            $this->currentsagLocked = (bool) ($myLock?->currentsag_locked ?? false);
-        }
-
-        $lock = SagLock::where('sag_id', $this->sag->id)->first();
-
-        if ($lock) {
-            // AUTOMATISK FRIGIVELSE: Hvis låsen er ældre end 3 minutter uden opdatering
-            if ($lock->locked_at && Carbon::parse($lock->locked_at)->lt(now()->subMinutes(3))) {
-                $lock->delete();
-                SagEditRequest::where('sag_id', $this->sag->id)->where('status', 'pending')->update(['status' => 'rejected']);
-                
-                $lock = null; 
-            }
-        }
-
-        $this->pendingRequests = SagEditRequest::where('sag_id', $this->sag->id)
-            ->where('requested_by', '!=', auth()->id())
-            ->where('status', 'pending')
-            ->latest()
-            ->get();
-
-        if (!$lock) {
-            $this->lockState = 'unlocked';
-            $this->lock = null;
-            return;
-        }
-
-        if ($lock->user_id === auth()->id()) {
-            $this->lockState = 'mine';
-            $this->hasLock = true;
-            $this->isLockedByOther = false;
-            $this->lock = null;
-            return;
-        }
-
-        // 🟢 Hvis en almindelig medarbejder prøver at tilgå en sag, der er sat på kaffepause af en anden
-        $this->lockState = 'foreign';
+{
+    if (!$this->sag?->id) {
+        $this->lockState = 'unlocked';
         $this->hasLock = false;
-        $this->isLockedByOther = true;
-
-        $this->lock = [
-            'user_name' => $lock->user?->name ?? 'Ukendt',
-        ];
+        $this->isLockedByOther = false;
+        $this->currentsagLocked = false;
+        return;
     }
+
+    // Hent låsen for denne sag uanset hvem der ejer den
+    $lock = SagLock::where('sag_id', $this->sag->id)->first();
+
+    if ($lock) {
+        // AUTOMATISK FRIGIVELSE: Hvis låsen er ældre end 3 minutter uden opdatering
+        if ($lock->locked_at && Carbon::parse($lock->locked_at)->lt(now()->subMinutes(3))) {
+            $lock->delete();
+            SagEditRequest::where('sag_id', $this->sag->id)->where('status', 'pending')->update(['status' => 'rejected']);
+            
+            $lock = null; 
+        }
+    }
+
+    // 🟢 KAFFEPAUSE-TJEK:
+    if ($lock) {
+        if ($lock->user_id === auth()->id()) {
+            // Hvis det er ADMINS EGEN lås, skal kaffepause-status respekteres (så admin kan låse sin egen skærm)
+            $this->currentsagLocked = (bool) $lock->currentsag_locked;
+        } else {
+            // Hvis det er en ANDEN medarbejders lås, skal admin IKKE have kaffepause-blokering på skærmen
+            $this->currentsagLocked = false;
+        }
+    } else {
+        $this->currentsagLocked = false;
+    }
+
+    // VIGTIGT: Hent KUN anmodninger fra ANDRE brugere!
+    $this->pendingRequests = SagEditRequest::where('sag_id', $this->sag->id)
+        ->where('requested_by', '!=', auth()->id())
+        ->where('status', 'pending')
+        ->latest()
+        ->get();
+
+    if (!$lock) {
+        $this->lockState = 'unlocked';
+        $this->lock = null;
+        return;
+    }
+
+    if ($lock->user_id === auth()->id()) {
+        $this->lockState = 'mine';
+        $this->hasLock = true;
+        $this->isLockedByOther = false;
+        $this->lock = null;
+        return;
+    }
+
+    $this->lockState = 'foreign';
+    $this->hasLock = false;
+    $this->isLockedByOther = true;
+
+    $this->lock = [
+        'user_name' => $lock->user?->name ?? 'Ukendt',
+    ];
+}
 
     /**
      * Hjælpemetode fra modalen: Sætter dags dato i Afsluttet-feltet
