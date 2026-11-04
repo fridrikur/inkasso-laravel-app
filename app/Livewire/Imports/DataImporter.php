@@ -724,6 +724,39 @@ class DataImporter extends Component
         }
     }
     
+    public function runBrevImport()
+    {
+        set_time_limit(120);
+
+        // Tjek om filen findes i storage/app/ eller storage/
+        $filePath = storage_path('app/' . $this->brevFile);
+        if (!file_exists($filePath)) {
+            $filePath = storage_path($this->brevFile);
+        }
+
+        if (!file_exists($filePath)) {
+            session()->flash('error', "Kunne ikke finde filen '{$this->brevFile}' i storage-mappen.");
+            return;
+        }
+
+        try {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+
+            // Hvis filen er et SQL-dump, kan vi køre den direkte via DB::unprepared
+            $sql = file_get_contents($filePath);
+            
+            // Alternativt, hvis det er et råt SQL-script med INSERT statements:
+            DB::unprepared($sql);
+
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+
+            session()->flash('success', '🎉 Brev-skabeloner blev importeret succesfuldt!');
+        } catch (\Throwable $e) {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+            session()->flash('error', 'Fejl ved import af breve: ' . $e->getMessage());
+        }
+    }
+    
     public function render()
     {
         return view('imports.data-importer', [
