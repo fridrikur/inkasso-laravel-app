@@ -65,7 +65,7 @@
                 </div>
 
                 <button type="button" 
-                        onclick="extendSession()"
+                        wire:click="extendSession"
                         class="w-full bg-[var(--theme-primary)] hover:opacity-90 text-white font-semibold px-4 py-2.5 rounded-xl transition shadow-sm cursor-pointer text-sm">
                     Fortsæt med at være logget på
                 </button>
