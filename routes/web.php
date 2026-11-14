@@ -115,6 +115,7 @@ use App\Livewire\Autotekster\AutotekstIndex;
 use App\Livewire\Imports\DataImporter;
 use App\Livewire\Admin\SystemSecuritySetup;
 use App\Livewire\Admin\OnboardingWizard; 
+use App\Livewire\Admin\Breve\BrevFeltManager;
 
 Route::get('/internal/force-logout', function (Illuminate\Http\Request $request) {
     $roleTarget = session('active_role_target', 'Medarbejder');
@@ -336,6 +337,8 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             Route::get('/konsulenter', ManageKonsulenterFieldSettings::class)->name('fields.konsulenter');
             Route::get('/sagsbehandler', ManageSagsbehandlerFieldSettings::class)->name('fields.sagsbehandler');
             Route::get('/sager', ManageSagerFieldSettings::class)->name('fields.sager');
+
+            Route::get('/breve/felter', BrevFeltManager::class)->name('admin.breve.felter');
         });
 
         /* KREDITORER */
@@ -438,7 +441,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])
             })->name('sager.import');
 
         Route::get('/admin/doctor-norton', SagDoctorDashboard::class)->name('sager.doctor');
-        Route::get('/sager/breve/rediger', BrevManager::class)->name('admin.breve.rediger');
+        Route::get('/breve/rediger', BrevManager::class)->name('admin.breve.rediger');
 
         Route::get('/breve/filter', [BrevFilterController::class, 'index'])->name('breve.filter');
         Route::post('/breve/filter/{brevID}', [BrevFilterController::class, 'update'])->name('breve.filter.update');

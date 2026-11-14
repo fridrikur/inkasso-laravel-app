@@ -35,10 +35,16 @@ class BrevMergeService
 
     protected function cleanTemplate(string $template): string
     {
-        // Udskifter bogstavelige '\r\n' eller '\n' strenge (hvis de er gemt som rå tekst) 
-        // samt rigtige linjeskift med enten <br> eller lader dem håndtere pænt.
-        $template = str_replace(['\r\n', '\n'], '<br>', $template);
-        
+        if (empty($template)) {
+            return '';
+        }
+
+        // 1. Oversæt/fjern rå tekst-escape-sekvenser (såsom \r og \n) til rigtige tegn
+        $template = stripcslashes($template);
+
+        // 2. Konverter rigtige linjeskift til <br> tags, så de vises korrekt i HTML-editoren
+        $template = nl2br($template);
+
         return $template;
     }
 
@@ -91,21 +97,67 @@ class BrevMergeService
 
     protected function relationFields(Sager $sag): array
     {
-        $kreditor = $sag->kreditor()->first();
-        $debitor = $sag->debitor()->first();
+        $kreditor = method_exists($sag, 'kreditor') ? $sag->kreditor()->first() : null;
+        $debitor = method_exists($sag, 'debitor') ? $sag->debitor()->first() : null;
+        
+        // 🟢 Hent by via debitorens postnummer-relation (hvis modellen hedder Postnr og har en 'by'- eller 'navn'-kolonne)
+        $byNavn = '';
+        if ($debitor) {
+            // Hvis relationen er loaded eller kan hentes:
+            $postnrModel = method_exists($debitor, 'postnummer') ? $debitor->postnummer()->first() : null;
+            if ($postnrModel) {
+                $byNavn = $postnrModel->by ?? $postnrModel->navn ?? $postnrModel->bynavn ?? '';
+            }
+        }
+
+        $ktrRecord = null;
+        if (method_exists($sag, 'ktr')) {
+            $ktrRecord = $sag->ktr instanceof \Illuminate\Database\Eloquent\Collection 
+                ? $sag->ktr->first() 
+                : $sag->ktr()->first();
+        }
+
+        $ktrTekst = '';
+        if ($ktrRecord) {
+            if (is_object($ktrRecord)) {
+                $ktrTekst = $ktrRecord->navn ?? $ktrRecord->beskrivelse ?? $ktrRecord->forkortelse ?? '';
+            } elseif (is_string($ktrRecord)) {
+                $ktrTekst = $ktrRecord;
+            }
+        }
+
+        if (empty($ktrTekst) && isset($sag->ktr) && is_string($sag->ktr)) {
+            $ktrTekst = $sag->ktr;
+        }
 
         return [
-            'firmanavn'    => $kreditor?->navn ?? $kreditor?->firmanavn ?? '',
-            'debitor_navn' => $debitor?->navn ?? '',
-            'debitor_email' => $debitor?->email ?? $debitor?->debitor_email ?? '',
-            'ktr'          => $sag->ktr()->first()?->navn ?? '',
+            'firmanavn'          => $kreditor?->navn ?? $kreditor?->firmanavn ?? '',
+            
+            // Debitor felter koblet til Debitorer-modellen og dens postnummer-relation
+            'debitor_navn'       => $debitor?->navn ?? '',
+            'debitor_adresse'    => $debitor?->adresse ?? '',
+            'debitor_postnr'     => $debitor?->postnr ?? '',
+            'debitor_postnummer' => $debitor?->postnr ?? '',
+            'debitor_by'         => $byNavn, // 🟢 Hentes nu via Postnr-relationen
+            'debitor_email'      => $debitor?->email ?? $debitor?->email2 ?? '',
+            
+            'ktr'                => $ktrTekst,
         ];
     }
 
     protected function computedFields(Sager $sag): array
     {
+        // 🟢 Gør 'aktiv' læsbar (fx "Aktiv" / "Inaktiv" eller en beskrivelse i stedet for 1/0)
+        $aktivTekst = $sag->aktiv ? 'Aktiv' : 'Inaktiv';
+        
+        // Hvis 'aktiv' i virkeligheden er et tekstfelt eller en kolonne på sagen, bruges den direkte:
+        if (isset($sag->aktiv) && is_string($sag->aktiv)) {
+            $aktivTekst = $sag->aktiv;
+        }
+
         return [
             'today' => now()->format('d-m-Y'),
+            'aktiv' => $aktivTekst, // 🟢 Sender læsbar tekst med i stedet for rå kode
         ];
     }
 }

@@ -13,43 +13,30 @@ class MergeBrev extends Component
 
     public ?int $brevId = null;
     public string $emne = '';
-    public string $preview = '';
     public string $tekst = '';
+    public array $breveList = [];
+    
+    // Admin-lignende felter til den lækre editor
+    public string $previewHtml = '';
+    public ?string $flettetEmne = '';
     public array $missingTokens = [];
     public array $availableTokens = [];
-    public bool $dirty = false;
-    public string $mode = 'preview'; // preview | edit
-    public array $breveList = []; // for tabs
-    
-    public string $newBrevTitle = ''; // new Brev input
 
     public function mount(Sager $sag)
     {
         $this->sag = $sag;
         $this->availableTokens = $this->buildAvailableTokens();
 
-        // Load all tabs
         $this->loadBreveList();
 
-        // Load first Brev as active
         if (!empty($this->breveList)) {
             $this->loadBrev($this->breveList[0]['id']);
         }
     }
 
-    /** Load tabs */
     private function loadBreveList(): void
     {
         $this->breveList = Brev::orderBy('brevpos')->get()->toArray();
-        
-    }
-
-    /** Load first Brev if exists */
-    private function loadFirstBrev(): void
-    {
-        if ($first = Brev::orderBy('brevpos')->first()) {
-            $this->loadBrev($first['id']);
-        }
     }
 
     public function loadBrev(int $id): void
@@ -57,18 +44,28 @@ class MergeBrev extends Component
         $brev = Brev::findOrFail($id);
 
         $this->brevId = $brev->id;
-        $this->emne = $brev->emne;
-        $this->tekst = $brev->tekst;
-        $this->dirty = false;
+        $this->emne = $brev->emne ?? '';
 
+        $service = app(BrevMergeService::class);
+        
+        $result = $service->mergeWithMeta($brev->tekst ?? '', $this->sag);
+        $this->tekst = $result['text'] ?? $result['html'] ?? '';
+
+        $emneResult = $service->mergeWithMeta($this->emne, $this->sag);
+        $this->flettetEmne = strip_tags($emneResult['text'] ?? $this->emne);
+
+        // 🟢 Send et signal til browseren om, at et nyt brev er klar
+        $this->dispatch('brev-loaded', tekst: $this->tekst, emne: $this->flettetEmne);
+    }
+
+    public function updatedTekst(): void
+    {
         $this->generatePreview();
     }
 
-    public function updated($property)
+    public function updatedEmne(): void
     {
-        if (in_array($property, ['emne', 'tekst'])) {
-            $this->dirty = true;
-        }
+        $this->generatePreview();
     }
 
     public function generatePreview(): void
@@ -76,35 +73,20 @@ class MergeBrev extends Component
         if (!$this->brevId) return;
 
         $service = app(BrevMergeService::class);
+
+        // 🟢 Flet brevet, så ALLE klammer ({ktr}, {aktiv}, {firmanavn} osv.) omdannes til rigtig data
         $result = $service->mergeWithMeta($this->tekst, $this->sag);
+        $this->previewHtml = $result['text'] ?? $result['html'] ?? '';
+        $this->missingTokens = $result['missing'] ?? [];
 
-        $this->preview = $result['text'];
-        $this->missingTokens = $result['missing'];
-    }
-
-    public function saveTemplate(): void
-    {
-        if (!$this->brevId) return;
-
-        Brev::where('id', $this->brevId)->update([
-            'emne' => $this->emne,
-            'tekst' => $this->tekst,
-        ]);
-
-        $this->dirty = false;
-
-        // Dispatch Livewire 3 toast
-        $this->dispatch('toast', [
-            'message' => 'Skabelonen er gemt',
-            'type' => 'success',
-        ]);
+        // Flet emnet
+        $emneResult = $service->mergeWithMeta($this->emne, $this->sag);
+        $this->flettetEmne = strip_tags($emneResult['text'] ?? $this->emne);
     }
 
     private function buildAvailableTokens(): array
     {
         $tokens = [];
-
-        // Hent fillable felter fra Sager-modellen + faste felter
         foreach ($this->sag->getFillable() as $field) {
             $tokens[] = $field;
         }
@@ -118,7 +100,6 @@ class MergeBrev extends Component
         $tokens[] = 'debitor_email';
         $tokens[] = 'ktr';
 
-        // Debitor relaterede felter
         if ($this->sag->debitor()->getRelated()->getFillable()) {
             foreach ($this->sag->debitor()->getRelated()->getFillable() as $field) {
                 $tokens[] = 'debitor_' . $field;
@@ -126,48 +107,6 @@ class MergeBrev extends Component
         }
 
         return array_unique($tokens);
-    }
-    
-    /** Update Brev title inline */
-    public function updateBrevTitle($brevId, $newTitle)
-    {
-        $brev = Brev::find($brevId);
-        if (!$brev) return;
-
-        $brev->update(['titel' => $newTitle]);
-        $this->loadBreveList(); // refresh tabs
-        $this->dispatch('toast', [
-            'message' => 'Titel opdateret',
-            'type' => 'success'
-        ]);
-    }
-
-    /** Create a new Brev */
-    public function createNewBrev()
-    {
-        if (!$this->newBrevTitle) {
-            $this->dispatch('toast', [
-                'message' => 'Titel må ikke være tom',
-                'type' => 'error'
-            ]);
-            return;
-        }
-
-        $brev = Brev::create([
-            'titel' => $this->newBrevTitle,
-            'emne' => '',
-            'tekst' => '',
-            'brevpos' => Brev::max('brevpos') + 1,
-        ]);
-
-        $this->newBrevTitle = '';
-        $this->loadBreveList();
-        $this->loadBrev($brev->id);
-
-        $this->dispatch('toast', [
-            'message' => 'Nyt brev oprettet',
-            'type' => 'success'
-        ]);
     }
     
     public function render()

@@ -1,541 +1,372 @@
-<div class="space-y-6 relative" x-data="{ showCreateModal: false, showSelectModal: false, showRenameModal: false, editTitle: '' }">
+<div class="relative pb-24">
 
-    {{-- TOP BAR: NAVN FØST (VENSTRE) OG CRUD SIDST (HØJRE) --}}
-    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-wrap items-center justify-between gap-4">
-
-        {{-- 1. NAVNET PÅ SKABELONEN (ALLERFØRSTE TIL VENSTRE) --}}
-        <div class="flex items-center gap-3">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Aktiv skabelon:</span>
-            <span class="px-3.5 py-2 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl text-xs font-bold shadow-2xs">
-                {{ $titel ?: 'Ingen skabelon valgt' }}
-            </span>
-        </div>
-
-        {{-- MIDDEL: SKABELON INFO (TITEL & EMNE) --}}
-        <div class="flex items-center gap-3 flex-1 max-w-xl">
-            <div class="flex-1">
-                <input wire:model="titel" class="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50 focus:outline-none focus:border-indigo-500 font-medium" placeholder="Skabelontitel...">
-            </div>
-            <div class="flex-1">
-                <input wire:model="emne" class="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50 focus:outline-none focus:border-indigo-500 font-medium" placeholder="Emne / overskrift...">
-            </div>
-        </div>
-
-        {{-- 2. CRUD AFDELINGEN (ALLERSIDSTE TIL HØJRE) --}}
-        <div class="flex items-center gap-2">
-            <button
-                type="button"
-                @click="showSelectModal = true"
-                class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer flex items-center gap-1.5"
-            >
-                <span>📂</span> Skift skabelon
-            </button>
-
-            @if ($brevId)
+    {{-- 1. FANER ØVERST --}}
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 flex-1">
+            @foreach ($breveList as $brev)
                 <button
                     type="button"
-                    @click="showRenameModal = true; editTitle = '{{ $titel }}'"
-                    class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition cursor-pointer"
-                    title="Omdøb aktiv skabelon"
+                    wire:click="loadBrev({{ $brev['id'] }})"
+                    class="px-4 py-2 rounded-t-xl rounded-b-none text-xs font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-2 border-t border-x {{ $brevId === $brev['id'] ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' }}"
                 >
-                    ✏️
+                    <span>✉️</span> {{ $brev['titel'] }}
                 </button>
+            @endforeach
+        </div>
+    </div>
 
-                <button
-                    type="button"
-                    wire:click="confirmDeleteBrev({{ $brevId }})"
-                    class="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition cursor-pointer"
-                    title="Slet aktiv skabelon"
+    {{-- 2. SKABELONINDHOLD --}}
+    <div class="bg-white border border-slate-200 rounded-b-2xl rounded-tr-2xl p-6 shadow-sm flex flex-col space-y-4">
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {{-- Emne-felt --}}
+            <div class="md:col-span-1">
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Emne / overskrift:</label>
+                <input 
+                    type="text" 
+                    wire:model="emne" 
+                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-slate-50/50 focus:outline-none focus:border-indigo-500 font-bold text-slate-900" 
+                    placeholder="Skriv emne..."
                 >
-                    🗑️
-                </button>
-            @endif
+            </div>
 
-            <a
-                href="{{ route('breve.filter') }}" 
-                class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition shadow-2xs flex items-center justify-center cursor-pointer"
-                title="Sorter & felter"
-            >
-                ⚙️
-            </a>
+            {{-- Top Margin --}}
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5" title="Skub indholdet op eller ned">Top-margin (px):</label>
+                <input type="number" wire:model.live="margin_top" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-slate-50/50 focus:outline-none focus:border-indigo-500 font-bold text-slate-900">
+            </div>
 
-            <button
-                type="button"
-                @click="showCreateModal = true"
-                class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"
-            >
-                <span>+</span> Opret ny
-            </button>
+            {{-- Left Margin --}}
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5" title="Skub indholdet til højre eller venstre">Venstre-margin (px):</label>
+                <input type="number" wire:model.live="margin_left" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-slate-50/50 focus:outline-none focus:border-indigo-500 font-bold text-slate-900">
+            </div>
+
+            {{-- Right Margin --}}
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5" title="Juster højre margin">Højre-margin (px):</label>
+                <input type="number" wire:model.live="margin_right" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-slate-50/50 focus:outline-none focus:border-indigo-500 font-bold text-slate-900">
+            </div>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5" title="Afstand mellem linjer (f.eks. 1.2, 1.5, 2.0)">Linjeafstand:</label>
+            <select wire:model.live="linjeafstand" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-slate-50/50 focus:outline-none focus:border-indigo-500 font-bold text-slate-900 cursor-pointer">
+                <option value="1.0">Tæt (1.0)</option>
+                <option value="1.2">Normal (1.2)</option>
+                <option value="1.3">Standard brev (1.3)</option>
+                <option value="1.5">Luftig (1.5)</option>
+                <option value="2.0">Dobbelt (2.0)</option>
+            </select>
         </div>
 
-    </div>
+        {{-- Beskyttet Checkbox --}}
+        <div class="flex flex-col justify-end">
+            <label class="flex items-center gap-2 h-[42px] px-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition">
+                <input type="checkbox" wire:model.live="beskyttet" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer">
+                <span class="text-xs font-bold text-slate-700">🔒 Beskyttet</span>
+            </label>
+        </div>
 
-    {{-- TOOLBAR --}}
-    <div class="flex flex-wrap gap-2 items-center">
-        <button
-            type="button"
-            wire:click="generatePreview"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
-        >
-            🔄 Opdater preview
-        </button>
-
-        <button
-            type="button"
-            wire:click="loadRandomSag"
-            class="bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
-        >
-            🎲 Random sag
-        </button>
-
-        <button
-            type="button"
-            onclick="printPreview()"
-            class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
-            title="Udskriv kun forhåndsvisningen af brevet"
-        >
-            🖨️ Udskriv brev
-        </button>
-
-        <button
-            type="button"
-            wire:click="saveTemplate"
-            class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs ml-auto flex items-center gap-1.5 cursor-pointer"
-        >
-            💾 Gem brev
-        </button>
-    </div>
-
-    {{-- EDITOR GRID --}}
-    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col" x-data="{
-        activeTab: 'visual',
-        formatText(tag) {
-            if (this.activeTab === 'visual') {
-                document.execCommand(tag === 'b' ? 'bold' : (tag === 'i' ? 'italic' : 'underline'), false, null);
-                return;
-            }
-            const textarea = document.getElementById('brev-textarea');
-            if (!textarea) return;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const selectedText = textarea.value.substring(start, end);
+        {{-- OVERSKRIFT OG BREVHOVED-KNAP SAMLET --}}
+        <div class="flex items-center justify-between pb-2">
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Skabelonens layout og indhold:</label>
             
-            const replacement = `<${tag}>${selectedText}</${tag}>`;
-            textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
-            textarea.dispatchEvent(new Event('input', { bubbles: true }));
-        },
-        insertTable() {
-            const tableHtml = `
-<table class=&quot;w-full border-collapse border border-slate-300 my-4 text-xs font-mono&quot;>
-    <thead>
-        <tr class=&quot;bg-slate-100&quot;>
-            <th class=&quot;border border-slate-300 p-2 text-left&quot;>Beskrivelse</th>
-            <th class=&quot;border border-slate-300 p-2 text-right&quot;>Beløb</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td class=&quot;border border-slate-300 p-2&quot;>Hovedstol / Restance</td>
-            <td class=&quot;border border-slate-300 p-2 text-right&quot;>{hovedstol}</td>
-        </tr>
-        <tr>
-            <td class=&quot;border border-slate-300 p-2&quot;>Gebyrer og renter</td>
-            <td class=&quot;border border-slate-300 p-2 text-right&quot;>{gebyr}</td>
-        </tr>
-    </tbody>
-</table>
-`;
-            if (this.activeTab === 'visual') {
-                document.execCommand('insertHTML', false, tableHtml);
-            } else {
-                const textarea = document.getElementById('brev-textarea');
-                if (!textarea) return;
-                const start = textarea.selectionStart;
-                textarea.value = textarea.value.substring(0, start) + tableHtml + textarea.value.substring(start);
-                textarea.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        }
-    }">
-        <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-            {{-- Faneblade knapper --}}
-            <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            {{-- Brevhoved Indstillinger (Dropdown) --}}
+            <div class="relative" x-data="{ openHeaderMenu: false }">
                 <button 
                     type="button" 
-                    @click="activeTab = 'visual'"
-                    :class="activeTab === 'visual' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white'"
-                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                    @if(!$beskyttet) @click="openHeaderMenu = !openHeaderMenu" @else @click="alert('🚫 Denne skabelon er beskyttet. Brevhovedet kan ikke ændres.');" @endif
+                    class="bg-white text-slate-800 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-2xs {{ $beskyttet ? 'opacity-60 cursor-not-allowed bg-slate-100' : 'hover:bg-slate-100 cursor-pointer' }}"
                 >
-                    ✨ Visuel Editor
+                    <span>📄 Brevhoved indstillinger</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold {{ ($filter['skjulalle'] ?? false) ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700' }}">
+                        {{ $beskyttet ? 'Låst' : (($filter['skjulalle'] ?? false) ? 'Skjult' : 'Aktiv') }}
+                    </span>
                 </button>
-                <button 
-                    type="button" 
-                    @click="activeTab = 'source'"
-                    :class="activeTab === 'source' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white'"
-                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
-                >
-                    💻 Kilde / HTML
-                </button>
-                <button 
-                    type="button" 
-                    @click="activeTab = 'preview'"
-                    :class="activeTab === 'preview' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white'"
-                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
-                >
-                    👁️ Preview
-                </button>
-            </div>
 
-            {{-- FORMATERINGS-TOOLBAR --}}
-            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200" x-show="activeTab !== 'preview'">
-                <button type="button" @click="formatText('b')" class="px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 hover:bg-white transition shadow-2xs cursor-pointer" title="Fed tekst"><b>B</b></button>
-                <button type="button" @click="formatText('i')" class="px-2.5 py-1 rounded-lg text-xs italic text-slate-700 hover:bg-white transition shadow-2xs cursor-pointer" title="Kursiv tekst"><i>I</i></button>
-                <button type="button" @click="formatText('u')" class="px-2.5 py-1 rounded-lg text-xs underline text-slate-700 hover:bg-white transition shadow-2xs cursor-pointer" title="Understreget tekst"><u>U</u></button>
-                <span class="text-slate-300 px-1">|</span>
-                <button type="button" @click="insertTable()" class="px-2.5 py-1 rounded-lg text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition shadow-2xs cursor-pointer flex items-center gap-1" title="Indsæt standard tabel">
-                    <span>📊</span> Tabel
-                </button>
-            </div>
-        </div>
+                {{-- Dropdown boks (Kun tilgængelig hvis ikke beskyttet) --}}
+                @if(!$beskyttet)
+                    <div 
+                        x-show="openHeaderMenu" 
+                        @click.outside="openHeaderMenu = false"
+                        class="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl p-4 z-50 space-y-3 text-xs"
+                        style="display: none;"
+                    >
+                        <div class="font-bold text-slate-700 border-b border-slate-100 pb-2 flex justify-between items-center">
+                            <span>Styr brevhoved visning</span>
+                            <span class="text-[10px] text-slate-400">Pr. skabelon</span>
+                        </div>
 
-        {{-- 1A. VISUEL EDITOR (Viser fejl og "Mente du..." forslag) --}}
-        <div x-show="activeTab === 'visual'" class="flex-1 flex">
-            <div 
-                contenteditable="true"
-                @input="$wire.set('tekst',$event.target.innerHTML)"
-                class="w-full h-[700px] min-h-[700px] border border-slate-200 rounded-xl px-4 py-3 font-sans text-xs sm:text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 overflow-y-auto bg-white"
-            >
-                {!! 
-                    preg_replace_callback('/\{([^}]+)\}/', function($matches) {$field = $matches[1];$validTokens = array_merge((new \App\Models\Sager())->getFillable(), ['today', 'aktiv', 'firmanavn', 'debitor_navn', 'ktr', 'debitor_email']);
-                        
-                        if (in_array($field,$validTokens)) {
-                            return '<span contenteditable="false" class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-mono text-xs border border-indigo-100 font-bold">{' . $field . '}</span>';
-                        } else {
-                            $suggestion = $this->getClosestTokenSuggestion($field);
-                            $suggestionHtml =$suggestion ? ' <span class="text-[10px] text-rose-800 underline cursor-pointer font-semibold" title="Klik for at rette" wire:click.prevent="replaceToken(\'' . $field . '\', \'' .$suggestion . '\')">Mente du: {' . $suggestion . '}?</span>' : '';
+                        {{-- Master kontrol --}}
+                        <div class="space-y-1.5">
+                            <label class="flex items-center gap-2 cursor-pointer font-medium text-slate-800">
+                                <input type="checkbox" wire:model.live="filter.visalle" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                <span>Vis alle felter i top</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer font-medium text-slate-800">
+                                <input type="checkbox" wire:model.live="filter.skjulalle" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500 w-3.5 h-3.5">
+                                <span>Skjul hele brevhovedet</span>
+                            </label>
+                        </div>
 
-                            return '<span contenteditable="false" class="bg-rose-50 text-rose-700 px-2 py-1 rounded font-mono text-xs border border-rose-300 font-bold inline-flex items-center gap-1.5 mx-1 shadow-2xs">' .
-                                   '<span>{' . $field . '} (Ugyldig)</span>' .$suggestionHtml . 
-                                   '</span>';
-                        }
-                    }, $tekst) 
-                !!}
-            </div>
-        </div>
+                        <hr class="border-slate-100">
 
-        {{-- 1B. KILDE / HTML EDITOR --}}
-        <div x-show="activeTab === 'source'" class="flex-1 flex">
-            <textarea
-                id="brev-textarea"
-                wire:model="tekst"
-                rows="30"
-                @drop.prevent="
-                    const token = $event.dataTransfer.getData('text/plain');
-                    const start = $el.selectionStart;
-                    const end = $el.selectionEnd;
-                    const newValue = $el.value.substring(0, start) + token + $el.value.substring(end);$el.value = newValue;
-                    $el.selectionStart =$el.selectionEnd = start + token.length;
-                    $el.dispatchEvent(new Event('input', { bubbles: true }));
-                "
-                @dragover.prevent="$event.dataTransfer.dropEffect = 'copy'"
-                class="w-full h-[700px] min-h-[700px] border border-slate-200 rounded-xl px-4 py-3 font-mono text-xs sm:text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-y"
-                placeholder="Rå HTML kildekode..."
-            ></textarea>
-        </div>
-
-        {{-- 2. LIVE PREVIEW FANE --}}
-        <div x-show="activeTab === 'preview'" style="display: none;" class="flex-1 flex flex-col">
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-xs font-bold text-slate-500 uppercase">Forhåndsvisning med data:</span>
-                <button
-                    type="button"
-                    wire:click="togglePreview"
-                    class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer"
-                >
-                    Fuldskærm
-                </button>
-            </div>
-
-            <div class="prose border border-slate-200 rounded-xl p-5 h-[700px] min-h-[700px] overflow-y-auto bg-slate-50/50 max-w-none font-sans text-sm leading-relaxed">
-                {!! $previewHtml ?: '<span class="text-slate-400">Klik “Opdater preview” for at generere visning.</span>' !!}
-            </div>
-        </div>
-    </div>
-
-    {{-- MODAL TIL SKIFT / VÆLG SKABELON --}}
-    <div 
-        x-show="showSelectModal" 
-        class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
-        style="display: none;"
-    >
-        <div @click.away="showSelectModal = false" class="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4 border border-slate-100">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 class="text-base font-bold text-slate-900">Vælg brevskabelon</h3>
-                <button type="button" @click="showSelectModal = false" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
-            </div>
-
-            <div class="max-h-96 overflow-y-auto space-y-2 py-2">
-                @foreach ($breveList as $brev)
-                    <div class="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 hover:bg-slate-50 transition">
-                        <span class="text-xs font-bold text-slate-800">{{ $brev['titel'] }}</span>
-                        <button
-                            type="button"
-                            wire:click="loadBrev({{ $brev['id'] }})"
-                            @click="showSelectModal = false"
-                            class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
-                        >
-                            Vælg skabelon
-                        </button>
+                        {{-- Detaljerede felter --}}
+                        <div class="space-y-1.5 text-slate-600">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" wire:model.live="filter.navn" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
+                                <span>Vis Navn</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" wire:model.live="filter.adresse" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
+                                <span>Vis Adresse</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" wire:model.live="filter.dato" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
+                                <span>Vis Dato</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" wire:model.live="filter.sagsnr" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
+                                <span>Vis Sagsnr.</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" wire:model.live="filter.emne" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
+                                <span>Vis Emne</span>
+                            </label>
+                        </div>
                     </div>
-                @endforeach
-            </div>
+                    <hr class="border-slate-100">
 
-            <div class="flex justify-end pt-2 border-t border-slate-100">
-                <button
-                    type="button"
-                    @click="showSelectModal = false"
-                    class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-                >
-                    Luk
-                </button>
-            </div>
-        </div>
-    </div>
-
-    {{-- MODAL TIL OPRETTELSE AF NY SKABELON --}}
-    <div 
-        x-show="showCreateModal" 
-        class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
-        style="display: none;"
-    >
-        <div @click.away="showCreateModal = false" class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 border border-slate-100">
-            <div class="flex items-center justify-between">
-                <h3 class="text-base font-bold text-slate-900">Opret ny brevskabelon</h3>
-                <button type="button" @click="showCreateModal = false" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">Navn på skabelon</label>
-                <input
-                    type="text"
-                    wire:model="newBrevTitle"
-                    placeholder="F.eks. Rykkerbrev 1..."
-                    class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs bg-slate-50 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
-                >
-            </div>
-
-            <div class="flex justify-end gap-2 pt-2">
-                <button
-                    type="button"
-                    @click="showCreateModal = false"
-                    class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-                >
-                    Annuller
-                </button>
-                <button
-                    type="button"
-                    wire:click="createNewBrev(); showCreateModal = false;"
-                    class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm cursor-pointer"
-                >
-                    Opret skabelon
-                </button>
+                    {{-- Styring af højre top-margin --}}
+                    <div class="space-y-1 pt-1">
+                        <label class="block font-medium text-slate-700">Højre top-afstand (pixel)</label>
+                        <div class="flex items-center gap-2">
+                            <input 
+                                type="number" 
+                                wire:model.live="right_margin_top" 
+                                class="w-full border border-slate-300 rounded-lg px-2.5 py-1 text-slate-800 text-xs focus:ring-indigo-500 focus:border-indigo-500" 
+                                min="0" 
+                                max="300"
+                                step="5"
+                            >
+                            <span class="text-slate-400 text-[10px]">px</span>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
+
+        @php
+            $skjulAlt = $filter['skjulalle'] ?? false;
+            $visAlt   = $filter['visalle'] ?? false;
+
+            $visNavn    = $visAlt || (!$skjulAlt && ($filter['navn'] ?? true));
+            $visAdresse = $visAlt || (!$skjulAlt && ($filter['adresse'] ?? true));
+            $visDato    = $visAlt || (!$skjulAlt && ($filter['dato'] ?? true));
+            $visSagsnr  = $visAlt || (!$skjulAlt && ($filter['sagsnr'] ?? true));
+        @endphp
+
+        {{-- DYNAMISK TOP-HEADER (Viser præcis de valgte eksempler) --}}
+        @if($skjulAlt)
+            <div class="w-full text-xs text-slate-400 bg-slate-50 border border-dashed border-slate-300 rounded-t-2xl p-4 text-center italic">
+                🚫 Brevhovedet er skjult for denne skabelon
+            </div>
+        @else
+            {{-- TOP SEKTION: 2-rækket rammefri tabel, hvor højre side starter hvor venstre side slutter --}}
+            <table class="w-full text-xs sm:text-sm text-slate-700 font-sans" style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 20px;" cellspacing="0" cellpadding="0" border="0">
+                
+                {{-- RÆKKE 1: Kun modtageradresse i venstre side --}}
+                <tr style="border: none;">
+                    <td style="width: 50%; vertical-align: top; text-align: left; padding: 20px; padding-bottom: 0; border: none;">
+                        @if($visNavn || $visAdresse)
+                            <div class="space-y-1">
+                                @if($visNavn)
+                                    <div class="font-bold text-base text-slate-900">[ Eksempel Navn ]</div>
+                                @endif
+                                @if($visAdresse)
+                                    <div class="text-slate-600">[ Eksempel Adresse ]</div>
+                                    <div class="text-slate-600">[ Postnr By ]</div>
+                                @endif
+                            </div>
+                        @else
+                            <span class="text-slate-300 italic">[ Modtagerfelt skjult ]</span>
+                        @endif
+                    </td>
+                    {{-- Højre side er tom i første række, så venstre side får lov at bestemme højden --}}
+                    <td style="width: 50%; border: none;"></td>
+                </tr>
+
+                {{-- RÆKKE 2: Dato og Sagsnr i højre side (starter præcist under adressen + din finjustering) --}}
+                <tr style="border: none;">
+                    {{-- Venstre side er tom i anden række --}}
+                    <td style="width: 50%; border: none;"></td>
+                    
+                    <td style="width: 50%; vertical-align: top; text-align: right; padding: 20px; padding-top: {{ 15 + ($right_margin_top ?? 0) }}px; border: none;">
+                        @if($visDato || $visSagsnr)
+                            <div class="space-y-1 font-medium text-slate-900" style="line-height: 1.4;">
+                                @if($visDato)
+                                    <div><strong>Dato:</strong> {{ $sag->dato ?? date('d.m.Y') }}</div>
+                                @endif
+                                @if($visSagsnr)
+                                    <div><strong>J. nr.:</strong> {{ $sag->sagsnr ?? '123456' }}</div>
+                                @endif
+                            </div>
+                        @else
+                            <span class="text-slate-300 italic">[ Dato/Sagsnr skjult ]</span>
+                        @endif
+                    </td>
+                </tr>
+
+            </table>
+        @endif
+
+    {{-- WYSIWYG REDIGERER TIL SELVE BREVTEKSTEN --}}
+    <x-wysiwyg-editor 
+        wire:key="editor-{{ $brevId }}-{{ $beskyttet ? 'prot' : 'unprot' }}"
+        wireModel="tekst" 
+        :value="$tekst"
+        :marginTop="$margin_top" 
+        :marginLeft="$margin_left" 
+        :marginRight="$margin_right"
+        :linjeafstand="$linjeafstand" 
+        :beskyttet="$beskyttet"
+        height="450px" 
+    />
     </div>
 
-    {{-- MODAL TIL OMDØBNING AF AKTIV SKABELON --}}
-    <div 
-        x-show="showRenameModal" 
-        class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
-        style="display: none;"
-    >
-        <div @click.away="showRenameModal = false" class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 border border-slate-100">
-            <div class="flex items-center justify-between">
-                <h3 class="text-base font-bold text-slate-900">Omdøb skabelon</h3>
-                <button type="button" @click="showRenameModal = false" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
-            </div>
+    {{-- 3. BUNDMED ALLE KNAPPER --}}
+    <div class="mt-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4 text-white">
+        <div class="flex items-center gap-2">
+    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">Handlinger:</span>
+    @if ($brevId)
+        <button type="button" wire:click="openRenameModal" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border border-slate-700">
+            ✏️ Omdøb
+        </button>
+        <button type="button" wire:click="confirmDeleteBrev({{ $brevId }})" class="px-3.5 py-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border border-rose-900/50">
+            🗑️ Slet
+        </button>
+    @endif
+    <button type="button" wire:click="openCreateModal" class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm">
+        <span>+</span> Opret ny skabelon
+    </button>
+</div>
 
-            <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">Ny titel</label>
-                <input
-                    type="text"
-                    x-model="editTitle"
-                    class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs bg-slate-50 text-slate-800 focus:outline-none focus:border-indigo-500 font-medium"
-                >
-            </div>
-
-            <div class="flex justify-end gap-2 pt-2">
-                <button
-                    type="button"
-                    @click="showRenameModal = false"
-                    class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-                >
-                    Annuller
-                </button>
-                <button
-                    type="button"
-                    @click="$wire.updateBrevTitle({{$brevId ?? 0 }}, editTitle); showRenameModal = false;"
-                    class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-sm cursor-pointer"
-                >
-                    Gem navn
-                </button>
-            </div>
-        </div>
+        <div>
+        <div>
+    <button type="button" wire:click="saveTemplate" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-lg flex items-center gap-2">
+        💾 Gem skabelon
+    </button>
+</div>
     </div>
 
-    {{-- FLYDENDE / TRÆKBAR BOKS MED TILGÆNGELIGE FELTER --}}
+    {{-- 4. TRÆKBAR BOKS MED FELTER --}}
     <div 
-        x-data="{ 
+        x-data="{
             open: true,
-            x: window.innerWidth - 320, 
-            y: 120,
             dragging: false,
+            x: window.innerWidth - 320,
+            y: 120,
             startX: 0,
             startY: 0,
-            startDrag(e) {
-                this.dragging = true;
-                this.startX = e.clientX - this.x;
-                this.startY = e.clientY - this.y;
-            },
-            doDrag(e) {
-                if (!this.dragging) return;
-                this.x = e.clientX - this.startX;
-                this.y = e.clientY - this.startY;
-            },
-            stopDrag() {
-                this.dragging = false;
+            init() {
+                if (this.x > window.innerWidth - 320) this.x = window.innerWidth - 320;
             }
         }"
-        @mousemove.window="doDrag($event)"
-        @mouseup.window="stopDrag()"
-        :style="`left: ${x}px; top: ${y}px; position: fixed;`"
-        class="w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden transition-shadow"
+        @mousemove.window="
+            if (dragging) {
+                x = Math.max(10, Math.min(window.innerWidth - 300, startX + ($event.clientX - mouseX)));
+                y = Math.max(10, Math.min(window.innerHeight - 200, startY + ($event.clientY - mouseY)));
+            }
+        "
+        @mouseup.window="dragging = false"
+        :style="`left: ${x}px; top: ${y}px; position: fixed;`" 
+        class="w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden select-none"
     >
         <div 
-            @mousedown="startDrag($event)"
-            class="cursor-move bg-slate-900 text-white px-4 py-3 flex justify-between items-center select-none"
+            @mousedown="
+                dragging = true; 
+                mouseX = $event.clientX; 
+                mouseY = $event.clientY; 
+                startX = x; 
+                startY = y;
+            "
+            class="cursor-grab active:cursor-grabbing bg-slate-900 text-white px-4 py-3 flex justify-between items-center"
         >
-            <div class="flex items-center gap-2">
-                <span class="text-xs">⋮⋮</span>
-                <span class="font-bold text-xs tracking-wide">Tilgængelige felter</span>
-            </div>
-            <button 
-                type="button" 
-                @click="open = !open" 
-                class="text-xs text-slate-400 hover:text-white transition cursor-pointer"
-            >
-                <span x-text="open ? '–' : '+ '"></span>
-            </button>
+            <span class="font-bold text-xs flex items-center gap-1.5">
+                <span>⠿</span> Tilgængelige felter
+            </span>
+            <button type="button" @click="open = !open" class="text-xs text-slate-400 hover:text-white cursor-pointer"><span x-text="open ? '–' : '+'"></span></button>
         </div>
-
-        <div x-show="open" class="p-3 max-h-80 overflow-y-auto bg-slate-50/50 space-y-2">
-            <p class="text-[10px] text-slate-400 font-medium">Træk et felt over i skabelon-teksten:</p>
+        
+        <div x-show="open" class="p-3 max-h-80 overflow-y-auto bg-slate-50 space-y-2">
+            <p class="text-[10px] text-slate-400 font-medium px-1">Træk felterne ind i editoren:</p>
             <div class="flex flex-wrap gap-1.5">
-                @php
-                    $standardTokens = array_merge(
-                        (new \App\Models\Sager())->getFillable(),
-                        ['today', 'aktiv', 'firmanavn', 'debitor_navn', 'ktr', 'debitor_email']
-                    );
-                @endphp
-                @foreach ($standardTokens as $token)
-                    <div
-                        draggable="true"
-                        @dragstart="$event.dataTransfer.setData('text/plain', '{{ '{'.$token.'}' }}')"
-                        class="px-2.5 py-1 rounded-lg cursor-grab active:cursor-grabbing text-xs font-mono font-bold select-none transition shadow-2xs {{ $highlightedToken ===$token ? 'bg-amber-400 text-amber-950 ring-2 ring-amber-500 scale-105 animate-pulse shadow-md' : 'bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white' }}"
-                    >
+                @foreach ($this->validTokens as $token)
+                    <div draggable="true" @dragstart="$event.dataTransfer.setData('text/plain', '{{ '{'.$token.'}' }}')" class="px-2.5 py-1 rounded-lg cursor-grab text-xs font-mono font-bold bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white transition shadow-2xs">
                         {{ '{'.$token.'}' }}
-                        @if($highlightedToken ===$token)
-                            <span class="text-[9px] bg-amber-950 text-amber-200 px-1 rounded ml-1">Match!</span>
-                        @endif
                     </div>
                 @endforeach
             </div>
         </div>
     </div>
 
-    {{-- FULLSCREEN PREVIEW MODAL --}}
-    @if($previewExpanded)
-        <div class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-            <div class="bg-white w-[95vw] h-[95vh] rounded-2xl p-6 overflow-auto relative shadow-2xl">
-                <button
-                    type="button"
-                    wire:click="togglePreview"
-                    class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer"
-                >
-                    ✕ Close
-                </button>
-
-                <div class="prose max-w-none pt-4">
-                    {!! $previewHtml !!}
+    {{-- MODALER (Opret, Omdøb, Slet) --}}
+    {{-- MODAL: OPRET NY SKABELON --}}
+    @if($showCreateModal)
+        <div class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div wire:click.away="closeCreateModal" class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 border border-slate-100">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 class="text-base font-bold text-slate-900">Opret ny brevskabelon</h3>
+                    <button type="button" wire:click="closeCreateModal" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
+                </div>
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold text-slate-700">Skabelontitel</label>
+                    <input type="text" wire:model.blur="newBrevTitle" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-slate-50 focus:outline-none focus:border-indigo-500 font-bold text-slate-900" placeholder="F.eks. Rykker 1...">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" wire:click="closeCreateModal" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Annuller</button>
+                    <button type="button" wire:click="createNewBrev" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer">Opret</button>
                 </div>
             </div>
         </div>
     @endif
 
-    {{-- 🗑️ PROFESSIONEL SLET-MODAL --}}
-    @if($showDeleteBrevModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4">
-            <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 border border-slate-100">
-                <div class="flex items-center gap-3">
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 text-xl font-bold">
-                        🗑️
-                    </div>
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900">Bekræft sletning</h3>
-                        <p class="text-xs text-slate-500">Denne handling kan ikke fortydes.</p>
-                    </div>
+    {{-- MODAL: OMDØB SKABELON --}}
+    @if($showRenameModal)
+        <div class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div wire:click.away="closeRenameModal" class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 border border-slate-100">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 class="text-base font-bold text-slate-900">Omdøb skabelon</h3>
+                    <button type="button" wire:click="closeRenameModal" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
                 </div>
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold text-slate-700">Ny titel</label>
+                    <input type="text" wire:model.blur="editTitle" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-slate-50 focus:outline-none focus:border-indigo-500 font-bold text-slate-900">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" wire:click="closeRenameModal" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Annuller</button>
+                    <button type="button" wire:click="updateBrevTitle" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer">Gem navn</button>
+                </div>
+            </div>
+        </div>
+    @endif
 
+    @if($showDeleteBrevModal)
+        <div class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 border border-slate-100">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 class="text-base font-bold text-rose-600">Slet skabelon</h3>
+                    <button type="button" wire:click="cancelDeleteBrev" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
+                </div>
                 <p class="text-xs text-slate-600 leading-relaxed">
-                    Er du sikker på, at du vil slette skabelonen <span class="font-bold text-slate-900">"{{ $brevToDeleteTitle }}"</span>?
+                    Er du sikker på, at du vil slette skabelonen <strong class="text-slate-900">{{ $brevToDeleteTitle }}</strong>? Denne handling kan ikke angres.
                 </p>
-
-                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                    <button
-                        type="button"
-                        wire:click="cancelDeleteBrev"
-                        class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-                    >
-                        Annuller
-                    </button>
-                    <button
-                        type="button"
-                        wire:click="executeDeleteBrev"
-                        class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-sm cursor-pointer"
-                    >
-                        Ja, slet permanent
-                    </button>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" wire:click="cancelDeleteBrev" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Annuller</button>
+                    <button type="button" wire:click="executeDeleteBrev" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold cursor-pointer">Slet permanent</button>
                 </div>
             </div>
         </div>
     @endif
 
 </div>
-
-<script>
-function printPreview() {
-    let previewEl = document.querySelector('.prose');
-    if (!previewEl) {
-        alert('Ingen forhåndsvisning fundet til udskrivning.');
-        return;
-    }
-    let printContents = previewEl.innerHTML;
-    let printWindow = window.open('', '_blank', 'height=600,width=800');
-    printWindow.document.write('<html><head><title>Udskriv brev</title>');
-    printWindow.document.write('<style>');
-    printWindow.document.write('body { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; padding: 40px; margin: 0; }');
-    printWindow.document.write('table { width: 100%; border-collapse: collapse; margin: 20px 0; }');
-    printWindow.document.write('th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }');
-    printWindow.document.write('th { background-color: #f1f5f9; }');
-    printWindow.document.write('@media print { body { padding: 0; } }');
-    printWindow.document.write('</style>');
-    printWindow.document.write('</head><body>');
-    printWindow.document.write(printContents);
-    printWindow.document.write('</body></html>');
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 250);
-}
-</script>

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\File;
 use Throwable;
 use Illuminate\Support\Facades\Artisan;
 use Database\Seeders\DropdownDataSeeder;
+use Illuminate\Database\Schema\Blueprint;
 
 class DataImporter extends Component
 {
@@ -723,7 +724,7 @@ class DataImporter extends Component
             session()->flash('error', 'Fejl ved synkronisering: ' . $e->getMessage());
         }
     }
-    
+
     public function runBrevImport()
     {
         set_time_limit(120);
@@ -740,25 +741,75 @@ class DataImporter extends Component
         }
 
         try {
-            DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
-            DB::statement('SET NAMES utf8mb4;');
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+        DB::statement('SET NAMES utf8mb4;');
 
-            $sql = file_get_contents($filePath);
-            DB::unprepared($sql);
+        // 1. Kør SQL-filen (den sletter/opretter tabellen på gammel manér)
+        $sql = file_get_contents($filePath);
+        DB::unprepared($sql);
 
-            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
-
-            session()->flash('success', '🎉 Brev-skabeloner blev importeret succesfuldt!');
-        } catch (\Throwable $e) {
-            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
-            
-            if (str_contains($e->getMessage(), 'already exists')) {
-                session()->flash('error', 'Tabellen "breve" eksisterer allerede. Tilføj "DROP TABLE IF EXISTS breve;" i toppen af din SQL-fil.');
-            } else {
-                session()->flash('error', 'Fejl ved import af breve: ' . $e->getMessage());
-            }
+        // 2. "Heal" tabellen med margin-kolonner, hvis de mangler
+        if (!Schema::hasColumn('breve', 'margin_top')) {
+            Schema::table('breve', function (Blueprint $table) {
+                $table->integer('margin_top')->default(0);
+            });
         }
+
+        if (!Schema::hasColumn('breve', 'margin_left')) {
+            Schema::table('breve', function (Blueprint $table) {
+                $table->integer('margin_left')->default(0);
+            });
+        }
+
+        if (!Schema::hasColumn('breve', 'margin_right')) {
+            Schema::table('breve', function (Blueprint $table) {
+                $table->integer('margin_right')->default(0);
+            });
+        }
+
+        // <-- NYT: Tilføj healing for linjeafstand og beskyttet -->
+        if (!Schema::hasColumn('breve', 'linjeafstand')) {
+            Schema::table('breve', function (Blueprint $table) {
+                $table->float('linjeafstand')->default(1.5);
+            });
+        }
+
+        if (!Schema::hasColumn('breve', 'beskyttet')) {
+            Schema::table('breve', function (Blueprint $table) {
+                $table->tinyInteger('beskyttet')->default(0);
+            });
+        }
+
+        if (!Schema::hasColumn('breve', 'right_margin_top')) {
+            Schema::table('breve', function (Blueprint $table) {
+                $table->integer('right_margin_top')->default(0);
+            });
+        }
+
+        // 3. "Heal" tabellen med timestamps, hvis de mangler
+        if (!Schema::hasColumn('breve', 'created_at')) {
+            Schema::table('breve', function (Blueprint $table) {
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
+            });
+
+            // Sæt dags dato som standard på de importerede rækker, 
+            // så de ikke er tomme (null)
+            DB::table('breve')->whereNull('created_at')->update([
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+
+        session()->flash('success', '🎉 Brev-skabeloner blev importeret, opdateret og tidsstempler blev tilføjet succesfuldt!');
+    } catch (\Throwable $e) {
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+        
+        session()->flash('error', 'Fejl ved import af breve: ' . $e->getMessage());
     }
+}
     
     public function render()
     {

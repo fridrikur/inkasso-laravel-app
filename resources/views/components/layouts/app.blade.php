@@ -220,22 +220,49 @@
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('debitorer.*') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>👥</span> Debitorer
                                     </a>
-                                    <a href="{{ route('admin.sager.status.index') }}" 
+                                    {{-- <a href="{{ route('admin.sager.status.index') }}" 
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('admin.sager.status.*') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>🏷️</span> Sagsstatus
-                                    </a>
+                                    </a> --}}
                                     <a href="{{ route('dropdowns.index') }}" 
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('dropdowns*') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>💬</span> Dropdown tekster
                                     </a>
-                                    <a href="{{ route('admin.breve.rediger') }}" 
-                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('admin.breve.rediger') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                        <span>✉️</span> Brevskabeloner
-                                    </a>
-                                    <a href="{{ route('breve.filter') }}" 
-                                       class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('breve.filter') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                                        <span>⚙️</span> Brev-felter & filter
-                                    </a>
+                                    <div class="space-y-1" x-data="{ open: {{ request()->routeIs('admin.breve.*', 'breve.filter') ? 'true' : 'false' }} }">
+    
+    {{-- Hovedkategori / Klikbar knap til at fold ud/i --}}
+    <button 
+        type="button" 
+        @click="open = !open" 
+        class="w-full flex items-center justify-between px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer"
+    >
+        <span class="flex items-center gap-2.5">
+            <span>✉️</span> Brev-administration
+        </span>
+        <span class="text-[10px] transition-transform duration-200" :class="open ? 'rotate-90' : ''">▶</span>
+    </button>
+
+    {{-- Undermenu punkter (foldes ud/i med x-show) --}}
+    <div x-show="open" x-cloak class="pl-3 space-y-1 pt-1">
+        {{-- 1. Brevskabeloner --}}
+        <a href="{{ route('admin.breve.rediger') }}" 
+           class="flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.breve.rediger') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <span>📄</span> Skabeloner
+        </a>
+
+        {{-- 2. Brev filtrering --}}
+        <a href="{{ route('breve.filter') }}" 
+           class="flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('breve.filter') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <span>🔍</span> Brev filtrering
+        </a>
+
+        {{-- 3. Brev-felter & filter --}}
+        <a href="{{ route('admin.breve.felter') }}" 
+           class="flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.breve.felter') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <span>⚙️</span> Flettefelter & filter
+        </a>
+    </div>
+</div>
                                     <a href="{{ route('sager.search') }}" 
                                        class="flex items-center gap-2.5 px-4 py-2 font-semibold transition {{ request()->routeIs('sager.search') ? 'text-white bg-slate-800' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                                         <span>🔍</span> Søg Sager
@@ -497,8 +524,36 @@ document.addEventListener("DOMContentLoaded", function () {
     // Start timeren med det samme siden indlæses
     startTimers();
 });
-</script>
-    {{-- GLOBAL TOAST CONTAINER (Lytter automatisk på alle dispatches fra Livewire-komponenter) --}}
+
+    window.printPreview = function() {
+        let printEl = document.getElementById('print-container');
+        if (!printEl) {
+            alert('Ingen forhåndsvisning fundet til udskrivning.');
+            return;
+        }
+        let printContents = printEl.innerHTML;
+        let printWindow = window.open('', '_blank', 'height=600,width=800');
+        printWindow.document.write('<html><head><title>Udskriv brev</title>');
+        printWindow.document.write('<style>');
+        // Tilpas padding her i stedet for top: -200px i selve HTML'en
+        printWindow.document.write('body { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; padding: 20px; margin: 0; }');
+        printWindow.document.write('table { width: 100%; border-collapse: collapse; margin: 20px 0; }');
+        printWindow.document.write('th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }');
+        printWindow.document.write('th { background-color: #f1f5f9; }');
+        printWindow.document.write('@media print { body { padding: 0; } }');
+        printWindow.document.write('</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(printContents);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
+    }
+</script>    
+{{-- GLOBAL TOAST CONTAINER (Lytter automatisk på alle dispatches fra Livewire-komponenter) --}}
 <x-toaster />
 @livewire('active-locks-manager')
 </body>

@@ -1,38 +1,51 @@
 <?php
+
 namespace App\Livewire\Admin\Breve;
 
 use Livewire\Component;
 use App\Models\Brev;
-use App\Models\Sager;
-use App\Services\BrevMergeService;
+use App\Models\BrevFeltIndstilling;
+use App\Services\ToastService;
 
 class BrevManager extends Component
 {
     public ?int $brevId = null;
-
     public string $titel = '';
     public string $emne = '';
     public string $tekst = '';
+    
+    // Layout marginaler
+    public int $margin_top = 0;
+    public int $margin_left = 0;
+    public int $margin_right = 0;
 
     public array $breveList = [];
-
     public string $newBrevTitle = '';
-
-    public string $previewHtml = '';
-    public ?Sager $previewSag = null;
-
-    public bool $previewExpanded = false;
-
     public $showDeleteBrevModal = false;
     public $brevToDeleteId = null;
     public $brevToDeleteTitle = '';
-
     public ?string $highlightedToken = null;
+    public bool $beskyttet = false;
 
-    // -----------------------------------------
-    // INIT
-    // -----------------------------------------
-    public function mount(): void
+    public float $linjeafstand = 1.5; // Standard linjeafstand
+
+    public bool $showCreateModal = false;
+    public bool $showRenameModal = false;
+    public string $editTitle = '';
+
+    public array $filter = [
+        'adresse'   => true,
+        'dato'      => true,
+        'navn'      => true,
+        'sagsnr'    => true,
+        'emne'      => true,
+        'skjulalle' => false,
+        'visalle'   => false,
+    ];
+
+    public int $right_margin_top = 0;
+
+    public function mount()
     {
         $this->loadBreveList();
 
@@ -41,196 +54,97 @@ class BrevManager extends Component
         }
     }
 
-    // -----------------------------------------
-    // LIST
-    // -----------------------------------------
     public function loadBreveList(): void
     {
         $this->breveList = Brev::orderBy('brevpos')->get()->toArray();
     }
 
-    // -----------------------------------------
-    // LOAD BREV
-    // -----------------------------------------
-    public function loadBrev(int $id): void
+    public function loadBrev($id): void
     {
-        $brev = Brev::findOrFail($id);
+        $brev = Brev::find($id);
 
-        $this->brevId = $brev->id;
-        $this->titel  = $brev->titel;
-        $this->emne   = $brev->emne ?? '';
-        $this->tekst  = $brev->tekst ?? '';
+        if ($brev) {
+            $this->brevId       = $brev->id;
+            $this->titel        = $brev->titel ?? '';
+            $this->editTitle    = $brev->titel ?? '';
+            $this->emne         = $brev->emne ?? '';
+            $this->tekst        = $brev->tekst ?? '';  
+            $this->margin_top   = $brev->margin_top ?? 0;
+            $this->margin_left  = $brev->margin_left ?? 0;
+            $this->margin_right = $brev->margin_right ?? 0;
+            $this->beskyttet    = (bool) ($brev->beskyttet ?? 0);
+            $this->linjeafstand = $brev->linjeafstand ?? 1.5;
+            $this->right_margin_top = $brev->right_margin_top ?? 0;
 
-        $this->generatePreview();
+            // Hent eller opret standard filter for dette brev
+            $brevFilter = \App\Models\BrevFilter::where('brevID', $this->brevId)->first();
+            if ($brevFilter) {
+                $this->filter = [
+                    'adresse'   => (bool) $brevFilter->adresse,
+                    'dato'      => (bool) $brevFilter->dato,
+                    'navn'      => (bool) $brevFilter->navn,
+                    'sagsnr'    => (bool) $brevFilter->sagsnr,
+                    'emne'      => (bool) $brevFilter->emne,
+                    'skjulalle' => (bool) $brevFilter->skjulalle,
+                    'visalle'   => (bool) $brevFilter->visalle,
+                ];
+            } else {
+                // Standardværdier hvis der ikke findes et filter endnu
+                $this->filter = [
+                    'adresse' => true, 'dato' => true, 'navn' => true, 
+                    'sagsnr' => true, 'emne' => true, 'skjulalle' => false, 'visalle' => false
+                ];
+            }
+        }
     }
 
-    // -----------------------------------------
-    // CREATE
-    // -----------------------------------------
-    public function createNewBrev(): void
-    {
-        if (!$this->newBrevTitle) return;
-
-        $brev = Brev::create([
-            'titel'   => $this->newBrevTitle,
-            'emne'    => '',
-            'tekst'   => '',
-            'brevpos' => (Brev::max('brevpos') ?? 0) + 1,
-        ]);
-
-        $this->newBrevTitle = '';
-
-        $this->loadBreveList();
-        $this->loadBrev($brev->id);
-
-        $this->dispatch('toast', [
-            'message' => 'Nyt brev oprettet',
-            'type' => 'success'
-        ]);
-    }
-
-    // -----------------------------------------
-    // SAVE
-    // -----------------------------------------
-    public function saveTemplate(): void
+    public function saveTemplate(ToastService $toast): void
     {
         if (!$this->brevId) return;
 
-        Brev::where('id', $this->brevId)->update([
-            'titel' => $this->titel,
-            'emne'  => $this->emne,
-            'tekst' => $this->tekst,
-        ]);
-
-        $this->loadBreveList();
-
-        $this->dispatch('toast', [
-            'message' => 'Brev gemt',
-            'type' => 'success'
-        ]);
-    }
-
-    // -----------------------------------------
-    // DELETE
-    // -----------------------------------------
-    public function deleteBrev(int $id): void
-    {
-        Brev::where('id', $id)->delete();
-
-        $this->loadBreveList();
-
-        if ($first = Brev::orderBy('brevpos')->first()) {
-            $this->loadBrev($first->id);
-        } else {
-            $this->brevId = null;
-            $this->titel = '';
-            $this->emne = '';
-            $this->tekst = '';
-            $this->previewHtml = '';
-        }
-
-        $this->dispatch('toast', [
-            'message' => 'Brev slettet',
-            'type' => 'success'
-        ]);
-    }
-
-    // -----------------------------------------
-    // PREVIEW
-    // -----------------------------------------
-    public function generatePreview(): void
-    {
-        if (!$this->brevId) return;
-
-        if (!$this->previewSag) {
-            $this->previewSag = Sager::inRandomOrder()->first();
-        }
-
-        if (!$this->previewSag) {
-            $this->previewHtml = '<em>Ingen sager tilgængelige</em>';
+        $brev = Brev::find($this->brevId);
+        
+        if ($brev && $brev->beskyttet && $this->beskyttet) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => 'Fejl: Denne brevskabelon er beskyttet og kan ikke ændres!']);
             return;
         }
 
-        $service = app(BrevMergeService::class);
+        // Gem selve brevet
+        Brev::where('id', $this->brevId)->update([
+            'titel'        => $this->titel,
+            'emne'         => $this->emne,
+            'tekst'        => $this->tekst,
+            'margin_top'   => $this->margin_top,
+            'margin_left'  => $this->margin_left,
+            'margin_right' => $this->margin_right,
+            'right_margin_top' => $this->right_margin_top, 
+            'beskyttet'    => $this->beskyttet ? 1 : 0, 
+            'linjeafstand' => $this->linjeafstand,
+        ]);
 
-        $result = $service->mergeWithMeta(
-            $this->tekst,
-            $this->previewSag
+        // Gem / Opdater BrevFilter i databasen
+        \App\Models\BrevFilter::updateOrCreate(
+            ['brevID' => $this->brevId],
+            [
+                'adresse'   => $this->filter['adresse'] ?? true,
+                'dato'      => $this->filter['dato'] ?? true,
+                'navn'      => $this->filter['navn'] ?? true,
+                'sagsnr'    => $this->filter['sagsnr'] ?? true,
+                'emne'      => $this->filter['emne'] ?? true,
+                'skjulalle' => $this->filter['skjulalle'] ?? false,
+                'visalle'   => $this->filter['visalle'] ?? false,
+            ]
         );
 
-        $this->previewHtml =
-            $result['text']
-            ?? $result['html']
-            ?? '';
+        $this->loadBreveList();
+        $this->loadBrev($this->brevId);
+
+        $this->dispatch('toast', $toast->success('Skabelonen og brevhoved blev gemt'));
     }
 
-    // -----------------------------------------
-    // RANDOM SAG
-    // -----------------------------------------
-    public function loadRandomSag(): void
-    {
-        $this->previewSag = Sager::inRandomOrder()->first();
-
-        if (!$this->previewSag) return;
-
-        $this->generatePreview();
-
-        $this->dispatch('toast', [
-            'message' => 'Random sag loaded',
-            'type' => 'success'
-        ]);
-    }
-
-    // -----------------------------------------
-    // LIVE UPDATE
-    // -----------------------------------------
-    public function updatedTekst(): void
-    {
-        $this->generatePreview();
-    }
-
-    public function updatedTitel(): void
-    {
-        $this->generatePreview();
-    }
-
-    public function updatedEmne(): void
-    {
-        $this->generatePreview();
-    }
-
-    // -----------------------------------------
-    // MODAL TOGGLE
-    // -----------------------------------------
-    public function togglePreview(): void
-    {
-        $this->previewExpanded = !$this->previewExpanded;
-    }
-
-    // -----------------------------------------
-    // VIEW
-    // -----------------------------------------
-    
-    public function updateBrevTitle($brevId, $newTitle)
-    {
-        if (empty(trim($newTitle))) {
-            return;
-        }
-
-        $brev = \App\Models\Brev::find($brevId);
-        if ($brev) {
-            $brev->titel = $newTitle;
-            $brev->save();
-            
-            // Genindlæs listen af breve så de opdateres i UI'et
-            $this->loadBreveList(); // Eller det kald I bruger til at hente breve
-        }
-    }
-
-    // Åbn modal og gem ID'et på det brev der ønskes slettet
     public function confirmDeleteBrev($id)
     {
-        $brev = \App\Models\Brev::find($id);
+        $brev = Brev::find($id);
         if ($brev) {
             $this->brevToDeleteId = $brev->id;
             $this->brevToDeleteTitle = $brev->titel;
@@ -238,7 +152,6 @@ class BrevManager extends Component
         }
     }
 
-    // Annuller
     public function cancelDeleteBrev()
     {
         $this->showDeleteBrevModal = false;
@@ -246,91 +159,123 @@ class BrevManager extends Component
         $this->brevToDeleteTitle = '';
     }
 
-    // Udfør selve sletningen
     public function executeDeleteBrev()
     {
         if ($this->brevToDeleteId) {
-            \App\Models\Brev::where('id', $this->brevToDeleteId)->delete();
-            
-            // Nulstil og genindlæs listen
+            Brev::where('id', $this->brevToDeleteId)->delete();
             $this->showDeleteBrevModal = false;
             $this->brevToDeleteId = null;
             $this->brevToDeleteTitle = '';
-            
-            // Genindlæs dine breve (tilpas evt. til dit eget metodekald for at hente listen)
-            $this->loadBreveList(); 
-        }
-    }
-
-    // -----------------------------------------
-    // VALIDERING AF FLETTEFELTER (TOKENS)
-    // -----------------------------------------
-    public function getInvalidTokensProperty(): array
-    {
-        // Hent alle tilladte gyldige felter præcis som i din blade-fil
-        $validTokens = array_merge(
-            (new \App\Models\Sager())->getFillable(),
-            ['today', 'aktiv', 'firmanavn', 'debitor_navn', 'ktr', 'debitor_email']
-        );
-
-        // Find alle felter i tekst med curly brackets {feltnavn}
-        preg_match_all('/\{([^}]+)\}/', $this->tekst, $matches);
-        
-        $foundTokens = $matches[1] ?? [];
-        $invalidTokens = [];
-
-        foreach ($foundTokens as $token) {
-            if (!in_array($token, $validTokens)) {
-                $invalidTokens[] = $token;
+            $this->loadBreveList();
+            if (!empty($this->breveList)) {
+                $this->loadBrev($this->breveList[0]['id']);
             }
         }
-
-        return array_unique($invalidTokens);
     }
 
-    // Opdater metoden så den vælger det tætteste match og sætter det som fremhævet
-    public function getClosestTokenSuggestion(string $invalidToken): ?string
+    public function getValidTokensProperty(): array
     {
-        $validTokens = array_merge(
-            (new \App\Models\Sager())->getFillable(),
-            ['today', 'aktiv', 'firmanavn', 'debitor_navn', 'ktr', 'debitor_email']
-        );
-
-        $closest = null;
-        $highestPercent = 0;
-
-        foreach ($validTokens as $token) {
-            similar_text($invalidToken, $token, $percent);
-            if ($percent > $highestPercent) {
-                $highestPercent = $percent;
-                $closest = $token;
-            }
+        if (class_exists(BrevFeltIndstilling::class)) {
+            return BrevFeltIndstilling::where('aktiv', true)->pluck('felt_navn')->toArray();
         }
 
-        $suggestion = $highestPercent > 40 ? $closest : null;
-        
-        // Sæt automatisk det fremhævede felt til det foreslåede match
-        if ($suggestion) {
-            $this->highlightedToken = $suggestion;
+        return [
+            'today', 'aktiv', 'firmanavn', 'debitor_navn', 'debitor_adresse', 
+            'debitor_postnr', 'debitor_postnummer', 'debitor_by', 'debitor_email', 
+            'ktr', 'dato', 'sagsnr', 'restgaeld_dkg', 'restgaeld_kreditor'
+        ];
+    }
+
+    public function resetTemplateLayout(): void
+    {
+        if (!$this->brevId) return;
+
+        // Hent brevet og tjek om det er beskyttet
+        $brev = Brev::find($this->brevId);
+        if ($brev && $brev->beskyttet) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => 'Denne skabelon er beskyttet og kan ikke nulstilles!']);
+            return;
         }
 
-        return $suggestion;
+        // Rens teksten for farlige inline styles (som position: absolute, top: -200px osv.)
+        // Vi bruger et simpelt regex til at fjerne style="..." attributter fra tags, hvis det ønskes,
+        // eller renser blot marginer. Her fjerner vi style-attributter der indeholder 'position' eller 'top'.
+        $tekstUdenAbsolut = preg_replace('/style="[^"]*?(position|top|left|right|bottom)[^"]*?"/i', '', $this->tekst);
+
+        $this->tekst = $tekstUdenAbsolut;
+        $this->margin_top = 0;
+        $this->margin_left = 0;
+        $this->margin_right = 0;
+
+        $this->dispatch('toast', ['type' => 'success', 'message' => 'Layout og marginaler blev nulstillet. Husk at gemme!']);
     }
 
-    // Metode til at rydde fremhævningen igen
-    public function clearHighlight(): void
+    // Åbn/luk Opret-modal
+    public function openCreateModal(): void
     {
-        $this->highlightedToken = null;
+        $this->newBrevTitle = '';
+        $this->showCreateModal = true;
     }
 
-    // -----------------------------------------
-    // ERSTAT UGYLDIGT FELT MED FORSLAG
-    // -----------------------------------------
-    public function replaceToken(string $invalidField, string $validField): void
+    public function closeCreateModal(): void
     {
-        $this->tekst = str_replace('{' . $invalidField . '}', '{' . $validField . '}', $this->tekst);
-        $this->highlightedToken = null;
-        $this->generatePreview();
+        $this->showCreateModal = false;
+        $this->newBrevTitle = '';
+    }
+
+    // Opret selve brevet
+    public function createNewBrev(): void
+    {
+        if (empty(trim($this->newBrevTitle))) return;
+
+        $brev = Brev::create([
+            'titel'        => $this->newBrevTitle,
+            'emne'         => '',
+            'tekst'        => '',
+            'margin_top'   => 0,
+            'margin_left'  => 0,
+            'margin_right' => 0,
+            'beskyttet'    => 0,
+            'linjeafstand' => 1.5,
+            'brevpos'      => (Brev::max('brevpos') ?? 0) + 1,
+            'brevtype' => '0',
+        ]);
+
+        $this->closeCreateModal();
+        $this->loadBreveList();
+        $this->loadBrev($brev->id);
+    }
+
+    // Åbn/luk Omdøb-modal
+    public function openRenameModal(): void
+    {
+        if (!$this->brevId) return;
+
+        // Hent brevet friskt fra databasen, og sæt editTitle med det samme
+        $brev = Brev::find($this->brevId);
+        if ($brev) {
+            $this->editTitle = $brev->titel;
+        }
+
+        $this->showRenameModal = true;
+    }
+
+    public function closeRenameModal(): void
+    {
+        $this->showRenameModal = false;
+    }
+
+    public function updateBrevTitle(): void
+    {
+        if (!$this->brevId || empty(trim($this->editTitle))) return;
+
+        $brev = Brev::find($this->brevId);
+        if ($brev) {
+            $brev->titel = $this->editTitle;
+            $brev->save();
+            $this->loadBreveList();
+            $this->closeRenameModal();
+        }
     }
     
     public function render()
