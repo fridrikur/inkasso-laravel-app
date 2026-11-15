@@ -31,11 +31,12 @@
             </button>
         </div>
 
-        {{-- Selve A4-arket --}}
-        <div class="flex justify-center">
+       {{-- Selve A4-arket med fast størrelse, luft omkring og dyb skygge --}}
+        <div class="flex justify-center p-4 sm:p-8 bg-slate-100/80 rounded-3xl overflow-x-auto">
             <div 
                 id="print-container" 
-                class="bg-white shadow-xl rounded-lg w-full max-w-[210mm] min-h-[297mm] px-[35mm] py-[30mm] text-slate-800 font-sans text-sm leading-relaxed space-y-8 relative box-border"
+                style="width: 210mm; height: 297mm;"
+                class="bg-white shadow-2xl rounded-xl px-[35mm] py-[30mm] text-slate-800 font-sans text-sm leading-relaxed relative box-border overflow-hidden shrink-0 flex flex-col"
             >
                 
                 @php
@@ -49,72 +50,77 @@
                     $visEmne    = $visAlt || (!$skjulAlt && ($filter?->emne ?? true));
                 @endphp
 
-                {{-- TOP SEKTION: 2-rækket rammefri tabel, hvor højre side starter hvor venstre side slutter --}}
-                <table class="w-full text-xs sm:text-sm text-slate-700 font-sans" style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 20px;" cellspacing="0" cellpadding="0" border="0">
-                    
-                    {{-- RÆKKE 1: Kun modtageradresse i venstre side --}}
-                    <tr style="border: none;">
-                        <td style="width: 50%; vertical-align: top; text-align: left; padding: 20px; padding-bottom: 0; border: none;">
-                            @if($visNavn || $visAdresse)
-                                <div class="space-y-1">
-                                    @if($visNavn)
-                                        <div class="font-bold text-base text-slate-900">{{ $sag->debitor()->first()?->navn ?? '[ Eksempel Navn ]' }}</div>
-                                    @endif
-                                    @if($visAdresse)
-                                        <div class="text-slate-600">{{ $sag->debitor()->first()?->adresse ?? '[ Eksempel Adresse ]' }}</div>
-                                        <div class="text-slate-600">
-                                            {{ $sag->debitor()->first()?->postnr ?? '[ Postnr ]' }} &nbsp; {{ $sag->debitor()->first()?->postnummer?->by ?? '[ By ]' }}
-                                        </div>
-                                    @endif
-                                </div>
-                            @else
-                                <span class="text-slate-300 italic">[ Modtagerfelt skjult ]</span>
-                            @endif
-                        </td>
-                        {{-- Højre side er tom i første række, så venstre side får lov at bestemme højden --}}
-                        <td style="width: 50%; border: none;"></td>
-                    </tr>
-
-                    {{-- RÆKKE 2: Dato og Sagsnr i højre side (starter præcist under adressen + din finjustering) --}}
-                    <tr style="border: none;">
-                        {{-- Venstre side er tom i anden række --}}
-                        <td style="width: 50%; border: none;"></td>
+                <div class="space-y-6 flex-grow flex flex-col">
+                    {{-- TOP SEKTION: 2-rækket rammefri tabel, hvor højre side starter hvor venstre side slutter --}}
+                    <table class="w-full text-xs sm:text-sm text-slate-700 font-sans shrink-0" style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 10px;" cellspacing="0" cellpadding="0" border="0">
                         
-                        <td style="width: 50%; vertical-align: top; text-align: right; padding: 20px; padding-top: {{ 15 + ($right_margin_top ?? 0) }}px; border: none;">
-                            @if($visDato || $visSagsnr)
-                                <div class="space-y-1 font-medium text-slate-900" style="line-height: 1.4;">
-                                    @if($visDato)
-                                        <div><strong>Dato:</strong> {{ $sag->dato ?? date('d.m.Y') }}</div>
-                                    @endif
-                                    @if($visSagsnr)
-                                        <div><strong>J. nr.:</strong> {{ $sag->sagsnr ?? '123456' }}</div>
-                                    @endif
-                                </div>
-                            @else
-                                <span class="text-slate-300 italic">[ Dato/Sagsnr skjult ]</span>
-                            @endif
-                        </td>
-                    </tr>
+                        {{-- RÆKKE 1: Kun modtageradresse i venstre side --}}
+                        <tr style="border: none;">
+                            <td style="width: 50%; vertical-align: top; text-align: left; padding: 10px; padding-bottom: 0; border: none;">
+                                @if($visNavn || $visAdresse)
+                                    <div class="space-y-1">
+                                        @if($visNavn)
+                                            <div class="text-base text-slate-900 font-medium">{{ $sag->debitor()->first()?->navn ?? '[ Eksempel Navn ]' }}</div>
+                                        @endif
+                                        @if($visAdresse)
+                                            <div class="text-slate-600">{{ $sag->debitor()->first()?->adresse ?? '[ Eksempel Adresse ]' }}</div>
+                                            <div class="text-slate-600">
+                                                {{ $sag->debitor()->first()?->postnr ?? '[ Postnr ]' }} &nbsp; {{ $sag->debitor()->first()?->postnummer?->by ?? '[ By ]' }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="text-slate-300 italic">[ Modtagerfelt skjult ]</span>
+                                @endif
+                            </td>
+                            <td style="width: 50%; border: none;"></td>
+                        </tr>
 
-                </table>
+                        {{-- RÆKKE 2: Dato og Sagsnr i højre side --}}
+                        <tr style="border: none;">
+                            <td style="width: 50%; border: none;"></td>
+                            <td style="width: 50%; vertical-align: top; text-align: right; padding: 10px; padding-top: {{ 10 + ($right_margin_top ?? 0) }}px; border: none;">
+                                @if($visDato || $visSagsnr)
+                                    <div class="space-y-1 font-medium text-slate-900" style="line-height: 1.4;">
+                                        @if($visDato)
+                                            <div><strong>Dato:</strong> {{ $sag->dato ?? date('d.m.Y') }}</div>
+                                        @endif
+                                        @if($visSagsnr)
+                                            <div><strong>J. nr.:</strong> {{ $sag->sagsnr ?? '123456' }}</div>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="text-slate-300 italic">[ Dato/Sagsnr skjult ]</span>
+                                @endif
+                            </td>
+                        </tr>
 
-                {{-- Emne / Overskrift --}}
-                @if($visEmne && !empty($flettetEmne))
-                    <div class="pt-2 pb-2">
-                        <h3 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
-                            {!! $flettetEmne !!}
-                        </h3>
-                    </div>
-                @endif
+                    </table>
 
-                {{-- Brevtekst (Redigerbar med rigelig plads og luft) --}}
-                <div class="pt-2">
-                    <div 
-                        contenteditable="true" 
-                        @input="$wire.set('flettetTekst', $event.target.innerHTML, false)"
-                        class="outline-none focus:ring-1 focus:ring-indigo-100 rounded-lg p-2 min-h-[450px] space-y-4"
-                    >
-                        {!! $flettetTekst ?? '<p>Ingen brevtekst tilgængelig...</p>' !!}
+                    {{-- Emne / Overskrift --}}
+                    @if($visEmne && !empty($flettetEmne))
+                        <div class="pt-1 pb-1 shrink-0">
+                            <h3 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-2">
+                                {!! $flettetEmne !!}
+                            </h3>
+                        </div>
+                    @endif
+
+                    {{-- Brevtekst med WYSIWYG-editor (tilpasset til at fylde resten af A4-højden) --}}
+                    <div class="pt-1 flex-grow flex flex-col">
+                        <div class="flex-grow flex flex-col">
+                            <x-wysiwyg-editor 
+                                wire:key="editor-vis-brev-{{ $selectedBrevId ?? 'default' }}"
+                                wireModel="flettetTekst" 
+                                :value="$flettetTekst"
+                                :marginTop="$margin_top ?? 0" 
+                                :marginLeft="$margin_left ?? 0" 
+                                :marginRight="$margin_right ?? 0"
+                                :linjeafstand="$linjeafstand ?? '1.5'" 
+                                :beskyttet="$beskyttet ?? false"
+                                height="320px" 
+                            />
+                        </div>
                     </div>
                 </div>
 

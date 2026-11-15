@@ -531,22 +531,31 @@ document.addEventListener("DOMContentLoaded", function () {
             alert('Ingen forhåndsvisning fundet til udskrivning.');
             return;
         }
-        let printContents = printEl.innerHTML;
+
+        // 1. Klon print-containeren, så vi kan rense den uden at røre skærmbilledet
+        let clone = printEl.cloneNode(true);
+        
+        // 2. Fjern alle værktøjslinjer, knapper, tekstfelter og skjulte elementer fra kopien
+        let unwantedElements = clone.querySelectorAll('.print\\:hidden, button, textarea, [x-ref="toolbar"]');
+        unwantedElements.forEach(el => el.remove());
+
+        let printContents = clone.innerHTML;
+
+        // 3. Åbn udskrivningsvinduet med det rene indhold
         let printWindow = window.open('', '_blank', 'height=600,width=800');
         printWindow.document.write('<html><head><title>Udskriv brev</title>');
         printWindow.document.write('<style>');
-        // Tilpas padding her i stedet for top: -200px i selve HTML'en
         printWindow.document.write('body { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; padding: 20px; margin: 0; }');
         printWindow.document.write('table { width: 100%; border-collapse: collapse; margin: 20px 0; }');
         printWindow.document.write('th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }');
         printWindow.document.write('th { background-color: #f1f5f9; }');
-        printWindow.document.write('@media print { body { padding: 0; } }');
         printWindow.document.write('</style>');
         printWindow.document.write('</head><body>');
         printWindow.document.write(printContents);
         printWindow.document.write('</body></html>');
         printWindow.document.close();
         printWindow.focus();
+        
         setTimeout(() => {
             printWindow.print();
             printWindow.close();
