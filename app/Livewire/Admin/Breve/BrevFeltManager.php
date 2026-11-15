@@ -22,6 +22,14 @@ class BrevFeltManager extends Component
         $this->dispatch('toast', message: 'Feltets status blev opdateret.', type: 'success');
     }
 
+    public function setKategoriStatus($kategori, $status)
+    {
+        BrevFeltIndstilling::where('kategori', $kategori)->update(['aktiv' => $status]);
+        
+        $statusTekst = $status ? 'aktiveret' : 'deaktiveret';
+        $this->dispatch('toast', message: "Alle felter i '$kategori' blev $statusTekst.", type: 'success');
+    }
+
     public function render()
     {
         return view('livewire.admin.breve.brev-felt-manager', [

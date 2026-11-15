@@ -34,8 +34,9 @@ class BrevFeltIndstilling extends Model
             $debitorFelter = array_map(fn($f) => str_starts_with($f, 'debitor_') ? $f : 'debitor_' . $f, $debitorFelter);
         }
 
+        // 'aktiv' er fjernet fra system-listen herunder
         $systemFelter = [
-            'today', 'aktiv', 'firmanavn', 'debitor_navn', 'debitor_adresse', 
+            'today', 'firmanavn', 'debitor_navn', 'debitor_adresse', 
             'debitor_postnr', 'debitor_postnummer', 'debitor_by', 'debitor_email', 
             'ktr', 'dato', 'sagsnr', 'restgaeld_dkg', 'restgaeld_kreditor'
         ];
@@ -47,8 +48,9 @@ class BrevFeltIndstilling extends Model
                 ['felt_navn' => $felt],
                 [
                     'visnings_navn' => ucfirst(str_replace('_', ' ', $felt)),
-                    'kategori' => str_starts_with($felt, 'debitor') ? 'Debitor' : (in_array($felt, ['today', 'aktiv', 'firmanavn']) ? 'System' : 'Sag'),
-                    'aktiv' => true // Standard aktiv
+                    // 'aktiv' er nu fjernet fra System-arrayet herunder, så den falder i "Sag"
+                    'kategori' => str_starts_with($felt, 'debitor') ? 'Debitor' : (in_array($felt, ['today', 'firmanavn']) ? 'System' : 'Sag'),
+                    'aktiv' => true // Standard aktiv ved oprettelse
                 ]
             );
         }
