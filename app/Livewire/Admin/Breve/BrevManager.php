@@ -14,10 +14,19 @@ class BrevManager extends Component
     public string $emne = '';
     public string $tekst = '';
     
-    // Layout marginaler
-    public int $margin_top = 0;
+    // Layout marginaler og skriftstørrelser (i cm / pt)
+    public $navn_top_margin = 5.45;
+    public $dato_margin_top = 7.57;
+    public $emne_top_margin = 8.91;
+    public $body_margin_top = 1.00;
+    
     public int $margin_left = 0;
     public int $margin_right = 0;
+
+    public float $navn_font_size = 9.5;
+    public float $emne_font_size = 10.5;
+    public float $body_font_size = 9.5;
+    public string $font_family = "Century Schoolbook, Georgia, serif";
 
     public array $breveList = [];
     public string $newBrevTitle = '';
@@ -43,8 +52,6 @@ class BrevManager extends Component
         'visalle'   => false,
     ];
 
-    public int $right_margin_top = 0;
-
     public function mount()
     {
         $this->loadBreveList();
@@ -64,18 +71,29 @@ class BrevManager extends Component
         $brev = Brev::find($id);
 
         if ($brev) {
-            $this->brevId       = $brev->id;
-            $this->titel        = $brev->titel ?? '';
-            $this->editTitle    = $brev->titel ?? '';
-            $this->emne         = $brev->emne ?? '';
-            $this->tekst        = $brev->tekst ?? '';  
-            $this->margin_top   = $brev->margin_top ?? 0;
-            $this->margin_left  = $brev->margin_left ?? 0;
-            $this->margin_right = $brev->margin_right ?? 0;
-            $this->beskyttet    = (bool) ($brev->beskyttet ?? 0);
-            $this->linjeafstand = $brev->linjeafstand ?? 1.5;
-            $this->right_margin_top = $brev->right_margin_top ?? 0;
+            $this->brevId           = $brev->id;
+            $this->titel            = $brev->titel ?? '';
+            $this->editTitle        = $brev->titel ?? '';
+            $this->emne             = $brev->emne ?? '';
+            $this->tekst            = $brev->tekst ?? '';  
+            
+            // Indlæs nye layout- og skriftværdier (med faste standarder som fallback)
+            $this->navn_top_margin  = $brev->navn_top_margin ?? 5.45;
+            $this->dato_margin_top  = $brev->dato_margin_top ?? 7.57;
+            $this->emne_top_margin  = $brev->emne_top_margin ?? 8.91;
+            $this->body_margin_top  = $brev->body_margin_top ?? 1.00;
+            
+            $this->margin_left      = $brev->margin_left ?? 0;
+            $this->margin_right     = $brev->margin_right ?? 0;
+            
+            $this->navn_font_size   = $brev->navn_font_size ?? 9.5;
+            $this->emne_font_size   = $brev->emne_font_size ?? 10.5;
+            $this->body_font_size   = $brev->body_font_size ?? 9.5;
+            $this->font_family      = $brev->font_family ?? "Century Schoolbook, Georgia, serif";
 
+            $this->beskyttet        = (bool) ($brev->beskyttet ?? 0);
+            $this->linjeafstand     = $brev->linjeafstand ?? 1.5;
+            
             // Hent eller opret standard filter for dette brev
             $brevFilter = \App\Models\BrevFilter::where('brevID', $this->brevId)->first();
             if ($brevFilter) {
@@ -109,17 +127,23 @@ class BrevManager extends Component
             return;
         }
 
-        // Gem selve brevet
+        // Gem selve brevet inkl. alle nye layout- og skriftfelter
         Brev::where('id', $this->brevId)->update([
-            'titel'        => $this->titel,
-            'emne'         => $this->emne,
-            'tekst'        => $this->tekst,
-            'margin_top'   => $this->margin_top,
-            'margin_left'  => $this->margin_left,
-            'margin_right' => $this->margin_right,
-            'right_margin_top' => $this->right_margin_top, 
-            'beskyttet'    => $this->beskyttet ? 1 : 0, 
-            'linjeafstand' => $this->linjeafstand,
+            'titel'           => $this->titel,
+            'emne'            => $this->emne,
+            'tekst'           => $this->tekst,
+            'navn_top_margin' => $this->navn_top_margin,
+            'dato_margin_top' => $this->dato_margin_top,
+            'emne_top_margin' => $this->emne_top_margin,
+            'body_margin_top' => $this->body_margin_top,
+            'margin_left'     => $this->margin_left,
+            'margin_right'    => $this->margin_right,
+            'navn_font_size'  => $this->navn_font_size,
+            'emne_font_size'  => $this->emne_font_size,
+            'body_font_size'  => $this->body_font_size,
+            'font_family'     => $this->font_family,
+            'beskyttet'       => $this->beskyttet ? 1 : 0, 
+            'linjeafstand'    => $this->linjeafstand,
         ]);
 
         // Gem / Opdater BrevFilter i databasen
@@ -190,20 +214,19 @@ class BrevManager extends Component
     {
         if (!$this->brevId) return;
 
-        // Hent brevet og tjek om det er beskyttet
         $brev = Brev::find($this->brevId);
         if ($brev && $brev->beskyttet) {
             $this->dispatch('toast', ['type' => 'error', 'message' => 'Denne skabelon er beskyttet og kan ikke nulstilles!']);
             return;
         }
 
-        // Rens teksten for farlige inline styles (som position: absolute, top: -200px osv.)
-        // Vi bruger et simpelt regex til at fjerne style="..." attributter fra tags, hvis det ønskes,
-        // eller renser blot marginer. Her fjerner vi style-attributter der indeholder 'position' eller 'top'.
         $tekstUdenAbsolut = preg_replace('/style="[^"]*?(position|top|left|right|bottom)[^"]*?"/i', '', $this->tekst);
 
         $this->tekst = $tekstUdenAbsolut;
-        $this->margin_top = 0;
+        $this->navn_top_margin = 5.45;
+        $this->dato_margin_top = 7.57;
+        $this->emne_top_margin = 8.91;
+        $this->body_margin_top = 1.00;
         $this->margin_left = 0;
         $this->margin_right = 0;
 
@@ -229,16 +252,23 @@ class BrevManager extends Component
         if (empty(trim($this->newBrevTitle))) return;
 
         $brev = Brev::create([
-            'titel'        => $this->newBrevTitle,
-            'emne'         => '',
-            'tekst'        => '',
-            'margin_top'   => 0,
-            'margin_left'  => 0,
-            'margin_right' => 0,
-            'beskyttet'    => 0,
-            'linjeafstand' => 1.5,
-            'brevpos'      => (Brev::max('brevpos') ?? 0) + 1,
-            'brevtype' => '0',
+            'titel'           => $this->newBrevTitle,
+            'emne'            => '',
+            'tekst'           => '',
+            'navn_top_margin' => 5.45,
+            'dato_margin_top' => 7.57,
+            'emne_top_margin' => 8.91,
+            'body_margin_top' => 1.00,
+            'margin_left'     => 0,
+            'margin_right'    => 0,
+            'navn_font_size'  => 9.5,
+            'emne_font_size'  => 10.5,
+            'body_font_size'  => 9.5,
+            'font_family'     => "Century Schoolbook, Georgia, serif",
+            'beskyttet'       => 0,
+            'linjeafstand'    => 1.5,
+            'brevpos'         => (Brev::max('brevpos') ?? 0) + 1,
+            'brevtype'        => '0',
         ]);
 
         $this->closeCreateModal();
@@ -251,7 +281,6 @@ class BrevManager extends Component
     {
         if (!$this->brevId) return;
 
-        // Hent brevet friskt fra databasen, og sæt editTitle med det samme
         $brev = Brev::find($this->brevId);
         if ($brev) {
             $this->editTitle = $brev->titel;
@@ -278,6 +307,95 @@ class BrevManager extends Component
         }
     }
     
+    public function getSkjulAltProperty(): bool
+    {
+        return $this->filter['skjulalle'] ?? false;
+    }
+
+    public function getVisAltProperty(): bool
+    {
+        return $this->filter['visalle'] ?? false;
+    }
+
+    public function getVisNavnProperty(): bool
+    {
+        return $this->visAlt || (!$this->skjulAlt && ($this->filter['navn'] ?? true));
+    }
+
+    public function getVisAdresseProperty(): bool
+    {
+        return $this->visAlt || (!$this->skjulAlt && ($this->filter['adresse'] ?? true));
+    }
+
+    public function getVisDatoProperty(): bool
+    {
+        return $this->visAlt || (!$this->skjulAlt && ($this->filter['dato'] ?? true));
+    }
+
+    public function getVisSagsnrProperty(): bool
+    {
+        return $this->visAlt || (!$this->skjulAlt && ($this->filter['sagsnr'] ?? true));
+    }
+
+    public function getVisEmneProperty(): bool
+    {
+        return $this->visAlt || (!$this->skjulAlt && ($this->filter['emne'] ?? true));
+    }
+
+    public function getBrevVisningstilstandProperty(): array
+    {
+        $skjulAlt = $this->filter['skjulalle'] ?? false;
+        $visAlt   = $this->filter['visalle'] ?? false;
+
+        return [
+            'skjulAlt' => $skjulAlt,
+            'visAlt'   => $visAlt,
+            'visNavn'    => $visAlt || (!$skjulAlt && ($this->filter['navn'] ?? true)),
+            'visAdresse' => $visAlt || (!$skjulAlt && ($this->filter['adresse'] ?? true)),
+            'visDato'    => $visAlt || (!$skjulAlt && ($this->filter['dato'] ?? true)),
+            'visSagsnr'  => $visAlt || (!$skjulAlt && ($this->filter['sagsnr'] ?? true)),
+            'visEmne'    => $visAlt || (!$skjulAlt && ($this->filter['emne'] ?? true)),
+        ];
+    }
+
+    public function nulstilAlleMarginer()
+    {
+        // Opdaterer samtlige brevskabeloner i databasen på én gang
+        Brev::query()->update([
+            'navn_top_margin' => 0,
+            'dato_margin_top' => 0,
+            'emne_top_margin' => 0,
+            'body_margin_top' => 0,
+        ]);
+
+        // Genindlæs det aktuelt valgte brev, så visningen opdateres med det samme
+        if ($this->brevId) {
+            $this->loadBrev($this->brevId);
+        }
+
+        session()->flash('message', 'Alle marginer er nulstillet til 0 for samtlig skabeloner.');
+    }
+
+    public function updatedNavnTopMargin($value)
+    {
+        $this->navn_top_margin = str_replace(',', '.', $value);
+    }
+
+    public function updatedDatoMarginTop($value)
+    {
+        $this->dato_margin_top = str_replace(',', '.', $value);
+    }
+
+    public function updatedEmneMarginTop($value)
+    {
+        $this->emne_top_margin = str_replace(',', '.', $value);
+    }
+
+    public function updatedBodyMarginTop($value)
+    {
+        $this->body_margin_top = str_replace(',', '.', $value);
+    }
+
     public function render()
     {
         return view('livewire.admin.breve.brev-manager');

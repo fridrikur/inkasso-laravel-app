@@ -46,8 +46,52 @@ class VisBrev extends Component
         $this->flettetEmne = $emneResult['text'] ?? $emneResult['html'] ?? ($brev->emne ?? '');
     }
 
+    // Helper til at hente det aktuelt valgte brev-objekt
+    public function getAktueltBrevProperty()
+    {
+        return $this->selectedBrevId ? Brev::find($this->selectedBrevId) : null;
+    }
+
+    // Computed Properties til visningstilstand (helt uden PHP i view)
+    public function getSkjulAltProperty(): bool
+    {
+        return $this->filter->skjulalle ?? false;
+    }
+
+    public function getVisAltProperty(): bool
+    {
+        return $this->filter->visalle ?? false;
+    }
+
+    public function getVisNavnProperty(): bool
+    {
+        return $this->visAlt || (!$this->skjulAlt && ($this->filter->navn ?? true));
+    }
+
+    public function getVisAdresseProperty(): bool
+    {
+        return $this->visAlt || (!$this->skjulAlt && ($this->filter->adresse ?? true));
+    }
+
+    public function getVisDatoProperty(): bool
+    {
+        return $this->visAlt || (!$this->skjulAlt && ($this->filter->dato ?? true));
+    }
+
+    public function getVisSagsnrProperty(): bool
+    {
+        return $this->visAlt || (!$this->skjulAlt && ($this->filter->sagsnr ?? true));
+    }
+
+    public function getVisEmneProperty(): bool
+    {
+        return $this->visAlt || (!$this->skjulAlt && ($this->filter->emne ?? true));
+    }
+
     public function render()
     {
-        return view('livewire.sager.vis-brev');
+        return view('livewire.sager.vis-brev', [
+            'brev' => $this->aktueltBrev,
+        ]);
     }
 }

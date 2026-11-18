@@ -741,75 +741,95 @@ class DataImporter extends Component
         }
 
         try {
-        DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
-        DB::statement('SET NAMES utf8mb4;');
+            DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+            DB::statement('SET NAMES utf8mb4;');
 
-        // 1. Kør SQL-filen (den sletter/opretter tabellen på gammel manér)
-        $sql = file_get_contents($filePath);
-        DB::unprepared($sql);
+            // 1. Kør SQL-filen (den sletter/opretter tabellen på gammel manér)
+            $sql = file_get_contents($filePath);
+            DB::unprepared($sql);
 
-        // 2. "Heal" tabellen med margin-kolonner, hvis de mangler
-        if (!Schema::hasColumn('breve', 'margin_top')) {
-            Schema::table('breve', function (Blueprint $table) {
-                $table->integer('margin_top')->default(0);
-            });
+            // Nye margin-kolonner med korrekte navne og standardværdier
+            if (!Schema::hasColumn('breve', 'navn_top_margin')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->decimal('navn_top_margin', 8, 2)->default(5.45);
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'dato_margin_top')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->decimal('dato_margin_top', 8, 2)->default(7.57);
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'emne_top_margin')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->decimal('emne_top_margin', 8, 2)->default(8.91);
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'body_margin_top')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->decimal('body_margin_top', 8, 2)->default(1.00);
+                });
+            }
+            if (!Schema::hasColumn('breve', 'linjeafstand')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->float('linjeafstand')->default(1.5);
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'beskyttet')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->tinyInteger('beskyttet')->default(0);
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'navn_font_size')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->decimal('navn_font_size', 5, 2)->default(9.5);
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'emne_font_size')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->decimal('emne_font_size', 5, 2)->default(10.5);
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'body_font_size')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->decimal('body_font_size', 5, 2)->default(9.5);
+                });
+            }
+
+            // 3. "Heal" tabellen med timestamps, hvis de mangler
+            if (!Schema::hasColumn('breve', 'created_at')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->timestamp('created_at')->nullable();
+                    $table->timestamp('updated_at')->nullable();
+                });
+
+                DB::table('breve')->whereNull('created_at')->update([
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            if (!Schema::hasColumn('breve', 'font_family')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->string('font_family')->default("Century Schoolbook, Georgia, serif");
+                });
+            }
+
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+
+            session()->flash('success', '🎉 Brev-skabeloner blev importeret, opdateret og tidsstempler blev tilføjet succesfuldt!');
+        } catch (\Throwable $e) {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+            
+            session()->flash('error', 'Fejl ved import af breve: ' . $e->getMessage());
         }
-
-        if (!Schema::hasColumn('breve', 'margin_left')) {
-            Schema::table('breve', function (Blueprint $table) {
-                $table->integer('margin_left')->default(0);
-            });
-        }
-
-        if (!Schema::hasColumn('breve', 'margin_right')) {
-            Schema::table('breve', function (Blueprint $table) {
-                $table->integer('margin_right')->default(0);
-            });
-        }
-
-        // <-- NYT: Tilføj healing for linjeafstand og beskyttet -->
-        if (!Schema::hasColumn('breve', 'linjeafstand')) {
-            Schema::table('breve', function (Blueprint $table) {
-                $table->float('linjeafstand')->default(1.5);
-            });
-        }
-
-        if (!Schema::hasColumn('breve', 'beskyttet')) {
-            Schema::table('breve', function (Blueprint $table) {
-                $table->tinyInteger('beskyttet')->default(0);
-            });
-        }
-
-        if (!Schema::hasColumn('breve', 'right_margin_top')) {
-            Schema::table('breve', function (Blueprint $table) {
-                $table->integer('right_margin_top')->default(0);
-            });
-        }
-
-        // 3. "Heal" tabellen med timestamps, hvis de mangler
-        if (!Schema::hasColumn('breve', 'created_at')) {
-            Schema::table('breve', function (Blueprint $table) {
-                $table->timestamp('created_at')->nullable();
-                $table->timestamp('updated_at')->nullable();
-            });
-
-            // Sæt dags dato som standard på de importerede rækker, 
-            // så de ikke er tomme (null)
-            DB::table('breve')->whereNull('created_at')->update([
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
-
-        session()->flash('success', '🎉 Brev-skabeloner blev importeret, opdateret og tidsstempler blev tilføjet succesfuldt!');
-    } catch (\Throwable $e) {
-        DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
-        
-        session()->flash('error', 'Fejl ved import af breve: ' . $e->getMessage());
     }
-}
     
     public function render()
     {

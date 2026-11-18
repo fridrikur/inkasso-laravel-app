@@ -16,9 +16,17 @@ class Brev extends Model
         'tekst',
         'beskyttet',
         'brevtype',
-        'margin_top',
         'margin_left',
         'margin_right',
+        'linjeafstand',
+        'navn_top_margin',    // Ændret fra margin_top (default: 5.45 cm)
+        'dato_margin_top',    // Ændret fra right_margin_top
+        'emne_top_margin',    // Ændret fra emne_top
+        'body_margin_top',
+        'navn_font_size',
+        'emne_font_size',
+        'body_font_size',
+        'font_family',
     ];
 
     protected function tekst(): Attribute
