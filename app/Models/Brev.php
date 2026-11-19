@@ -24,6 +24,8 @@ class Brev extends Model
         'emne_top_margin',    // Ændret fra emne_top
         'body_margin_top',
         'brevhoved_top_margin',
+        'firma_font_size',
+        'firma_left_margin',
         'navn_font_size',
         'emne_font_size',
         'body_font_size',

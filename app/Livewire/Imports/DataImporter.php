@@ -883,6 +883,18 @@ class DataImporter extends Component
                 });
             }
 
+            if (!Schema::hasColumn('breve', 'margin_left')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->integer('margin_left')->default(0);
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'margin_right')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->integer('margin_right')->default(0);
+                });
+            }
+            
             // 4. Udskift forældede flettefelter i importerede brevskabeloner
             $feltMapping = [
                 '{Statistik}' => '{restgaeld_dkg}',
