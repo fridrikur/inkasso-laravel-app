@@ -806,7 +806,7 @@ class DataImporter extends Component
             // 2. Brevhoved-synlighed og redigerbare firmaoplysninger med standardværdier
             if (!Schema::hasColumn('breve', 'visfirmabrevhoved')) {
                 Schema::table('breve', function (Blueprint $table) {
-                    $table->boolean('visfirmabrevhoved')->default(true);
+                    $table->boolean('visfirmabrevhoved')->default(false);
                 });
             }
 

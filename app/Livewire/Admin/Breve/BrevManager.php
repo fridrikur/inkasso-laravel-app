@@ -42,7 +42,7 @@ class BrevManager extends Component
     public bool $showRenameModal = false;
     public string $editTitle = '';
 
-    public bool $visfirmabrevhoved = true;
+    public bool $visfirmabrevhoved = false;
     public string $firma_navn = 'DANSK KONSULENT GRUPPE A/S';
     public string $firma_adresse = 'SCT. HANSGADE 9, 1 SAL, 4100 RINGSTED';
     public string $firma_telefon = '+45 22 22 68 94';
@@ -106,7 +106,7 @@ class BrevManager extends Component
             $this->beskyttet        = (bool) ($brev->beskyttet ?? 0);
             $this->linjeafstand     = $brev->linjeafstand ?? 1.5;
 
-            $this->visfirmabrevhoved = (bool) ($brev->visfirmabrevhoved ?? true);
+            $this->visfirmabrevhoved = (bool) ($brev->visfirmabrevhoved ?? false);
             $this->firma_navn        = $brev->firma_navn ?? 'DANSK KONSULENT GRUPPE A/S';
             $this->firma_adresse     = $brev->firma_adresse ?? 'SCT. HANSGADE 9, 1 SAL, 4100 RINGSTED';
             $this->firma_telefon     = $brev->firma_telefon ?? '+45 22 22 68 94';
@@ -286,23 +286,24 @@ class BrevManager extends Component
         if (empty(trim($this->newBrevTitle))) return;
 
         $brev = Brev::create([
-            'titel'           => $this->newBrevTitle,
-            'emne'            => '',
-            'tekst'           => '',
-            'navn_top_margin' => 5.45,
-            'dato_margin_top' => 7.57,
-            'emne_top_margin' => 8.91,
-            'body_margin_top' => 1.00,
-            'margin_left'     => 0,
-            'margin_right'    => 0,
-            'navn_font_size'  => 9.5,
-            'emne_font_size'  => 10.5,
-            'body_font_size'  => 9.5,
-            'font_family'     => "Century Schoolbook, Georgia, serif",
-            'beskyttet'       => 0,
-            'linjeafstand'    => 1.5,
-            'brevpos'         => (Brev::max('brevpos') ?? 0) + 1,
-            'brevtype'        => '0',
+            'titel'             => $this->newBrevTitle,
+            'emne'              => '',
+            'tekst'             => '',
+            'navn_top_margin'   => 5.45,
+            'dato_margin_top'   => 7.57,
+            'emne_top_margin'   => 8.91,
+            'body_margin_top'   => 1.00,
+            'margin_left'       => 0,
+            'margin_right'      => 0,
+            'navn_font_size'    => 9.5,
+            'emne_font_size'    => 10.5,
+            'body_font_size'    => 9.5,
+            'font_family'       => "Century Schoolbook, Georgia, serif",
+            'beskyttet'         => 0,
+            'linjeafstand'      => 1.5,
+            'visfirmabrevhoved' => false,
+            'brevpos'           => (Brev::max('brevpos') ?? 0) + 1,
+            'brevtype'          => '0',
         ]);
 
         $this->closeCreateModal();
