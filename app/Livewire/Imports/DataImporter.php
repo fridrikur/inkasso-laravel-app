@@ -769,9 +769,10 @@ class DataImporter extends Component
 
             if (!Schema::hasColumn('breve', 'body_margin_top')) {
                 Schema::table('breve', function (Blueprint $table) {
-                    $table->decimal('body_margin_top', 8, 2)->default(1.00);
+                    $table->decimal('body_margin_top', 8, 2)->default(2.00);
                 });
             }
+
             if (!Schema::hasColumn('breve', 'linjeafstand')) {
                 Schema::table('breve', function (Blueprint $table) {
                     $table->float('linjeafstand')->default(1.5);
@@ -802,6 +803,49 @@ class DataImporter extends Component
                 });
             }
 
+            // 2. Brevhoved-synlighed og redigerbare firmaoplysninger med standardværdier
+            if (!Schema::hasColumn('breve', 'visfirmabrevhoved')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->boolean('visfirmabrevhoved')->default(true);
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'firma_navn')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->string('firma_navn')->default('DANSK KONSULENT GRUPPE A/S');
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'firma_adresse')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->string('firma_adresse')->default('SCT. HANSGADE 9, 1 SAL, 4100 RINGSTED');
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'firma_telefon')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->string('firma_telefon')->default('+45 22 22 68 94');
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'firma_mail')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->string('firma_mail')->default('DKG@DKG-APS.DK');
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'firma_web')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->string('firma_web')->default('WWW.DKG-APS.DK');
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'firma_cvr')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->string('firma_cvr')->default('21 24 72 86');
+                });
+            }
+
             // 3. "Heal" tabellen med timestamps, hvis de mangler
             if (!Schema::hasColumn('breve', 'created_at')) {
                 Schema::table('breve', function (Blueprint $table) {
@@ -821,12 +865,71 @@ class DataImporter extends Component
                 });
             }
 
+            if (!Schema::hasColumn('breve', 'brevhoved_top_margin')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->decimal('brevhoved_top_margin', 8, 2)->default(1.50);
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'firma_font_size')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->decimal('firma_font_size', 5, 2)->default(8.5);
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'firma_left_margin')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->decimal('firma_left_margin', 8, 2)->default(11.80);
+                });
+            }
+
+            // 4. Udskift forældede flettefelter i importerede brevskabeloner
+            $feltMapping = [
+                '{Statistik}' => '{restgaeld_dkg}',
+                '{statistik}' => '{restgaeld_dkg}',
+                '{restgaeld}'  => '{ialt}',
+            ];
+
+            $tekstKolonner = array_values(array_filter(
+                ['tekst', 'emne'],
+                fn ($col) => Schema::hasColumn('breve', $col)
+            ));
+
+            if (!empty($tekstKolonner)) {
+                $alleBreve = DB::table('breve')->select(array_merge(['id'], $tekstKolonner))->get();
+
+                foreach ($alleBreve as $brevRow) {
+                    $updates = [];
+
+                    foreach ($tekstKolonner as $col) {
+                        $original = $brevRow->{$col};
+                        if (is_string($original) && $original !== '') {
+                            $opdateret = str_replace(
+                                array_keys($feltMapping),
+                                array_values($feltMapping),
+                                $original
+                            );
+
+                            if ($opdateret !== $original) {
+                                $updates[$col] = $opdateret;
+                            }
+                        }
+                    }
+
+                    if (!empty($updates)) {
+                        DB::table('breve')
+                            ->where('id', $brevRow->id)
+                            ->update($updates);
+                    }
+                }
+            }
+
             DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
 
-            session()->flash('success', '🎉 Brev-skabeloner blev importeret, opdateret og tidsstempler blev tilføjet succesfuldt!');
+            session()->flash('success', '🎉 Brev-skabeloner blev importeret, felter opdateret og tidsstempler tilføjet succesfuldt!');
         } catch (\Throwable $e) {
             DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
-            
+
             session()->flash('error', 'Fejl ved import af breve: ' . $e->getMessage());
         }
     }

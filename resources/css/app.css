@@ -31,4 +31,12 @@
     button:not(#print-container button) {
         display: none !important;
     }
+
+    .firma-brevhoved-tabel,
+    .firma-brevhoved-tabel tr,
+    .firma-brevhoved-tabel td {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
 }

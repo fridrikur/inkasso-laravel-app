@@ -39,11 +39,11 @@ class VisBrev extends Component
         // Flet data ind med BrevMergeService
         $service = app(BrevMergeService::class);
         
-        $result = $service->mergeWithMeta($brev->tekst, $this->sag);
+        $result = $service->mergeWithMeta((string) ($brev->tekst ?? ''), $this->sag);
         $this->flettetTekst = $result['text'] ?? $result['html'] ?? '';
 
-        $emneResult = $service->mergeWithMeta($brev->emne ?? '', $this->sag);
-        $this->flettetEmne = $emneResult['text'] ?? $emneResult['html'] ?? ($brev->emne ?? '');
+        $emneResult = $service->mergeWithMeta((string) ($brev->emne ?? ''), $this->sag);
+        $this->flettetEmne = $emneResult['text'] ?? $emneResult['html'] ?? (string) ($brev->emne ?? '');
     }
 
     // Helper til at hente det aktuelt valgte brev-objekt

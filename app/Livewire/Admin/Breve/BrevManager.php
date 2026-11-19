@@ -42,6 +42,18 @@ class BrevManager extends Component
     public bool $showRenameModal = false;
     public string $editTitle = '';
 
+    public bool $visfirmabrevhoved = true;
+    public string $firma_navn = 'DANSK KONSULENT GRUPPE A/S';
+    public string $firma_adresse = 'SCT. HANSGADE 9, 1 SAL, 4100 RINGSTED';
+    public string $firma_telefon = '+45 22 22 68 94';
+    public string $firma_mail = 'DKG@DKG-APS.DK';
+    public string $firma_web = 'WWW.DKG-APS.DK';
+    public string $firma_cvr = '21 24 72 86';
+    public $brevhoved_top_margin = 1.50;
+    
+    public string|float $firma_font_size = 8.5;
+    public string|float $firma_left_margin = 11.80;
+
     public array $filter = [
         'adresse'   => true,
         'dato'      => true,
@@ -93,6 +105,18 @@ class BrevManager extends Component
 
             $this->beskyttet        = (bool) ($brev->beskyttet ?? 0);
             $this->linjeafstand     = $brev->linjeafstand ?? 1.5;
+
+            $this->visfirmabrevhoved = (bool) ($brev->visfirmabrevhoved ?? true);
+            $this->firma_navn        = $brev->firma_navn ?? 'DANSK KONSULENT GRUPPE A/S';
+            $this->firma_adresse     = $brev->firma_adresse ?? 'SCT. HANSGADE 9, 1 SAL, 4100 RINGSTED';
+            $this->firma_telefon     = $brev->firma_telefon ?? '+45 22 22 68 94';
+            $this->firma_mail        = $brev->firma_mail ?? 'DKG@DKG-APS.DK';
+            $this->firma_web         = $brev->firma_web ?? 'WWW.DKG-APS.DK';
+            $this->firma_cvr         = $brev->firma_cvr ?? '21 24 72 86';
+            $this->brevhoved_top_margin = $brev->brevhoved_top_margin ?? 1.50;
+            
+            $this->firma_font_size   = $brev->firma_font_size ?? 8.5;
+            $this->firma_left_margin = $brev->firma_left_margin ?? 11.80;
             
             // Hent eller opret standard filter for dette brev
             $brevFilter = \App\Models\BrevFilter::where('brevID', $this->brevId)->first();
@@ -144,6 +168,16 @@ class BrevManager extends Component
             'font_family'     => $this->font_family,
             'beskyttet'       => $this->beskyttet ? 1 : 0, 
             'linjeafstand'    => $this->linjeafstand,
+            'visfirmabrevhoved' => $this->visfirmabrevhoved,
+            'firma_navn'        => $this->firma_navn,
+            'firma_adresse'     => $this->firma_adresse,
+            'firma_telefon'     => $this->firma_telefon,
+            'firma_mail'        => $this->firma_mail,
+            'firma_web'         => $this->firma_web,
+            'firma_cvr'         => $this->firma_cvr,
+            'brevhoved_top_margin' => (float) str_replace(',', '.', (string) ($this->brevhoved_top_margin ?: 1.50)),
+            'firma_font_size'   => (float) str_replace(',', '.', (string) ($this->firma_font_size ?: 8.5)),
+            'firma_left_margin' => (float) str_replace(',', '.', (string) ($this->firma_left_margin ?: 11.80)),
         ]);
 
         // Gem / Opdater BrevFilter i databasen
@@ -366,6 +400,7 @@ class BrevManager extends Component
             'dato_margin_top' => 0,
             'emne_top_margin' => 0,
             'body_margin_top' => 0,
+            'brevhoved_top_margin' => 0,
         ]);
 
         // Genindlæs det aktuelt valgte brev, så visningen opdateres med det samme
@@ -394,6 +429,15 @@ class BrevManager extends Component
     public function updatedBodyMarginTop($value)
     {
         $this->body_margin_top = str_replace(',', '.', $value);
+    }
+
+    public function updatedVisfirmabrevhoved(bool $value): void
+    {
+        if ($this->brevId) {
+            Brev::whereKey($this->brevId)->update([
+                'visfirmabrevhoved' => $value,
+            ]);
+        }
     }
 
     public function render()

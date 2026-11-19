@@ -16,7 +16,7 @@
     </div>
 
     {{-- 2. SKABELONINDHOLD --}}
-    <div class="bg-white border border-slate-200 rounded-b-2xl rounded-tr-2xl p-6 shadow-sm flex flex-col space-y-4">
+    <div class="bg-white border border-slate-200 rounded-b-2xl rounded-tr-2xl p-6 shadow-sm flex flex-col space-y-4" style="border:1px solid blue;height:100%">
         
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             {{-- Emne-felt --}}
@@ -56,19 +56,55 @@
             </div>
 
             {{-- Beskyttet Checkbox --}}
-            <div class="flex flex-col justify-end md:col-span-2">
+            <div class="flex flex-col justify-end md:col-span-2 gap-2">
                 <label class="flex items-center gap-2 h-[42px] px-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition">
                     <input type="checkbox" wire:model.live="beskyttet" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer">
                     <span class="text-xs font-bold text-slate-700">🔒 Beskyttet</span>
                 </label>
                 <button 
-                type="button" 
-                wire:click="nulstilAlleMarginer" 
-                wire:confirm="Er du sikker på, at du vil nulstille marginer til 0 på ALLE brevskabeloner?"
-                class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
-            >
-                🔄 Nulstil alle marginer (Globalt)
-            </button>
+                    type="button" 
+                    wire:click="nulstilAlleMarginer" 
+                    wire:confirm="Er du sikker på, at du vil nulstille marginer til 0 på ALLE brevskabeloner?"
+                    class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 w-fit"
+                >
+                    🔄 Nulstil alle marginer (Globalt)
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-4 space-y-3">
+            <h4 class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Firmaoplysninger i brevhoved</h4>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Firmanavn</label>
+                    <input type="text" wire:model.live="firma_navn" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:border-indigo-500 font-semibold text-slate-900">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Adresse</label>
+                    <input type="text" wire:model.live="firma_adresse" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:border-indigo-500 font-semibold text-slate-900">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Telefon</label>
+                    <input type="text" wire:model.live="firma_telefon" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:border-indigo-500 font-semibold text-slate-900">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mail</label>
+                    <input type="text" wire:model.live="firma_mail" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:border-indigo-500 font-semibold text-slate-900">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Web</label>
+                    <input type="text" wire:model.live="firma_web" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:border-indigo-500 font-semibold text-slate-900">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">CVR. nr.</label>
+                    <input type="text" wire:model.live="firma_cvr" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:border-indigo-500 font-semibold text-slate-900">
+                </div>
             </div>
         </div>
         
@@ -77,86 +113,118 @@
             <h3 class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Avancerede layout- og skriftindstillinger</h3>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {{-- 1. Navn top-margin --}}
-            <div>
-                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Navn top-margin (cm):</label>
-                <input 
-                    type="text" 
-                    inputmode="decimal"
-                    wire:model.live="navn_top_margin" 
-                    placeholder="5.45" 
-                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
-                >
-            </div>
+                {{-- 1. Navn top-margin --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Navn top-margin (cm):</label>
+                    <input 
+                        type="text" 
+                        inputmode="decimal"
+                        wire:model.live="navn_top_margin" 
+                        placeholder="5.45" 
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
+                    >
+                </div>
 
-            {{-- 2. Dato top-margin --}}
-            <div>
-                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Dato top-margin (cm):</label>
-                <input 
-                    type="text" 
-                    inputmode="decimal"
-                    wire:model.live="dato_margin_top" 
-                    placeholder="7.57" 
-                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
-                >
-            </div>
+                {{-- 2. Dato top-margin --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Dato top-margin (cm):</label>
+                    <input 
+                        type="text" 
+                        inputmode="decimal"
+                        wire:model.live="dato_margin_top" 
+                        placeholder="7.57" 
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
+                    >
+                </div>
 
-            {{-- 3. Emne top-margin --}}
-            <div>
-                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Emne top-margin (cm):</label>
-                <input 
-                    type="text" 
-                    inputmode="decimal"
-                    wire:model.live="emne_top_margin" 
-                    placeholder="8.91" 
-                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
-                >
-            </div>
+                {{-- 3. Emne top-margin --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Emne top-margin (cm):</label>
+                    <input 
+                        type="text" 
+                        inputmode="decimal"
+                        wire:model.live="emne_top_margin" 
+                        placeholder="8.91" 
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
+                    >
+                </div>
 
-            {{-- 4. Body top-margin --}}
-            <div>
-                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Body top-margin (cm):</label>
-                <input 
-                    type="text" 
-                    inputmode="decimal"
-                    wire:model.live="body_margin_top" 
-                    placeholder="1.00" 
-                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
-                >
-            </div>
-        </div>
+                {{-- 4. Body top-margin (afstand under emne i em) --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Body top-margin (em):</label>
+                    <input 
+                        type="text" 
+                        inputmode="decimal"
+                        wire:model.live="body_margin_top" 
+                        placeholder="2" 
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
+                    >
+                </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2 border-t border-slate-200/60">
-        {{-- Skrifttype --}}
-        <div>
-            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Skrifttype:</label>
-            <select wire:model.live="font_family" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900 cursor-pointer">
-                <option value="'Century Schoolbook', Georgia, serif">Century Schoolbook</option>
-                <option value="'Times New Roman', Times, serif">Times New Roman</option>
-                <option value="Arial, Helvetica, sans-serif">Arial</option>
-                <option value="Calibri, sans-serif">Calibri</option>
-            </select>
-        </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Brevhoved top-margin (cm):</label>
+                    <input 
+                        type="text" 
+                        inputmode="decimal"
+                        wire:model.live="brevhoved_top_margin" 
+                        placeholder="1.50" 
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
+                    >
+                </div>
+            
+                {{-- Skrifttype --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Skrifttype:</label>
+                    <select wire:model.live="font_family" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900 cursor-pointer">
+                        <option value="'Century Schoolbook', Georgia, serif">Century Schoolbook</option>
+                        <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                        <option value="Arial, Helvetica, sans-serif">Arial</option>
+                        <option value="Calibri, sans-serif">Calibri</option>
+                    </select>
+                </div>
 
-        {{-- Navn skriftstørrelse --}}
-        <div>
-            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Navn skriftstørrelse (pt):</label>
-            <input type="number" step="0.5" wire:model.live="navn_font_size" placeholder="9.5" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900">
-        </div>
+                {{-- Navn skriftstørrelse --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Navn skriftstørrelse (pt):</label>
+                    <input type="number" step="0.5" wire:model.live="navn_font_size" placeholder="9.5" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900">
+                </div>
 
-        {{-- Emne skriftstørrelse --}}
-        <div>
-            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Emne skriftstørrelse (pt):</label>
-            <input type="number" step="0.5" wire:model.live="emne_font_size" placeholder="10.5" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900">
-        </div>
+                {{-- Emne skriftstørrelse --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Emne skriftstørrelse (pt):</label>
+                    <input type="number" step="0.5" wire:model.live="emne_font_size" placeholder="10.5" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900">
+                </div>
 
-        {{-- Body skriftstørrelse --}}
-        <div>
-            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Body skriftstørrelse (pt):</label>
-            <input type="number" step="0.5" wire:model.live="body_font_size" placeholder="9.5" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900">
-        </div>
-    </div>
+                {{-- Body skriftstørrelse --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Body skriftstørrelse (pt):</label>
+                    <input type="number" step="0.5" wire:model.live="body_font_size" placeholder="9.5" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900">
+                </div>
+                {{-- Brevhoved venstre-margin (cm) --}}
+<div>
+    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Brevhoved venstre-margin (cm):</label>
+    <input
+        type="text"
+        inputmode="decimal"
+        wire:model.live="firma_left_margin"
+        placeholder="11.80"
+        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
+    >
 </div>
+
+{{-- Brevhoved skriftstørrelse (pt) --}}
+<div>
+    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Brevhoved skriftstørrelse (pt):</label>
+    <input
+        type="number"
+        step="0.5"
+        wire:model.live="firma_font_size"
+        placeholder="8.5"
+        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
+    >
+</div>
+            </div>
+        </div>
 
         {{-- OVERSKRIFT OG BREVHOVED-KNAP SAMLET --}}
         <div class="flex items-center justify-between pb-2 pt-2">
@@ -183,9 +251,16 @@
                         class="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl p-4 z-50 space-y-3 text-xs"
                         style="display: none;"
                     >
-                        <div class="font-bold text-slate-700 border-b border-slate-100 pb-2 flex justify-between items-center">
+                        <div class="font-bold text-slate-700 border-b border-slate-100 pb-2 flex justify-between items-center gap-2">
                             <span>Styr brevhoved visning</span>
-                            <span class="text-[10px] text-slate-400">Pr. skabelon</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-800">
+                                <input
+                                    type="checkbox"
+                                    wire:model.live="visfirmabrevhoved"
+                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
+                                >
+                                <span>Firmabrevhoved</span>
+                            </label>
                         </div>
 
                         {{-- Master kontrol --}}
@@ -239,11 +314,17 @@
             $visDato    = $visAlt || (!$skjulAlt && ($filter['dato'] ?? true));
             $visSagsnr  = $visAlt || (!$skjulAlt && ($filter['sagsnr'] ?? true));
 
+            $navnTop      = str_replace(',', '.', ($navn_top_margin ?: 5.45));
+            $datoTop      = str_replace(',', '.', ($dato_margin_top ?: 7.57));
+            $emneTop      = str_replace(',', '.', ($emne_top_margin ?: 8.91));
+            $bodyTop      = str_replace(',', '.', ($body_margin_top ?: 2));
+            $brevhovedTop = str_replace(',', '.', ($brevhoved_top_margin ?: 1.50));
 
-        $navnTop = str_replace(',', '.', $navn_top_margin ?? 5.45);
-        $datoTop = str_replace(',', '.', $dato_margin_top ?? 7.57);
-        $emneTop = str_replace(',', '.', $emne_top_margin ?? 8.91);
-        $bodyTop = str_replace(',', '.', $body_margin_top ?? 1.00);
+            $firmaLeft      = str_replace(',', '.', ($brev->firma_left_margin ?? $firma_left_margin ?? 11.80));
+            $firmaFontSize  = (float) str_replace(',', '.', ($brev->firma_font_size ?? $firma_font_size ?? 8.5));
+            $firmaTitleSize = round($firmaFontSize * 1.55, 1);
+
+            $firmaLeftCm = (float) str_replace(',', '.', ($firmaLeft ?? 11.0));
         @endphp
 
         {{-- DYNAMISK TOP-HEADER (Viser præcis de valgte eksempler) --}}
@@ -252,59 +333,134 @@
                 🚫 Brevhovedet er skjult for denne skabelon
             </div>
         @else
-        <div style="position: relative; width: 100%; min-height: 300px;" id="navn_og_adresse">
-    
-    {{-- 1. Navn og adresse sektion --}}
-    <div style="position: absolute; top: {{ $navnTop }}cm; left: 0; right: 0;">
-        <table class="w-full text-xs sm:text-sm text-slate-700 font-sans" style="width: 100%; border-collapse: collapse; border: none;" cellspacing="0" cellpadding="0" border="0">
-            <tr style="border: none;">
-                <td style="width: 50%; vertical-align: top; text-align: left; padding: 0; border: none;">
-                    @if($visNavn || $visAdresse)
-                        <div class="space-y-1">
-                            @if($visNavn)
-                                <div class="font-bold text-base text-slate-900">[ Eksempel Navn ]</div>
-                            @endif
-                            @if($visAdresse)
-                                <div class="text-slate-600">[ Eksempel Adresse ]</div>
-                                <div class="text-slate-600">[ Postnr By ]</div>
-                            @endif
+            <div style="position: relative; width: 100%; min-height: 500px; margin: 0;" id="brev_preview">
+                
+                {{-- Ensartet firmabrevhoved-blok til både brev-manager og vis-brev --}}
+                @if(($brev->visfirmabrevhoved ?? ($visfirmabrevhoved ?? true)))
+                    <div
+                        x-data="{
+                            previewWidth: 0,
+                            firmaLeftCm: {{ $firmaLeftCm }},
+                            get leftPx() {
+                                // 1 cm i CSS = 96px / 2.54 ≈ 37.7953px
+                                const pxPerCm = 37.79527559;
+                                const a4WidthPx = 21 * pxPerCm; // ~793.7px
+                                const desiredLeftOnA4Px = this.firmaLeftCm * pxPerCm;
+
+                                if (!this.previewWidth) {
+                                    return desiredLeftOnA4Px;
+                                }
+
+                                // Skaler forholdsmæssigt i forhold til et 21 cm A4-ark
+                                return (desiredLeftOnA4Px / a4WidthPx) * this.previewWidth;
+                            }
+                        }"
+                        x-init="
+                            previewWidth = $el.parentElement.clientWidth;
+                            const ro = new ResizeObserver(() => {
+                                if ($el.parentElement) previewWidth = $el.parentElement.clientWidth;
+                            });
+                            ro.observe($el.parentElement);
+                        "
+                        :wire:key="`firma-brevhoved-{{ $brevId ?? 'ny' }}-{{ $brevhovedTop }}-{{ $firmaLeft }}-{{ $firmaFontSize }}`"
+                        :style="`
+                            position: absolute;
+                            top: {{ $brevhovedTop }}cm;
+                            left: ${leftPx}px;
+                            border-left: 2.5px solid #1e293b;
+                            padding-left: 10px;
+                            font-family: Arial, Helvetica, sans-serif;
+                            line-height: 1.35;
+                            box-sizing: border-box;
+                        `"
+                        class="text-left text-slate-900"
+                    >
+                        <div
+                            style="font-size: {{ $firmaTitleSize }}pt; line-height: 1.15; letter-spacing: -0.01em;"
+                            class="font-extrabold uppercase text-slate-950 mb-1.5"
+                        >
+                            {{ $brev->firma_navn ?? ($this->firma_navn ?? 'DANSK KONSULENT GRUPPE A/S') }}
                         </div>
-                    @else
-                        <span class="text-slate-300 italic">[ Modtagerfelt skjult ]</span>
-                    @endif
-                </td>
-                <td style="width: 50%; border: none;"></td>
-            </tr>
-        </table>
+
+                        <table class="firma-brevhoved-tabel" style="width: auto; border-collapse: collapse !important; border: none !important; font-size: {{ $firmaFontSize }}pt;" cellspacing="0" cellpadding="0">
+                            <tr>
+                                <td style="font-size: {{ $firmaFontSize }}pt; padding-right: 14px;" class="font-bold uppercase text-slate-800 pb-1.5 align-top whitespace-nowrap">ADRESSE:</td>
+                                <td style="font-size: {{ $firmaFontSize }}pt;" class="uppercase text-slate-900 pb-1.5 align-top">{{ $brev->firma_adresse ?? ($this->firma_adresse ?? 'SCT. HANSGADE 9, 1 SAL, 4100 RINGSTED') }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-size: {{ $firmaFontSize }}pt; padding-right: 14px;" class="font-bold uppercase text-slate-800 align-top whitespace-nowrap">TELEFON:</td>
+                                <td style="font-size: {{ $firmaFontSize }}pt;" class="uppercase text-slate-900 align-top">{{ $brev->firma_telefon ?? ($this->firma_telefon ?? '+45 22 22 68 94') }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-size: {{ $firmaFontSize }}pt; padding-right: 14px;" class="font-bold uppercase text-slate-800 align-top whitespace-nowrap">MAIL:</td>
+                                <td style="font-size: {{ $firmaFontSize }}pt;" class="uppercase text-slate-900 align-top">{{ $brev->firma_mail ?? ($this->firma_mail ?? 'DKG@DKG-APS.DK') }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-size: {{ $firmaFontSize }}pt; padding-right: 14px;" class="font-bold uppercase text-slate-800 pb-1.5 align-top whitespace-nowrap">WEB:</td>
+                                <td style="font-size: {{ $firmaFontSize }}pt;" class="uppercase text-slate-900 pb-1.5 align-top">{{ $brev->firma_web ?? ($this->firma_web ?? 'WWW.DKG-APS.DK') }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-size: {{ $firmaFontSize }}pt; padding-right: 14px;" class="font-bold uppercase text-slate-800 align-top whitespace-nowrap">CVR. NR.:</td>
+                                <td style="font-size: {{ $firmaFontSize }}pt;" class="uppercase text-slate-900 align-top">{{ $brev->firma_cvr ?? ($this->firma_cvr ?? '21 24 72 86') }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                @endif
+            
+                {{-- 1. Navn og adresse sektion --}}
+                <div style="position: absolute; top: {{ $navnTop }}cm; left: 0; right: 0;">
+                    <table class="w-full text-xs sm:text-sm text-slate-700 font-sans" style="width: 100%; border-collapse: collapse; border: none;" cellspacing="0" cellpadding="0" border="0">
+                        <tr style="border: none;">
+                            <td style="width: 50%; vertical-align: top; text-align: left; padding: 0; border: none;">
+                                @if($visNavn || $visAdresse)
+                                    <div class="space-y-1">
+                                        @if($visNavn)
+                                            <div class="font-bold text-base text-slate-900">[ Eksempel Navn ]</div>
+                                        @endif
+                                        @if($visAdresse)
+                                            <div class="text-slate-600">[ Eksempel Adresse ]</div>
+                                            <div class="text-slate-600">[ Postnr By ]</div>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="text-slate-300 italic">[ Modtagerfelt skjult ]</span>
+                                @endif
+                            </td>
+                            <td style="width: 50%; border: none;"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                {{-- 2. Dato og Sagsnr sektion --}}
+                <div style="position: absolute; top: {{ $datoTop }}cm; left: 0; right: 0;">
+                    <table class="w-full text-xs sm:text-sm text-slate-700 font-sans" style="width: 100%; border-collapse: collapse; border: none;" cellspacing="0" cellpadding="0" border="0">
+                        <tr style="border: none;">
+                            <td style="width: 50%; border: none;"></td>
+                            <td style="width: 50%; vertical-align: top; text-align: right; padding: 0; border: none;">
+                                @if($visDato || $visSagsnr)
+                                    <div class="space-y-1 font-medium text-slate-900" style="line-height: 1.4;">
+                                        @if($visDato)
+                                            <div><strong>Dato:</strong> {{ $sag->dato ?? date('d.m.Y') }}</div>
+                                        @endif
+                                        @if($visSagsnr)
+                                            <div><strong>J. nr.:</strong> {{ $sag->sagsnr ?? '123456' }}</div>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="text-slate-300 italic">[ Dato/Sagsnr skjult ]</span>
+                                @endif
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                {{-- 3 + 4. EMNE OG BREVTEKST I NATURLIGT FLOW (Skubber automatisk bundbjælken ned) --}}
+<div style="position: relative; margin-top: {{ $emneTop }}cm;" class="flex flex-col space-y-3 pb-4">
+    <div class="font-bold text-slate-900 border-b border-slate-100 pb-2" style="font-size: {{ $emne_font_size ?? 10.5 }}pt;">
+        {{ $emne }}
     </div>
 
-    {{-- 2. Dato og Sagsnr sektion --}}
-    <div style="position: absolute; top: {{ $datoTop }}cm; left: 0; right: 0;">
-        <table class="w-full text-xs sm:text-sm text-slate-700 font-sans" style="width: 100%; border-collapse: collapse; border: none;" cellspacing="0" cellpadding="0" border="0">
-            <tr style="border: none;">
-                <td style="width: 50%; border: none;"></td>
-                <td style="width: 50%; vertical-align: top; text-align: right; padding: 0; border: none;">
-                    @if($visDato || $visSagsnr)
-                        <div class="space-y-1 font-medium text-slate-900" style="line-height: 1.4;">
-                            @if($visDato)
-                                <div><strong>Dato:</strong> {{ $sag->dato ?? date('d.m.Y') }}</div>
-                            @endif
-                            @if($visSagsnr)
-                                <div><strong>J. nr.:</strong> {{ $sag->sagsnr ?? '123456' }}</div>
-                            @endif
-                        </div>
-                    @else
-                        <span class="text-slate-300 italic">[ Dato/Sagsnr skjult ]</span>
-                    @endif
-                </td>
-            </tr>
-        </table>
-    </div>
-
-
-        @endif
-
-        {{-- WYSIWYG REDIGERER TIL SELVE BREVTEKSTEN --}}
+    <div style="margin-top: {{ $bodyTop }}em;" class="w-full">
         <x-wysiwyg-editor 
             wire:key="editor-{{ $brevId }}-{{ $beskyttet ? 'prot' : 'unprot' }}"
             wireModel="tekst" 
@@ -312,7 +468,7 @@
             :navnTopMargin="$navn_top_margin"
             :datoMarginTop="$dato_margin_top"
             :emneTopMargin="$emne_top_margin"
-            :bodyMarginTop="$body_margin_top"
+            :bodyMarginTop="0"
             :navnFontSize="$navn_font_size"
             :emneFontSize="$emne_font_size"
             :bodyFontSize="$body_font_size"
@@ -321,9 +477,14 @@
             :marginRight="$margin_right"
             :linjeafstand="$linjeafstand" 
             :beskyttet="$beskyttet"
-            height="450px" 
+            height="420px" 
         />
-    </div></div>
+    </div>
+
+                </div>
+            </div>
+        @endif
+    </div>
 
     {{-- 3. BUND MED ALLE KNAPPER --}}
     <div class="mt-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4 text-white">

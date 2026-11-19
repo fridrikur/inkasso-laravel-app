@@ -23,10 +23,18 @@ class Brev extends Model
         'dato_margin_top',    // Ændret fra right_margin_top
         'emne_top_margin',    // Ændret fra emne_top
         'body_margin_top',
+        'brevhoved_top_margin',
         'navn_font_size',
         'emne_font_size',
         'body_font_size',
         'font_family',
+        'visfirmabrevhoved',
+        'firma_navn',
+        'firma_adresse',
+        'firma_telefon',
+        'firma_mail',
+        'firma_web',
+        'firma_cvr',
     ];
 
     protected function tekst(): Attribute
