@@ -15,7 +15,7 @@
         </div>
     </div>
 
-    <button type="button" wire:click="openBackupModal" class="button">
+    <button type="button" wire:click="openBackupModal" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
         🛡️ Import / Eksport
     </button>
 
