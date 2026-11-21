@@ -15,9 +15,9 @@
         </div>
     </div>
 
-    <button type="button" wire:click="openBackupModal" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border border-slate-700">
-    🛡️ Import / Eksport
-</button>
+    <button type="button" wire:click="openBackupModal">
+        🛡️ Import / Eksport
+    </button>
 
     {{-- 2. SKABELONINDHOLD --}}
     <div class="bg-white border border-slate-200 rounded-b-2xl rounded-tr-2xl p-6 shadow-sm flex flex-col space-y-4" style="height:100%">
