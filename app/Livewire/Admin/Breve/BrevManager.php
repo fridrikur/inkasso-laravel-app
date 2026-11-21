@@ -654,6 +654,20 @@ class BrevManager extends Component
                     }
 
                     $cleanRow = array_intersect_key($item, array_flip($columns));
+
+                    // Sikr at 'tekst' og øvrige tekstfelter aldrig er null i MySQL
+                    $cleanRow['tekst'] = (string) ($cleanRow['tekst'] ?? '');
+
+                    if (in_array('emne', $columns, true) && !array_key_exists('emne', $cleanRow) || ($cleanRow['emne'] ?? null) === null) {
+                        if (in_array('emne', $columns, true)) {
+                            $cleanRow['emne'] = '';
+                        }
+                    }
+
+                    if (in_array('sub_emne', $columns, true) && ($cleanRow['sub_emne'] ?? null) === null) {
+                        $cleanRow['sub_emne'] = '';
+                    }
+
                     $eksisterende = Brev::where('titel', $cleanRow['titel'])->first();
 
                     if ($eksisterende) {
@@ -662,12 +676,11 @@ class BrevManager extends Component
                             continue;
                         }
 
-                        // Beskyttede skabeloner overskrives kun, hvis brugeren aktivt har tilladt overskrivning
                         $eksisterende->update($cleanRow);
                         $targetBrevId = $eksisterende->id;
                         $opdateret++;
                     } else {
-                        $cleanRow['brevpos'] = $cleanRow['brevpos'] ?? ((Brev::max('brevpos') ?? 0) + 1);
+                        $cleanRow['brevpos'] = $cleanRow['brevpos'] ?? (((int) Brev::max('brevpos')) + 1);
                         $cleanRow['brevtype'] = $cleanRow['brevtype'] ?? '0';
                         $nyBrev = Brev::create($cleanRow);
                         $targetBrevId = $nyBrev->id;
