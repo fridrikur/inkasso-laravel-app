@@ -15,7 +15,7 @@
         </div>
     </div>
 
-    <button type="button" wire:click="openBackupModal">
+    <button type="button" wire:click="openBackupModal" class="button">
         🛡️ Import / Eksport
     </button>
 
