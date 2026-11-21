@@ -70,6 +70,8 @@ class BrevManager extends Component
     public string|float $firma_font_size = 8.5;
     public string|float $firma_left_margin = 11.80;
 
+    public bool $settingsOpen = true;
+
     public array $filter = [
         'adresse'   => true,
         'dato'      => true,
@@ -116,6 +118,12 @@ class BrevManager extends Component
     public function loadBrev($id): void
     {
         $brev = Brev::find($id);
+        if (!$brev) {
+            return;
+        }
+
+        // Skjul top-indstillingerne automatisk, når der skiftes til en fane/skabelon
+        $this->settingsOpen = false;
 
         if ($brev) {
             $this->brevId              = $brev->id;
