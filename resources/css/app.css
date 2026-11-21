@@ -19,15 +19,17 @@
     }
 }
 
-.animate-progress-slide {
-    animation: progressSlide 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    will-change: transform;
+@layer utilities {
+    .animate-progress-slide {
+        animation: progressSlide 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        will-change: transform;
+    }
 }
 
 @media print {
     /* Skjul alt hvad der minder om editor-toolbars og knapper ved udskrivning */
-    .wysiwyg-toolbar, 
-    [x-ref="toolbar"], 
+    .wysiwyg-toolbar,
+    [x-ref="toolbar"],
     button:not(#print-container button) {
         display: none !important;
     }
@@ -38,5 +40,13 @@
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
+    }
+
+    .a4-print-container,
+    .a4-print-container *,
+    #print-container,
+    #print-container * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 }

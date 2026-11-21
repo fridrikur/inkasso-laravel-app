@@ -33,92 +33,82 @@
 
         {{-- Selve A4-arket --}}
         @if($brev)
-            @php
-                $navnTop        = str_replace(',', '.', ($brev->navn_top_margin ?: 5.45));
-                $datoTop        = str_replace(',', '.', ($brev->dato_margin_top ?: 7.57));
-                $emneTop        = str_replace(',', '.', ($brev->emne_top_margin ?: 8.91));
-                $bodyTop        = str_replace(',', '.', ($brev->body_margin_top ?: ($body_margin_top ?? 2)));
-                $brevhovedTop   = str_replace(',', '.', ($brev->brevhoved_top_margin ?: 1.50));
-                $firmaLeft      = str_replace(',', '.', ($brev->firma_left_margin ?: 11.80));
-                $firmaFontSize  = (float) str_replace(',', '.', ($brev->firma_font_size ?: 8.5));
-                $firmaTitleSize = round($firmaFontSize * 1.55, 1);
-            @endphp
-
             <div 
                 id="print-container" 
-                wire:key="print-ark-{{ $selectedBrevId ?? 'default' }}-{{ $navnTop }}-{{ $datoTop }}-{{ $emneTop }}-{{ $bodyTop }}-{{ $brevhovedTop }}-{{ $firmaLeft }}-{{ $firmaFontSize }}"
-                style="width: 210mm; height: 297mm; font-family: {!! $brev->font_family ?? 'Century Schoolbook, Georgia, serif' !!};"
-                class="bg-white shadow-2xl rounded-xl p-[25mm] text-slate-800 text-sm leading-relaxed relative box-border overflow-hidden shrink-0 mx-auto"
+                wire:key="print-ark-{{ $selectedBrevId ?? 'default' }}-{{ $this->navnTop }}-{{ $this->datoTop }}-{{ $this->emneTop }}-{{ $this->subEmneTop }}-{{ $this->bodyTop }}-{{ $this->brevhovedTop }}-{{ $this->firmaLeft }}-{{ $this->firmaFontSize }}-{{ md5($this->fontColor) }}"
+                style="width: 210mm; height: 297mm; font-family: {{ $this->fontFamily }}; color: {{ $this->fontColor }};"
+                class="bg-white shadow-2xl rounded-xl p-[25mm] text-sm leading-relaxed relative box-border overflow-hidden shrink-0 mx-auto"
             >
-                {{-- 0. FIRMA-BREVHOVED (Styres af visfirmabrevhoved, brevhoved_top_margin, firma_left_margin og firma_font_size) --}}
+                {{-- 0. FIRMA-BREVHOVED --}}
                 @if($brev->visfirmabrevhoved ?? true)
                     <div
                         style="
                             position: absolute;
-                            top: {{ $brevhovedTop }}cm;
-                            left: {{ $firmaLeft }}cm;
+                            top: {{ $this->brevhovedTop }}cm;
+                            left: {{ $this->firmaLeft }}cm;
                             border-left: 2.5px solid #1e293b;
                             padding-left: 10px;
                             font-family: Arial, Helvetica, sans-serif;
                             line-height: 1.35;
+                            color: {{ $this->fontColor }};
                         "
-                        class="text-left text-slate-900"
+                        class="text-left"
                     >
                         <div
-                            style="font-size: {{ $firmaTitleSize }}pt; line-height: 1.15; letter-spacing: -0.01em;"
-                            class="font-extrabold uppercase text-slate-950 mb-1.5"
+                            style="font-size: {{ $this->firmaTitleSize }}pt; line-height: 1.15; letter-spacing: -0.01em; color: {{ $this->fontColor }};"
+                            class="font-extrabold uppercase mb-1.5"
                         >
                             {{ $brev->firma_navn ?: 'DANSK KONSULENT GRUPPE A/S' }}
                         </div>
 
-                        <table class="firma-brevhoved-tabel" style="width: auto; border-collapse: collapse !important; border: none !important; font-size: {{ $firmaFontSize }}pt;" cellspacing="0" cellpadding="0">
+                        <table class="firma-brevhoved-tabel" style="width: auto; border-collapse: collapse !important; border: none !important; font-size: {{ $this->firmaFontSize }}pt; color: {{ $this->fontColor }};" cellspacing="0" cellpadding="0">
                             <tr>
-                                <td style="font-size: {{ $firmaFontSize }}pt; padding-right: 14px;" class="font-bold uppercase text-slate-800 pb-1.5 align-top whitespace-nowrap">ADRESSE:</td>
-                                <td style="font-size: {{ $firmaFontSize }}pt;" class="uppercase text-slate-900 pb-1.5 align-top">{{ $brev->firma_adresse ?? ($this->firma_adresse ?? 'SCT. HANSGADE 9, 1 SAL, 4100 RINGSTED') }}</td>
+                                <td style="font-size: {{ $this->firmaFontSize }}pt; padding-right: 14px; color: {{ $this->fontColor }};" class="font-bold uppercase pb-1.5 align-top whitespace-nowrap">ADRESSE:</td>
+                                <td style="font-size: {{ $this->firmaFontSize }}pt; color: {{ $this->fontColor }};" class="uppercase pb-1.5 align-top">{{ $brev->firma_adresse ?? 'SCT. HANSGADE 9, 1 SAL, 4100 RINGSTED' }}</td>
                             </tr>
                             <tr>
-                                <td style="font-size: {{ $firmaFontSize }}pt; padding-right: 14px;" class="font-bold uppercase text-slate-800 align-top whitespace-nowrap">TELEFON:</td>
-                                <td style="font-size: {{ $firmaFontSize }}pt;" class="uppercase text-slate-900 align-top">{{ $brev->firma_telefon ?? ($this->firma_telefon ?? '+45 22 22 68 94') }}</td>
+                                <td style="font-size: {{ $this->firmaFontSize }}pt; padding-right: 14px; color: {{ $this->fontColor }};" class="font-bold uppercase align-top whitespace-nowrap">TELEFON:</td>
+                                <td style="font-size: {{ $this->firmaFontSize }}pt; color: {{ $this->fontColor }};" class="uppercase align-top">{{ $brev->firma_telefon ?? '+45 22 22 68 94' }}</td>
                             </tr>
                             <tr>
-                                <td style="font-size: {{ $firmaFontSize }}pt; padding-right: 14px;" class="font-bold uppercase text-slate-800 align-top whitespace-nowrap">MAIL:</td>
-                                <td style="font-size: {{ $firmaFontSize }}pt;" class="uppercase text-slate-900 align-top">{{ $brev->firma_mail ?? ($this->firma_mail ?? 'DKG@DKG-APS.DK') }}</td>
+                                <td style="font-size: {{ $this->firmaFontSize }}pt; padding-right: 14px; color: {{ $this->fontColor }};" class="font-bold uppercase align-top whitespace-nowrap">MAIL:</td>
+                                <td style="font-size: {{ $this->firmaFontSize }}pt; color: {{ $this->fontColor }};" class="uppercase align-top">{{ $brev->firma_mail ?? 'DKG@DKG-APS.DK' }}</td>
                             </tr>
                             <tr>
-                                <td style="font-size: {{ $firmaFontSize }}pt; padding-right: 14px;" class="font-bold uppercase text-slate-800 pb-1.5 align-top whitespace-nowrap">WEB:</td>
-                                <td style="font-size: {{ $firmaFontSize }}pt;" class="uppercase text-slate-900 pb-1.5 align-top">{{ $brev->firma_web ?? ($this->firma_web ?? 'WWW.DKG-APS.DK') }}</td>
+                                <td style="font-size: {{ $this->firmaFontSize }}pt; padding-right: 14px; color: {{ $this->fontColor }};" class="font-bold uppercase pb-1.5 align-top whitespace-nowrap">WEB:</td>
+                                <td style="font-size: {{ $this->firmaFontSize }}pt; color: {{ $this->fontColor }};" class="uppercase pb-1.5 align-top">{{ $brev->firma_web ?? 'WWW.DKG-APS.DK' }}</td>
                             </tr>
                             <tr>
-                                <td style="font-size: {{ $firmaFontSize }}pt; padding-right: 14px;" class="font-bold uppercase text-slate-800 align-top whitespace-nowrap">CVR. NR.:</td>
-                                <td style="font-size: {{ $firmaFontSize }}pt;" class="uppercase text-slate-900 align-top">{{ $brev->firma_cvr ?? ($this->firma_cvr ?? '21 24 72 86') }}</td>
+                                <td style="font-size: {{ $this->firmaFontSize }}pt; padding-right: 14px; color: {{ $this->fontColor }};" class="font-bold uppercase align-top whitespace-nowrap">CVR. NR.:</td>
+                                <td style="font-size: {{ $this->firmaFontSize }}pt; color: {{ $this->fontColor }};" class="uppercase align-top">{{ $brev->firma_cvr ?? '21 24 72 86' }}</td>
                             </tr>
                         </table>
                     </div>
                 @endif
 
-                {{-- 1. ADRESSE / NAVN (Placeret præcist på navn_top_margin fra toppen) --}}
-                <div style="position: absolute; top: {{ $navnTop }}cm; left: 25mm; right: 25mm;">
+                {{-- 1. ADRESSE / NAVN --}}
+                <div style="position: absolute; top: {{ $this->navnTop }}cm; left: 25mm; right: 25mm;">
                     @if($this->visNavn || $this->visAdresse)
                         <div class="space-y-1">
                             @if($this->visNavn)
-                                <div class="text-slate-900 font-medium" style="font-size: {{ $brev->navn_font_size ?? 9.5 }}pt;">
+                                <div class="font-medium" style="font-size: {{ $brev->navn_font_size ?? 9.5 }}pt; color: {{ $this->fontColor }};">
                                     {{ $sag->debitor()->first()?->navn ?? '[ Eksempel Navn ]' }}
                                 </div>
                             @endif
                             @if($this->visAdresse)
-                                <div class="text-slate-600" style="font-size: {{ $brev->navn_font_size ?? 9.5 }}pt;">
+                                <div style="font-size: {{ $brev->navn_font_size ?? 9.5 }}pt; color: {{ $this->fontColor }};">
                                     {{ $sag->debitor()->first()?->adresse ?? '[ Eksempel Adresse ]' }}<br>
-                                    {{ $sag->debitor()->first()?->postnr ?? '[ Postnr ]' }}   {{ $sag->debitor()->first()?->postnummer?->by ?? '[ By ]' }}
+                                    {{ $sag->debitor()->first()?->postnr ?? '[ Postnr ]' }} &nbsp; {{ $sag->debitor()->first()?->postnummer?->by ?? '[ By ]' }}
                                 </div>
                             @endif
                         </div>
                     @endif
                 </div>
 
-                {{-- 2. DATO OG SAGSNR (Placeret præcist på dato_margin_top fra toppen i højre side) --}}
-                <div style="position: absolute; top: {{ $datoTop }}cm; right: 25mm; text-align: right;">
+                {{-- 2. DATO OG SAGSNR --}}
+                <div style="position: absolute; top: {{ $this->datoTop }}cm; right: 25mm; text-align: right;">
                     @if($this->visDato || $this->visSagsnr)
-                        <div class="space-y-1 font-medium text-slate-900" style="font-size: {{ $brev->navn_font_size ?? 9.5 }}pt; line-height: 1.4;">
+                        <div class="space-y-1 font-medium" style="font-size: {{ $brev->navn_font_size ?? 9.5 }}pt; line-height: 1.4; color: {{ $this->fontColor }};">
                             @if($this->visDato)
                                 <div><strong>Dato:</strong> {{ $sag->dato ? \Carbon\Carbon::parse($sag->dato)->format('d.m.Y') : date('d.m.Y') }}</div>
                             @endif
@@ -129,33 +119,92 @@
                     @endif
                 </div>
 
-                {{-- 3 + 4. EMNE OG BREVTEKST (Emne på emne_top_margin, og brevtekst i normalt flow med margin-top i em) --}}
-                <div style="position: absolute; top: {{ $emneTop }}cm; left: 25mm; right: 25mm; bottom: 20mm;" class="flex flex-col">
-                    @if($this->visEmne && !empty($flettetEmne))
-                        <h3 class="font-bold text-slate-900 border-b border-slate-100 pb-2" style="font-size: {{ $brev->emne_font_size ?? 10.5 }}pt;">
-                            {!! $flettetEmne !!}
-                        </h3>
+                {{-- 3 + 4. EMNE, SUB-EMNE OG BREVTEKST --}}
+                <div style="position: absolute; top: {{ $this->emneTop }}cm; left: 25mm; right: 25mm; bottom: 20mm;" class="flex flex-col">
+                    @if($this->visEmne)
+                        {{-- SAMLET DIV TIL EMNE (H3) OG SUB-EMNE --}}
+                        <div
+                            x-data="{ redigerEmne: false, redigerSubEmne: false }"
+                            class="border-b border-slate-100 pb-1.5"
+                            style="color: {{ $this->fontColor }};"
+                        >
+                            <h3
+                                x-show="!redigerEmne"
+                                @click="redigerEmne = true; $nextTick(() => $refs.visEmneInput?.focus())"
+                                title="Klik for at ændre emne til udskrift"
+                                class="m-0 font-bold cursor-pointer rounded px-1 -mx-1 transition hover:ring-1 hover:ring-indigo-300/80 hover:bg-indigo-50/10"
+                                style="font-size: {{ $this->emneFontSize }}pt; line-height: 1.2; color: {{ $this->fontColor }};"
+                            >
+                                @if(filled($flettetEmne))
+                                    {{ $flettetEmne }}
+                                @else
+                                    <span class="print:hidden text-slate-400 italic font-normal text-xs font-sans">[ Klik for at skrive emne... ]</span>
+                                @endif
+                            </h3>
+
+                            <div x-show="redigerEmne" x-cloak class="pt-1 print:hidden">
+                                <input
+                                    x-ref="visEmneInput"
+                                    type="text"
+                                    wire:model.live.debounce.250ms="flettetEmne"
+                                    @blur="redigerEmne = false"
+                                    @keydown.enter.prevent="redigerEmne = false"
+                                    @keydown.escape="redigerEmne = false"
+                                    placeholder="Skriv emne til udskrift..."
+                                    class="w-full border border-indigo-300 rounded-lg px-3 py-1.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900 font-sans"
+                                >
+                            </div>
+
+                            <div
+                                x-show="!redigerSubEmne"
+                                @click="redigerSubEmne = true; $nextTick(() => $refs.visSubEmneInput?.focus())"
+                                title="Klik for at ændre sub-emne til udskrift"
+                                class="font-bold cursor-pointer rounded px-1 -mx-1 transition hover:ring-1 hover:ring-indigo-300/80 hover:bg-indigo-50/10 {{ filled($flettetSubEmne) ? '' : 'print:hidden' }}"
+                                style="margin-top: {{ $this->subEmneTop }}cm; font-size: {{ $this->emneFontSize }}pt; line-height: 1.2; color: {{ $this->fontColor }};"
+                            >
+                                @if(filled($flettetSubEmne))
+                                    {{ $flettetSubEmne }}
+                                @else
+                                    <span class="text-slate-400 italic font-normal text-xs font-sans">[ Klik for at tilføje sub-emne til udskrift... ]</span>
+                                @endif
+                            </div>
+
+                            <div x-show="redigerSubEmne" x-cloak class="pt-1 print:hidden">
+                                <input
+                                    x-ref="visSubEmneInput"
+                                    type="text"
+                                    wire:model.live.debounce.250ms="flettetSubEmne"
+                                    @input="$event.target.value = $event.target.value.replace(/<[^>]*>?/gm, '')"
+                                    @blur="redigerSubEmne = false"
+                                    @keydown.enter.prevent="redigerSubEmne = false"
+                                    @keydown.escape="redigerSubEmne = false"
+                                    placeholder="Skriv sub-emne til udskrift..."
+                                    class="w-full border border-indigo-300 rounded-lg px-3 py-1.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900 font-sans"
+                                >
+                            </div>
+                        </div>
                     @endif
 
+                    {{-- 4. BREVTEKST (Spontan inline-redigering) --}}
                     <div 
                         x-data="{ redigerTekst: false }"
-                        style="margin-top: {{ $bodyTop }}em;" 
+                        style="margin-top: {{ $this->bodyTop }}em;" 
                         class="flex-1 flex flex-col group"
                     >
-                        {{-- LÆSEVISNING (Standard: rent A4-udtryk uden værktøjslinje) --}}
+                        {{-- LÆSEVISNING --}}
                         <div 
-                            wire:key="laesevisning-{{ $selectedBrevId ?? 'default' }}-{{ md5($flettetTekst ?? '') }}"
+                            wire:key="laesevisning-{{ $selectedBrevId ?? 'default' }}-{{ md5($flettetTekst ?? '') }}-{{ md5($this->fontColor) }}"
                             x-show="!redigerTekst"
                             @click="redigerTekst = true"
                             title="Klik for at redigere brevteksten"
                             style="
-                                font-size: {{ $brev->body_font_size ?? 9.5 }}pt;
-                                font-family: {!! $brev->font_family ?? 'Century Schoolbook, Georgia, serif' !!};
-                                line-height: {{ $brev->linjeafstand ?? 1.5 }};
+                                font-size: {{ $this->bodyFontSize }}pt;
+                                font-family: {{ $this->fontFamily }};
+                                line-height: {{ $this->linjeafstand }};
+                                color: {{ $this->fontColor }};
                             "
-                            class="prose prose-sm max-w-none text-slate-900 cursor-pointer rounded-lg transition hover:ring-1 hover:ring-indigo-300/80 hover:bg-indigo-50/10 p-1 -m-1 relative"
+                            class="prose prose-sm max-w-none cursor-pointer rounded-lg transition hover:ring-1 hover:ring-indigo-300/80 hover:bg-indigo-50/10 p-1 -m-1 relative"
                         >
-                            {{-- Diskret svævende knap ved hover (skjules automatisk ved print) --}}
                             <button 
                                 type="button"
                                 @click.stop="redigerTekst = true"
@@ -167,7 +216,7 @@
                             {!! $flettetTekst !!}
                         </div>
 
-                        {{-- REDIGERINGSVISNING (Vises kun når brugeren klikker for at redigere) --}}
+                        {{-- REDIGERINGSVISNING --}}
                         <div 
                             x-show="redigerTekst" 
                             style="display: none;" 
@@ -190,20 +239,20 @@
                             </div>
 
                             <x-wysiwyg-editor 
-                                wire:key="editor-vis-brev-{{ $selectedBrevId ?? 'default' }}"
+                                wire:key="editor-vis-brev-{{ $selectedBrevId ?? 'default' }}-{{ md5($this->fontColor) }}"
                                 wireModel="flettetTekst" 
                                 :value="$flettetTekst"
                                 :bodyMarginTop="0"
-                                :bodyFontSize="$brev->body_font_size ?? 9.5"
-                                :fontFamily="$brev->font_family ?? 'Century Schoolbook, Georgia, serif'"
-                                :linjeafstand="$brev->linjeafstand ?? 1.5" 
+                                :bodyFontSize="$this->bodyFontSize"
+                                :fontFamily="$this->fontFamily"
+                                :fontColor="$this->fontColor"
+                                :linjeafstand="$this->linjeafstand" 
                                 :beskyttet="false"
                                 height="100%" 
                             />
                         </div>
                     </div>
                 </div>
-
             </div>
         @endif
 

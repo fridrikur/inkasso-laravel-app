@@ -1,19 +1,20 @@
 @props([
     'wireModel' => 'tekst',
     'value' => '',
-    'navnTopMargin' => 5.45,
-    'datoMarginTop' => 7.57,
-    'emneTopMargin' => 8.91,
-    'bodyMarginTop' => 1.0,
-    'navnFontSize' => 9.5,
-    'emneFontSize' => 10.5,
-    'bodyFontSize' => 9.5,
+    'navnTopMargin' => null,
+    'datoMarginTop' => null,
+    'emneTopMargin' => null,
+    'bodyMarginTop' => 0,
+    'navnFontSize' => null,
+    'emneFontSize' => null,
+    'bodyFontSize' => null,
     'fontFamily' => "'Century Schoolbook', Georgia, serif",
+    'fontColor' => '#111827',
     'marginLeft' => 0,
     'marginRight' => 0,
-    'linjeafstand' => 1.5,
-    'height' => '550px',
-    'beskyttet' => false
+    'linjeafstand' => '1.3',
+    'beskyttet' => false,
+    'height' => '420px',
 ])
 
 <div {{ $attributes->merge(['class' => 'flex flex-col relative']) }} x-data="{
@@ -74,15 +75,30 @@
         </div>
     </div>
 
-    {{-- 1. Visuel WYSIWYG Editor (Bruger skrifttype, skriftstørrelse og body-margin) --}}
+    {{-- 1. Visuel WYSIWYG Editor --}}
     <div 
         x-show="!showHtml"
         x-ref="editor"
         contenteditable="{{ $beskyttet ? 'false' : 'true' }}" 
-        @if(!$beskyttet) @input="$wire.set('{{ $wireModel }}', $refs.editor.innerHTML, false)" @endif
-        @if($beskyttet) @click="alert('🚫 Adgang forbudt: Denne brevskabelon er beskyttet mod ændringer.');" @endif
-        class="outline-none border border-slate-200 rounded-b-xl p-4 overflow-y-auto transition-all {{ $beskyttet ? 'bg-slate-100 text-slate-500 cursor-not-allowed select-none opacity-90' : 'bg-slate-50/50 text-slate-900' }}"
-        style="height: {{ $height }}; font-family: {!! $fontFamily !!}; font-size: {{ $bodyFontSize }}pt; margin-top: {{ $bodyMarginTop }}cm; margin-left: {{ $marginLeft }}px; margin-right: {{ $marginRight }}px; line-height: {{ $linjeafstand }};"
+        @if(!$beskyttet)
+            @input="$wire.set('{{ $wireModel }}', $refs.editor.innerHTML, false)"
+            @dragover.prevent
+            @drop="$nextTick(() => $wire.set('{{ $wireModel }}', $refs.editor.innerHTML, false))"
+        @endif
+        @if($beskyttet)
+            @click="alert('🚫 Adgang forbudt: Denne brevskabelon er beskyttet mod ændringer.');"
+        @endif
+        class="outline-none border border-slate-200 rounded-b-xl p-4 overflow-y-auto transition-all {{ $beskyttet ? 'bg-slate-100 text-slate-500 cursor-not-allowed select-none opacity-90' : 'bg-slate-50/50' }}"
+        style="
+            height: {{ $height }};
+            font-family: {{ $fontFamily }};
+            color: {{ $beskyttet ? '#64748b' : $fontColor }};
+            font-size: {{ $bodyFontSize ?: 9.5 }}pt;
+            line-height: {{ $linjeafstand }};
+            margin-top: {{ $bodyMarginTop }}cm;
+            padding-left: {{ (int) ($marginLeft ?? 0) }}px;
+            padding-right: {{ (int) ($marginRight ?? 0) }}px;
+        "
     >{!! $value !!}</div>
 
     {{-- 2. Rå HTML-kodevisning --}}
@@ -91,6 +107,6 @@
         x-model="htmlContent"
         @input="updateFromTextarea()"
         class="font-mono text-xs sm:text-sm outline-none border border-slate-200 rounded-b-xl p-4 overflow-y-auto bg-slate-900 text-emerald-400 transition-all resize-none shadow-inner"
-        style="height: {{ $height }}; font-family: {!! $fontFamily !!}; font-size: {{ $bodyFontSize }}pt; margin-top: {{ $bodyMarginTop }}cm; margin-left: {{ $marginLeft }}px; margin-right: {{ $marginRight }}px; line-height: 1.5;"
+        style="height: {{ $height }}; font-family: {{ $fontFamily }}; font-size: {{ $bodyFontSize ?: 9.5 }}pt; margin-top: {{ $bodyMarginTop }}cm; margin-left: {{ (int) ($marginLeft ?? 0) }}px; margin-right: {{ (int) ($marginRight ?? 0) }}px; line-height: 1.5;"
     ></textarea>
 </div>

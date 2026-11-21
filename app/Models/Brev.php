@@ -37,6 +37,9 @@ class Brev extends Model
         'firma_mail',
         'firma_web',
         'firma_cvr',
+        'sub_emne',
+        'sub_emne_top_margin',
+        'font_color',
     ];
 
     protected function tekst(): Attribute

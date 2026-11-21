@@ -151,6 +151,65 @@
                 </button>
             </div>
         </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+            <h3 class="text-sm font-bold text-slate-900">🛡️ Sikkerhedskopi: Eksport &amp; Import af breve (JSON)</h3>
+            <p class="text-xs text-slate-500">Eksporter alle breve eller kun de beskyttede breve, og genskab dem sikkert ved behov.</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {{-- Eksport --}}
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+            <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">Eksporter breve</div>
+
+            <div class="space-y-2 text-xs text-slate-700">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" wire:model.live="brevExportScope" value="all" class="text-indigo-600 focus:ring-indigo-500">
+                    <span>Eksporter <strong>alle breve</strong></span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" wire:model.live="brevExportScope" value="protected" class="text-indigo-600 focus:ring-indigo-500">
+                    <span>Eksporter <strong>kun beskyttede breve</strong></span>
+                </label>
+            </div>
+
+            <button
+                type="button"
+                wire:click="exportBreve"
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
+            >
+                ⬇️ Download JSON-eksport
+            </button>
+        </div>
+
+        {{-- Import af JSON-backup --}}
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+            <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">Importer / genskab fra JSON</div>
+
+            <input
+                type="file"
+                wire:model="brevBackupFile"
+                accept=".json,application/json,text/plain"
+                class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+            >
+
+            <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                <input type="checkbox" wire:model.live="overwriteExistingBreveOnImport" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                <span>Overskriv eksisterende breve med samme ID eller titel</span>
+            </label>
+
+            <button
+                type="button"
+                wire:click="importBreveBackup"
+                class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
+            >
+                ⬆️ Importer JSON-backup
+            </button>
+        </div>
+    </div>
+</div>
     </div>
 
     {{-- ========================================== --}}

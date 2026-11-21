@@ -40,6 +40,9 @@ return new class extends Migration
             $table->date('dato')->nullable()->default(null);
             $table->string('restgaeld_kreditor', 50)->nullable();
             $table->softDeletes(); // 🟢 TILFØJ DENNE LINJE (Opretter deleted_at)
+            $table->string('sub_emne')->nullable()->after('emne');
+            $table->decimal('sub_emne_top_margin', 5, 2)->default(0.40);
+            $table->string('font_color', 20)->default('#000000');
             $table->timestamps();
           });
     }

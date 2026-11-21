@@ -524,125 +524,165 @@ document.addEventListener("DOMContentLoaded", function () {
     // Start timeren med det samme siden indlæses
     startTimers();
 });
-
-    window.printPreview = function() {
-        let printEl = document.getElementById('print-container');
+    window.printPreview = function () {
+        const printEl = document.getElementById('print-container');
         if (!printEl) {
             alert('Ingen forhåndsvisning fundet til udskrivning.');
             return;
         }
 
-        // 1. Klon hele #print-container, så A4-ramme og positionering bevares
-        let clone = printEl.cloneNode(true);
-
-        // 2. Fjern alle værktøjslinjer, knapper, tekstfelter og skjulte elementer fra kopien
-        let unwantedElements = clone.querySelectorAll('.print\\:hidden, button, textarea, [x-ref="toolbar"]');
-        unwantedElements.forEach(el => el.remove());
-
-        // Sørg for at den klonede container er synlig på arket
-        clone.style.boxShadow = 'none';
-        clone.style.borderRadius = '0';
-        clone.style.margin = '0 auto';
-
-        let printOuterHtml = clone.outerHTML;
-
-        // 3. Åbn udskrivningsvinduet med A4-ramme og opryddet brevhoved-tabel
-        let printWindow = window.open('', '_blank', 'height=800,width=900');
-        if (!printWindow) {
-            alert('Tillad pop-up-vinduer i browseren for at udskrive brevet.');
-            return;
+        // Tving blur på aktivt element (f.eks. emne, sub-emne eller WYSIWYG-editor), så ændringer synkroniseres
+        const activeEl = document.activeElement;
+        if (activeEl && printEl.contains(activeEl) && typeof activeEl.blur === 'function') {
+            activeEl.blur();
         }
 
-        printWindow.document.open();
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html lang="da">
-            <head>
-                <meta charset="utf-8">
-                <title>Udskriv brev</title>
-                <style>
-                    @page {
-                        size: A4 portrait;
-                        margin: 0;
-                    }
+        const openPrintWindow = () => {
+            // 1. Klon hele #print-container, så A4-ramme, farver og positionering bevares
+            const clone = printEl.cloneNode(true);
 
-                    * {
-                        box-sizing: border-box;
-                    }
+            // 2. Fjern alle værktøjslinjer, knapper, inputfelter, tekstfelter og skjulte elementer fra kopien
+            const unwantedElements = clone.querySelectorAll(
+                '.print\\:hidden, button, input, select, textarea, [x-ref="toolbar"], .wysiwyg-toolbar'
+            );
+            unwantedElements.forEach((el) => el.remove());
 
-                    html, body {
-                        margin: 0;
-                        padding: 0;
-                        background: #ffffff;
-                        color: #1e293b;
-                    }
+            // Fjern eventuelle skærm-specifikke skygger/afrundinger på klonen
+            clone.style.boxShadow = 'none';
+            clone.style.borderRadius = '0';
+            clone.style.margin = '0';
 
-                    #print-container {
-                        position: relative !important;
-                        width: 210mm !important;
-                        height: 297mm !important;
-                        margin: 0 !important;
-                        padding: 25mm !important;
-                        overflow: hidden !important;
-                        background: #ffffff !important;
-                        box-shadow: none !important;
-                        border-radius: 0 !important;
-                    }
+            // Kopiér stylesheets fra hovedsiden, så Tailwind- og app-CSS også gælder i printvinduet
+            const headAssets = Array.from(
+                document.querySelectorAll('link[rel="stylesheet"], style')
+            )
+                .map((el) => el.outerHTML)
+                .join('\n');
 
-                    /* Standard-tabeller i brevteksten */
-                    #print-container table:not(.firma-brevhoved-tabel) {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin: 12px 0;
-                    }
+            const printOuterHtml = clone.outerHTML;
 
-                    #print-container table:not(.firma-brevhoved-tabel) th,
-                    #print-container table:not(.firma-brevhoved-tabel) td {
-                        border: 1px solid #cbd5e1;
-                        padding: 6px 10px;
-                        text-align: left;
-                    }
+            // 3. Åbn udskrivningsvinduet med præcis A4-ramme og bevarede sort-nuancer
+            const printWindow = window.open('', '_blank', 'height=800,width=900');
+            if (!printWindow) {
+                alert('Tillad pop-up-vinduer i browseren for at udskrive brevet.');
+                return;
+            }
 
-                    /* Brevhoved-tabellen skal være helt uden cellekanter og ekstra margin */
-                    .firma-brevhoved-tabel,
-                    .firma-brevhoved-tabel tr,
-                    .firma-brevhoved-tabel td,
-                    .firma-brevhoved-tabel th {
-                        width: auto !important;
-                        margin: 0 !important;
-                        border: none !important;
-                        border-width: 0 !important;
-                        outline: none !important;
-                        box-shadow: none !important;
-                        background: transparent !important;
-                    }
+            printWindow.document.open();
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="da">
+                <head>
+                    <meta charset="utf-8">
+                    <title>Udskriv brev</title>
+                    ${headAssets}
+                    <style>
+                        @page {
+                            size: A4 portrait;
+                            margin: 0;
+                        }
 
-                    .firma-brevhoved-tabel td {
-                        padding: 1px 12px 1px 0 !important;
-                        vertical-align: top !important;
-                    }
+                        *, *::before, *::after {
+                            box-sizing: border-box;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
 
-                    .print\\:hidden,
-                    button,
-                    textarea,
-                    [x-ref="toolbar"] {
-                        display: none !important;
-                    }
-                </style>
-            </head>
-            <body>
-                ${printOuterHtml}
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
+                        html, body {
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            width: 210mm;
+                            height: 297mm;
+                            background: #ffffff !important;
+                        }
 
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 300);
+                        #print-container {
+                            position: relative !important;
+                            width: 210mm !important;
+                            height: 297mm !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            overflow: hidden !important;
+                            background: #ffffff !important;
+                            box-shadow: none !important;
+                            border-radius: 0 !important;
+                        }
+
+                        /* Sikr at emne (h3) og sub-emne ikke får ekstra standard-margin i print */
+                        #print-container h3 {
+                            margin-top: 0 !important;
+                            margin-bottom: 0 !important;
+                        }
+
+                        /* Standard-tabeller i brevteksten */
+                        #print-container table:not(.firma-brevhoved-tabel) {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin: 12px 0;
+                        }
+
+                        #print-container table:not(.firma-brevhoved-tabel) th,
+                        #print-container table:not(.firma-brevhoved-tabel) td {
+                            border: 1px solid #cbd5e1;
+                            padding: 6px 10px;
+                            text-align: left;
+                        }
+
+                        /* Brevhoved-tabellen skal være helt uden cellekanter og ekstra margin */
+                        .firma-brevhoved-tabel,
+                        .firma-brevhoved-tabel tr,
+                        .firma-brevhoved-tabel td,
+                        .firma-brevhoved-tabel th {
+                            width: auto !important;
+                            margin: 0 !important;
+                            border: none !important;
+                            border-width: 0 !important;
+                            outline: none !important;
+                            box-shadow: none !important;
+                            background: transparent !important;
+                        }
+
+                        .firma-brevhoved-tabel td {
+                            padding: 1px 12px 1px 0 !important;
+                            vertical-align: top !important;
+                        }
+
+                        .print\\:hidden,
+                        button,
+                        input,
+                        select,
+                        textarea,
+                        [x-ref="toolbar"],
+                        .wysiwyg-toolbar {
+                            display: none !important;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printOuterHtml}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+
+            const triggerPrintAndClose = () => {
+                printWindow.focus();
+                printWindow.print();
+                printWindow.close();
+            };
+
+            if (printWindow.document.readyState === 'complete') {
+                setTimeout(triggerPrintAndClose, 250);
+            } else {
+                printWindow.addEventListener('load', () => setTimeout(triggerPrintAndClose, 250), { once: true });
+            }
+        };
+
+        // Kort pause så Livewire/Alpine nåede at opdatere DOM'en efter blur
+        setTimeout(openPrintWindow, 180);
     };
+    
 </script>    
 {{-- GLOBAL TOAST CONTAINER (Lytter automatisk på alle dispatches fra Livewire-komponenter) --}}
 <x-toaster />

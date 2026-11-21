@@ -1,23 +1,38 @@
 <?php
 
+
 namespace App\Livewire\Admin\Breve;
 
 use Livewire\Component;
 use App\Models\Brev;
 use App\Models\BrevFeltIndstilling;
 use App\Services\ToastService;
+use Livewire\WithFileUploads;
+use App\Models\BrevFilter;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class BrevManager extends Component
 {
+    use WithFileUploads;
+
+    // Import / Export af brevskabeloner
+    public bool $showBackupModal = false;
+    public string $exportScope = 'all'; // 'all' eller 'protected'
+    public $importJsonFile = null;
+    public bool $overwriteExistingBreve = false;
+
     public ?int $brevId = null;
     public string $titel = '';
     public string $emne = '';
+    public string $sub_emne = '';
     public string $tekst = '';
     
     // Layout marginaler og skriftstørrelser (i cm / pt)
     public $navn_top_margin = 5.45;
     public $dato_margin_top = 7.57;
     public $emne_top_margin = 8.91;
+    public $sub_emne_top_margin = 0.05;
     public $body_margin_top = 1.00;
     
     public int $margin_left = 0;
@@ -27,6 +42,7 @@ class BrevManager extends Component
     public float $emne_font_size = 10.5;
     public float $body_font_size = 9.5;
     public string $font_family = "Century Schoolbook, Georgia, serif";
+    public string $font_color = '#000000';
 
     public array $breveList = [];
     public string $newBrevTitle = '';
@@ -64,6 +80,25 @@ class BrevManager extends Component
         'visalle'   => false,
     ];
 
+    public function getAllowedFontColorsProperty(): array
+    {
+        return [
+            '#000000' => 'Ren sort (#000000)',
+            '#111827' => 'Mørk kulsort (#111827)',
+            '#1e293b' => 'Skifer-sort (#1e293b)',
+            '#27272a' => 'Zink-sort (#27272a)',
+            '#374151' => 'Koksgrå / mørk (#374151)',
+        ];
+    }
+
+    protected function sanitizeFontColor(?string $color): string
+    {
+        $normalized = strtolower(trim((string) $color));
+        $allowed = array_map('strtolower', array_keys($this->allowedFontColors));
+
+        return in_array($normalized, $allowed, true) ? $normalized : '#000000';
+    }
+
     public function mount()
     {
         $this->loadBreveList();
@@ -83,40 +118,43 @@ class BrevManager extends Component
         $brev = Brev::find($id);
 
         if ($brev) {
-            $this->brevId           = $brev->id;
-            $this->titel            = $brev->titel ?? '';
-            $this->editTitle        = $brev->titel ?? '';
-            $this->emne             = $brev->emne ?? '';
-            $this->tekst            = $brev->tekst ?? '';  
+            $this->brevId              = $brev->id;
+            $this->titel               = $brev->titel ?? '';
+            $this->editTitle           = $brev->titel ?? '';
+            $this->emne                = $brev->emne ?? '';
+            $this->sub_emne            = strip_tags($brev->sub_emne ?? '');
+            $this->tekst               = $brev->tekst ?? '';  
             
             // Indlæs nye layout- og skriftværdier (med faste standarder som fallback)
-            $this->navn_top_margin  = $brev->navn_top_margin ?? 5.45;
-            $this->dato_margin_top  = $brev->dato_margin_top ?? 7.57;
-            $this->emne_top_margin  = $brev->emne_top_margin ?? 8.91;
-            $this->body_margin_top  = $brev->body_margin_top ?? 1.00;
+            $this->navn_top_margin     = $brev->navn_top_margin ?? 5.45;
+            $this->dato_margin_top     = $brev->dato_margin_top ?? 7.57;
+            $this->emne_top_margin     = $brev->emne_top_margin ?? 8.91;
+            $this->sub_emne_top_margin = $brev->sub_emne_top_margin ?? 0.40;
+            $this->body_margin_top     = $brev->body_margin_top ?? 1.00;
             
-            $this->margin_left      = $brev->margin_left ?? 0;
-            $this->margin_right     = $brev->margin_right ?? 0;
+            $this->margin_left         = $brev->margin_left ?? 0;
+            $this->margin_right        = $brev->margin_right ?? 0;
             
-            $this->navn_font_size   = $brev->navn_font_size ?? 9.5;
-            $this->emne_font_size   = $brev->emne_font_size ?? 10.5;
-            $this->body_font_size   = $brev->body_font_size ?? 9.5;
-            $this->font_family      = $brev->font_family ?? "Century Schoolbook, Georgia, serif";
+            $this->navn_font_size      = $brev->navn_font_size ?? 9.5;
+            $this->emne_font_size      = $brev->emne_font_size ?? 10.5;
+            $this->body_font_size      = $brev->body_font_size ?? 9.5;
+            $this->font_family         = $brev->font_family ?? "Century Schoolbook, Georgia, serif";
+            $this->font_color          = $this->sanitizeFontColor($brev->font_color ?? '#000000');
 
-            $this->beskyttet        = (bool) ($brev->beskyttet ?? 0);
-            $this->linjeafstand     = $brev->linjeafstand ?? 1.5;
+            $this->beskyttet           = (bool) ($brev->beskyttet ?? 0);
+            $this->linjeafstand        = $brev->linjeafstand ?? 1.5;
 
-            $this->visfirmabrevhoved = (bool) ($brev->visfirmabrevhoved ?? false);
-            $this->firma_navn        = $brev->firma_navn ?? 'DANSK KONSULENT GRUPPE A/S';
-            $this->firma_adresse     = $brev->firma_adresse ?? 'SCT. HANSGADE 9, 1 SAL, 4100 RINGSTED';
-            $this->firma_telefon     = $brev->firma_telefon ?? '+45 22 22 68 94';
-            $this->firma_mail        = $brev->firma_mail ?? 'DKG@DKG-APS.DK';
-            $this->firma_web         = $brev->firma_web ?? 'WWW.DKG-APS.DK';
-            $this->firma_cvr         = $brev->firma_cvr ?? '21 24 72 86';
+            $this->visfirmabrevhoved   = (bool) ($brev->visfirmabrevhoved ?? false);
+            $this->firma_navn          = $brev->firma_navn ?? 'DANSK KONSULENT GRUPPE A/S';
+            $this->firma_adresse       = $brev->firma_adresse ?? 'SCT. HANSGADE 9, 1 SAL, 4100 RINGSTED';
+            $this->firma_telefon       = $brev->firma_telefon ?? '+45 22 22 68 94';
+            $this->firma_mail          = $brev->firma_mail ?? 'DKG@DKG-APS.DK';
+            $this->firma_web           = $brev->firma_web ?? 'WWW.DKG-APS.DK';
+            $this->firma_cvr           = $brev->firma_cvr ?? '21 24 72 86';
             $this->brevhoved_top_margin = $brev->brevhoved_top_margin ?? 1.50;
             
-            $this->firma_font_size   = $brev->firma_font_size ?? 8.5;
-            $this->firma_left_margin = $brev->firma_left_margin ?? 11.80;
+            $this->firma_font_size     = $brev->firma_font_size ?? 8.5;
+            $this->firma_left_margin   = $brev->firma_left_margin ?? 11.80;
             
             // Hent eller opret standard filter for dette brev
             $brevFilter = \App\Models\BrevFilter::where('brevID', $this->brevId)->first();
@@ -151,33 +189,44 @@ class BrevManager extends Component
             return;
         }
 
+        $cleanSubEmne = strip_tags($this->sub_emne);
+        $this->sub_emne = $cleanSubEmne;
+
+        $cleanFontColor = $this->sanitizeFontColor($this->font_color);
+        $this->font_color = $cleanFontColor;
+
+        $cleanSubEmneMargin = (float) str_replace(',', '.', (string) ($this->sub_emne_top_margin ?: 0.40));
+
         // Gem selve brevet inkl. alle nye layout- og skriftfelter
         Brev::where('id', $this->brevId)->update([
-            'titel'           => $this->titel,
-            'emne'            => $this->emne,
-            'tekst'           => $this->tekst,
-            'navn_top_margin' => $this->navn_top_margin,
-            'dato_margin_top' => $this->dato_margin_top,
-            'emne_top_margin' => $this->emne_top_margin,
-            'body_margin_top' => $this->body_margin_top,
-            'margin_left'     => $this->margin_left,
-            'margin_right'    => $this->margin_right,
-            'navn_font_size'  => $this->navn_font_size,
-            'emne_font_size'  => $this->emne_font_size,
-            'body_font_size'  => $this->body_font_size,
-            'font_family'     => $this->font_family,
-            'beskyttet'       => $this->beskyttet ? 1 : 0, 
-            'linjeafstand'    => $this->linjeafstand,
-            'visfirmabrevhoved' => $this->visfirmabrevhoved,
-            'firma_navn'        => $this->firma_navn,
-            'firma_adresse'     => $this->firma_adresse,
-            'firma_telefon'     => $this->firma_telefon,
-            'firma_mail'        => $this->firma_mail,
-            'firma_web'         => $this->firma_web,
-            'firma_cvr'         => $this->firma_cvr,
+            'titel'               => $this->titel,
+            'emne'                => $this->emne,
+            'sub_emne'            => $cleanSubEmne,
+            'tekst'               => $this->tekst,
+            'navn_top_margin'     => $this->navn_top_margin,
+            'dato_margin_top'     => $this->dato_margin_top,
+            'emne_top_margin'     => $this->emne_top_margin,
+            'sub_emne_top_margin' => $cleanSubEmneMargin,
+            'body_margin_top'     => $this->body_margin_top,
+            'margin_left'         => $this->margin_left,
+            'margin_right'        => $this->margin_right,
+            'navn_font_size'      => $this->navn_font_size,
+            'emne_font_size'      => $this->emne_font_size,
+            'body_font_size'      => $this->body_font_size,
+            'font_family'         => $this->font_family,
+            'font_color'          => $cleanFontColor,
+            'beskyttet'           => $this->beskyttet ? 1 : 0, 
+            'linjeafstand'        => $this->linjeafstand,
+            'visfirmabrevhoved'   => $this->visfirmabrevhoved,
+            'firma_navn'          => $this->firma_navn,
+            'firma_adresse'       => $this->firma_adresse,
+            'firma_telefon'       => $this->firma_telefon,
+            'firma_mail'          => $this->firma_mail,
+            'firma_web'           => $this->firma_web,
+            'firma_cvr'           => $this->firma_cvr,
             'brevhoved_top_margin' => (float) str_replace(',', '.', (string) ($this->brevhoved_top_margin ?: 1.50)),
-            'firma_font_size'   => (float) str_replace(',', '.', (string) ($this->firma_font_size ?: 8.5)),
-            'firma_left_margin' => (float) str_replace(',', '.', (string) ($this->firma_left_margin ?: 11.80)),
+            'firma_font_size'     => (float) str_replace(',', '.', (string) ($this->firma_font_size ?: 8.5)),
+            'firma_left_margin'   => (float) str_replace(',', '.', (string) ($this->firma_left_margin ?: 11.80)),
         ]);
 
         // Gem / Opdater BrevFilter i databasen
@@ -260,7 +309,9 @@ class BrevManager extends Component
         $this->navn_top_margin = 5.45;
         $this->dato_margin_top = 7.57;
         $this->emne_top_margin = 8.91;
+        $this->sub_emne_top_margin = 0.40;
         $this->body_margin_top = 1.00;
+        $this->font_color = '#000000';
         $this->margin_left = 0;
         $this->margin_right = 0;
 
@@ -286,24 +337,27 @@ class BrevManager extends Component
         if (empty(trim($this->newBrevTitle))) return;
 
         $brev = Brev::create([
-            'titel'             => $this->newBrevTitle,
-            'emne'              => '',
-            'tekst'             => '',
-            'navn_top_margin'   => 5.45,
-            'dato_margin_top'   => 7.57,
-            'emne_top_margin'   => 8.91,
-            'body_margin_top'   => 1.00,
-            'margin_left'       => 0,
-            'margin_right'      => 0,
-            'navn_font_size'    => 9.5,
-            'emne_font_size'    => 10.5,
-            'body_font_size'    => 9.5,
-            'font_family'       => "Century Schoolbook, Georgia, serif",
-            'beskyttet'         => 0,
-            'linjeafstand'      => 1.5,
-            'visfirmabrevhoved' => false,
-            'brevpos'           => (Brev::max('brevpos') ?? 0) + 1,
-            'brevtype'          => '0',
+            'titel'               => $this->newBrevTitle,
+            'emne'                => '',
+            'sub_emne'            => '',
+            'tekst'               => '',
+            'navn_top_margin'     => 5.45,
+            'dato_margin_top'     => 7.57,
+            'emne_top_margin'     => 8.91,
+            'sub_emne_top_margin' => 0.40,
+            'body_margin_top'     => 1.00,
+            'margin_left'         => 0,
+            'margin_right'        => 0,
+            'navn_font_size'      => 9.5,
+            'emne_font_size'      => 10.5,
+            'body_font_size'      => 9.5,
+            'font_family'         => "Century Schoolbook, Georgia, serif",
+            'font_color'          => '#000000',
+            'beskyttet'           => 0,
+            'linjeafstand'        => 1.5,
+            'visfirmabrevhoved'   => false,
+            'brevpos'             => (Brev::max('brevpos') ?? 0) + 1,
+            'brevtype'            => '0',
         ]);
 
         $this->closeCreateModal();
@@ -397,10 +451,11 @@ class BrevManager extends Component
     {
         // Opdaterer samtlige brevskabeloner i databasen på én gang
         Brev::query()->update([
-            'navn_top_margin' => 0,
-            'dato_margin_top' => 0,
-            'emne_top_margin' => 0,
-            'body_margin_top' => 0,
+            'navn_top_margin'     => 0,
+            'dato_margin_top'     => 0,
+            'emne_top_margin'     => 0,
+            'sub_emne_top_margin' => 0,
+            'body_margin_top'     => 0,
             'brevhoved_top_margin' => 0,
         ]);
 
@@ -427,9 +482,19 @@ class BrevManager extends Component
         $this->emne_top_margin = str_replace(',', '.', $value);
     }
 
+    public function updatedSubEmneTopMargin($value)
+    {
+        $this->sub_emne_top_margin = str_replace(',', '.', $value);
+    }
+
     public function updatedBodyMarginTop($value)
     {
         $this->body_margin_top = str_replace(',', '.', $value);
+    }
+
+    public function updatedFontColor(string $value): void
+    {
+        $this->font_color = $this->sanitizeFontColor($value);
     }
 
     public function updatedVisfirmabrevhoved(bool $value): void
@@ -441,6 +506,208 @@ class BrevManager extends Component
         }
     }
 
+    public function openBackupModal(): void
+    {
+        $this->exportScope = 'all';
+        $this->importJsonFile = null;
+        $this->overwriteExistingBreve = false;
+        $this->showBackupModal = true;
+    }
+
+    public function closeBackupModal(): void
+    {
+        $this->showBackupModal = false;
+        $this->importJsonFile = null;
+    }
+
+    public function getAntalAlleBreveProperty(): int
+    {
+        return Brev::count();
+    }
+
+    public function getAntalBeskyttedeBreveProperty(): int
+    {
+        return Brev::where('beskyttet', 1)->count();
+    }
+
+    public function exportBreveJson()
+    {
+        $query = Brev::orderBy('brevpos')->orderBy('id');
+
+        if ($this->exportScope === 'protected') {
+            $query->where('beskyttet', 1);
+        }
+
+        $breve = $query->get();
+
+        if ($breve->isEmpty()) {
+            $besked = $this->exportScope === 'protected'
+                ? 'Der er ingen beskyttede breve at eksportere.'
+                : 'Der er ingen breve at eksportere.';
+
+            $this->dispatch('toast', ['type' => 'error', 'message' => $besked]);
+            return null;
+        }
+
+        $filtersByBrevId = BrevFilter::whereIn('brevID', $breve->pluck('id'))
+            ->get()
+            ->keyBy('brevID');
+
+        $payload = [
+            'exported_at' => now()->toIso8601String(),
+            'scope'       => $this->exportScope,
+            'count'       => $breve->count(),
+            'breve'       => $breve->map(function (Brev $brev) use ($filtersByBrevId) {
+                $data = $brev->toArray();
+                unset($data['id'], $data['created_at'], $data['updated_at']);
+
+                $filter = $filtersByBrevId->get($brev->id);
+                $data['filter'] = $filter ? [
+                    'adresse'   => (bool) $filter->adresse,
+                    'dato'      => (bool) $filter->dato,
+                    'navn'      => (bool) $filter->navn,
+                    'sagsnr'    => (bool) $filter->sagsnr,
+                    'emne'      => (bool) $filter->emne,
+                    'skjulalle' => (bool) $filter->skjulalle,
+                    'visalle'   => (bool) $filter->visalle,
+                ] : null;
+
+                return $data;
+            })->values()->all(),
+        ];
+
+        $prefix = $this->exportScope === 'protected' ? 'beskyttede-breve' : 'alle-breve';
+        $filename = $prefix . '-' . now()->format('Y-m-d-His') . '.json';
+
+        return response()->streamDownload(
+            function () use ($payload) {
+                echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            },
+            $filename,
+            ['Content-Type' => 'application/json; charset=UTF-8']
+        );
+    }
+
+    public function importBreveJson(ToastService $toast): void
+    {
+        $this->validate([
+            'importJsonFile' => 'required|file|mimes:json,txt|max:10240',
+        ]);
+
+        try {
+            $raw = file_get_contents($this->importJsonFile->getRealPath());
+            $decoded = json_decode($raw, true);
+
+            $items = is_array($decoded) && isset($decoded['breve']) && is_array($decoded['breve'])
+                ? $decoded['breve']
+                : (is_array($decoded) ? $decoded : null);
+
+            if (!$items) {
+                $this->dispatch('toast', ['type' => 'error', 'message' => 'Ugyldig JSON-fil: Kunne ikke læse brevskabeloner.']);
+                return;
+            }
+
+            $columns = Schema::getColumnListing('breve');
+            $feltMapping = [
+                '{Statistik}' => '{restgaeld_dkg}',
+                '{statistik}' => '{restgaeld_dkg}',
+                '{restgaeld}'  => '{ialt}',
+            ];
+
+            $oprettet = 0;
+            $opdateret = 0;
+            $sprungetOver = 0;
+
+            DB::transaction(function () use (
+                $items,
+                $columns,
+                $feltMapping,
+                &$oprettet,
+                &$opdateret,
+                &$sprungetOver
+            ) {
+                foreach ($items as $item) {
+                    if (!is_array($item) || empty(trim((string) ($item['titel'] ?? '')))) {
+                        continue;
+                    }
+
+                    $filterData = is_array($item['filter'] ?? null) ? $item['filter'] : null;
+                    unset($item['id'], $item['created_at'], $item['updated_at'], $item['filter']);
+
+                    // Opdater eventuelle forældede flettefelter
+                    foreach (['tekst', 'emne', 'sub_emne'] as $felt) {
+                        if (isset($item[$felt]) && is_string($item[$felt])) {
+                            $item[$felt] = str_replace(
+                                array_keys($feltMapping),
+                                array_values($feltMapping),
+                                $item[$felt]
+                            );
+                        }
+                    }
+
+                    if (isset($item['sub_emne'])) {
+                        $item['sub_emne'] = strip_tags((string) $item['sub_emne']);
+                    }
+
+                    if (isset($item['font_color'])) {
+                        $item['font_color'] = $this->sanitizeFontColor($item['font_color']);
+                    }
+
+                    $cleanRow = array_intersect_key($item, array_flip($columns));
+                    $eksisterende = Brev::where('titel', $cleanRow['titel'])->first();
+
+                    if ($eksisterende) {
+                        if (!$this->overwriteExistingBreve) {
+                            $sprungetOver++;
+                            continue;
+                        }
+
+                        // Beskyttede skabeloner overskrives kun, hvis brugeren aktivt har tilladt overskrivning
+                        $eksisterende->update($cleanRow);
+                        $targetBrevId = $eksisterende->id;
+                        $opdateret++;
+                    } else {
+                        $cleanRow['brevpos'] = $cleanRow['brevpos'] ?? ((Brev::max('brevpos') ?? 0) + 1);
+                        $cleanRow['brevtype'] = $cleanRow['brevtype'] ?? '0';
+                        $nyBrev = Brev::create($cleanRow);
+                        $targetBrevId = $nyBrev->id;
+                        $oprettet++;
+                    }
+
+                    if ($filterData && $targetBrevId) {
+                        BrevFilter::updateOrCreate(
+                            ['brevID' => $targetBrevId],
+                            [
+                                'adresse'   => (bool) ($filterData['adresse'] ?? true),
+                                'dato'      => (bool) ($filterData['dato'] ?? true),
+                                'navn'      => (bool) ($filterData['navn'] ?? true),
+                                'sagsnr'    => (bool) ($filterData['sagsnr'] ?? true),
+                                'emne'      => (bool) ($filterData['emne'] ?? true),
+                                'skjulalle' => (bool) ($filterData['skjulalle'] ?? false),
+                                'visalle'   => (bool) ($filterData['visalle'] ?? false),
+                            ]
+                        );
+                    }
+                }
+            });
+
+            $this->loadBreveList();
+            if ($this->brevId) {
+                $this->loadBrev($this->brevId);
+            } elseif (!empty($this->breveList)) {
+                $this->loadBrev($this->breveList[0]['id']);
+            }
+
+            $this->closeBackupModal();
+
+            $this->dispatch('toast', $toast->success(
+                "Import fuldført: {$oprettet} oprettet, {$opdateret} opdateret, {$sprungetOver} sprunget over"
+            ));
+        } catch (\Throwable $e) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => 'Fejl ved import: ' . $e->getMessage()]);
+        }
+    }
+    
     public function render()
     {
         return view('livewire.admin.breve.brev-manager');

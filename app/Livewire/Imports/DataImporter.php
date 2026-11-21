@@ -88,6 +88,10 @@ class DataImporter extends Component
 
     public bool $showConfirmModal = false;
 
+    public string $brevExportScope = 'all'; // 'all' eller 'protected'
+    public $brevBackupFile;
+    public bool $overwriteExistingBreveOnImport = false;
+
     public function mount()
     {
         $this->loadTargetFields();
@@ -767,6 +771,18 @@ class DataImporter extends Component
                 });
             }
 
+            if (!Schema::hasColumn('breve', 'sub_emne')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->string('sub_emne')->nullable();
+                });
+            }
+
+            if (!Schema::hasColumn('breve', 'sub_emne_top_margin')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->decimal('sub_emne_top_margin', 8, 2)->default(0.05);
+                });
+            }
+
             if (!Schema::hasColumn('breve', 'body_margin_top')) {
                 Schema::table('breve', function (Blueprint $table) {
                     $table->decimal('body_margin_top', 8, 2)->default(2.00);
@@ -865,6 +881,12 @@ class DataImporter extends Component
                 });
             }
 
+            if (!Schema::hasColumn('breve', 'font_color')) {
+                Schema::table('breve', function (Blueprint $table) {
+                    $table->string('font_color', 20)->default('#000000');
+                });
+            }
+
             if (!Schema::hasColumn('breve', 'brevhoved_top_margin')) {
                 Schema::table('breve', function (Blueprint $table) {
                     $table->decimal('brevhoved_top_margin', 8, 2)->default(1.50);
@@ -894,7 +916,7 @@ class DataImporter extends Component
                     $table->integer('margin_right')->default(0);
                 });
             }
-            
+
             // 4. Udskift forældede flettefelter i importerede brevskabeloner
             $feltMapping = [
                 '{Statistik}' => '{restgaeld_dkg}',
@@ -903,7 +925,7 @@ class DataImporter extends Component
             ];
 
             $tekstKolonner = array_values(array_filter(
-                ['tekst', 'emne'],
+                ['tekst', 'emne', 'sub_emne'],
                 fn ($col) => Schema::hasColumn('breve', $col)
             ));
 
@@ -946,6 +968,206 @@ class DataImporter extends Component
         }
     }
     
+    public function exportBreve()
+{
+    if (!Schema::hasTable('breve')) {
+        session()->flash('error', 'Tabellen "breve" findes ikke i databasen.');
+        return;
+    }
+
+    $query = DB::table('breve');
+
+    if ($this->brevExportScope === 'protected') {
+        $query->where('beskyttet', 1);
+    }
+
+    $breveRows = $query->orderBy('id')->get();
+
+    if ($breveRows->isEmpty()) {
+        $msg = $this->brevExportScope === 'protected'
+            ? 'Der blev ikke fundet nogen beskyttede breve at eksportere.'
+            : 'Der blev ikke fundet nogen breve at eksportere.';
+        session()->flash('error', $msg);
+        return;
+    }
+
+    $hasBrevFilter = Schema::hasTable('brev_filter');
+    $filtersByBrevId = [];
+
+    if ($hasBrevFilter) {
+        $brevIds = $breveRows->pluck('id')->all();
+        $filtersByBrevId = DB::table('brev_filter')
+            ->whereIn('brev_id', $brevIds)
+            ->get()
+            ->groupBy('brev_id')
+            ->map(fn ($items) => $items->map(fn ($item) => (array) $item)->all())
+            ->all();
+    }
+
+    $payload = [
+        'exported_at' => now()->toIso8601String(),
+        'scope' => $this->brevExportScope,
+        'count' => $breveRows->count(),
+        'breve' => $breveRows->map(function ($row) use ($filtersByBrevId) {
+            $arr = (array) $row;
+            $arr['_filters'] = $filtersByBrevId[$row->id] ?? [];
+            return $arr;
+        })->all(),
+    ];
+
+    $suffix = $this->brevExportScope === 'protected' ? 'beskyttede-breve' : 'alle-breve';
+    $filename = $suffix . '-' . now()->format('Y-m-d-His') . '.json';
+
+    return response()->streamDownload(
+        function () use ($payload) {
+            echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        },
+        $filename,
+        ['Content-Type' => 'application/json; charset=UTF-8']
+    );
+}
+
+public function importBreveBackup()
+{
+    $this->validate([
+        'brevBackupFile' => 'required|file|mimes:json,txt|max:10240',
+    ]);
+
+    if (!Schema::hasTable('breve')) {
+        session()->flash('error', 'Tabellen "breve" findes ikke i databasen.');
+        return;
+    }
+
+    try {
+        $raw = file_get_contents($this->brevBackupFile->getRealPath());
+        $decoded = json_decode($raw, true);
+
+        $breveList = is_array($decoded) && isset($decoded['breve']) && is_array($decoded['breve'])
+            ? $decoded['breve']
+            : (is_array($decoded) ? $decoded : null);
+
+        if (!$breveList) {
+            session()->flash('error', 'Ugyldig JSON-fil: Kunne ikke finde nogen breve i filen.');
+            return;
+        }
+
+        $feltMapping = [
+            '{Statistik}' => '{restgaeld_dkg}',
+            '{statistik}' => '{restgaeld_dkg}',
+            '{restgaeld}'  => '{ialt}',
+        ];
+
+        $existingColumns = Schema::getColumnListing('breve');
+        $hasBrevFilter = Schema::hasTable('brev_filter');
+        $filterColumns = $hasBrevFilter ? Schema::getColumnListing('brev_filter') : [];
+
+        $imported = 0;
+        $updated = 0;
+        $skipped = 0;
+
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+
+        DB::transaction(function () use (
+            $breveList,
+            $existingColumns,
+            $hasBrevFilter,
+            $filterColumns,
+            $feltMapping,
+            &$imported,
+            &$updated,
+            &$skipped
+        ) {
+            foreach ($breveList as $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+
+                $filters = $item['_filters'] ?? [];
+                unset($item['_filters']);
+
+                foreach (['tekst', 'emne', 'sub_emne'] as $textCol) {
+                    if (isset($item[$textCol]) && is_string($item[$textCol])) {
+                        $item[$textCol] = str_replace(
+                            array_keys($feltMapping),
+                            array_values($feltMapping),
+                            $item[$textCol]
+                        );
+                    }
+                }
+
+                $filteredData = array_intersect_key($item, array_flip($existingColumns));
+                $filteredData['updated_at'] = now();
+
+                $targetBrevId = null;
+                $existing = null;
+
+                if (!empty($filteredData['id'])) {
+                    $existing = DB::table('breve')->where('id', $filteredData['id'])->first();
+                }
+
+                if (!$existing && !empty($filteredData['titel'])) {
+                    $existing = DB::table('breve')->where('titel', $filteredData['titel'])->first();
+                }
+
+                if ($existing) {
+                    if ($this->overwriteExistingBreveOnImport) {
+                        $updateData = $filteredData;
+                        unset($updateData['id']);
+                        DB::table('breve')->where('id', $existing->id)->update($updateData);
+                        $targetBrevId = $existing->id;
+                        $updated++;
+                    } else {
+                        $skipped++;
+                        continue;
+                    }
+                } else {
+                    if (!isset($filteredData['created_at'])) {
+                        $filteredData['created_at'] = now();
+                    }
+                    $targetBrevId = DB::table('breve')->insertGetId($filteredData);
+                    $imported++;
+                }
+
+                if ($hasBrevFilter && $targetBrevId && !empty($filters) && is_array($filters)) {
+                    foreach ($filters as $filterRow) {
+                        if (!is_array($filterRow)) {
+                            continue;
+                        }
+                        $cleanFilter = array_intersect_key($filterRow, array_flip($filterColumns));
+                        unset($cleanFilter['id']);
+                        $cleanFilter['brev_id'] = $targetBrevId;
+                        $cleanFilter['updated_at'] = now();
+
+                        if (isset($cleanFilter['felt_navn'])) {
+                            $existsFilter = DB::table('brev_filter')
+                                ->where('brev_id', $targetBrevId)
+                                ->where('felt_navn', $cleanFilter['felt_navn'])
+                                ->first();
+
+                            if ($existsFilter) {
+                                DB::table('brev_filter')->where('id', $existsFilter->id)->update($cleanFilter);
+                            } else {
+                                $cleanFilter['created_at'] = now();
+                                DB::table('brev_filter')->insert($cleanFilter);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+
+        $this->brevBackupFile = null;
+        session()->flash(
+            'success',
+            "🎉 Brev-backup indlæst: {$imported} nye oprettet, {$updated} opdateret, {$skipped} sprunget over."
+        );
+    } catch (\Throwable $e) {
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+        session()->flash('error', 'Fejl ved import af brev-backup: ' . $e->getMessage());
+    }
+}
     public function render()
     {
         return view('imports.data-importer', [

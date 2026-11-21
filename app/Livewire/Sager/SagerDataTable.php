@@ -58,13 +58,29 @@ class SagerDataTable extends Component
     #[Computed]
     public function unreadCount(): int
     {
-        $query = $this->baseQuery()->whereHas('dialogs.messages', function ($q) {
-            $q->whereNull('read_at')
-              ->whereHas('sender.roles', fn($r) => $r->where('name', 'Kreditor'));
-        });
+        $kreditorRoleId = \Spatie\Permission\Models\Role::where('name', 'Kreditor')->value('id');
+        if (!$kreditorRoleId) {
+            return 0;
+        }
+
+        $sagIdsSubquery = \DB::table('dialog_messages')
+            ->join('dialogs', 'dialogs.id', '=', 'dialog_messages.dialog_id')
+            ->join('users', 'users.id', '=', 'dialog_messages.sender_id')
+            ->join('model_has_roles', function ($join) use ($kreditorRoleId) {
+                $join->on('model_has_roles.model_id', '=', 'users.id')
+                    ->where('model_has_roles.model_type', '=', \App\Models\User::class)
+                    ->where('model_has_roles.role_id', '=', $kreditorRoleId);
+            })
+            ->whereNull('dialog_messages.read_at')
+            ->whereNull('dialog_messages.deleted_at')
+            ->whereNull('users.deleted_at')
+            ->select('dialogs.sag_id')
+            ->distinct();
+
+        $query = $this->baseQuery()->whereIn('sagers.id', $sagIdsSubquery);
 
         if ($this->selectedKreditor) {
-            $query->whereHas('kreditor', fn($k) => $k->where('kreditors.navn', $this->selectedKreditor));
+            $query->whereHas('kreditor', fn ($k) => $k->where('kreditors.navn', $this->selectedKreditor));
         }
 
         return $query->count();
@@ -373,6 +389,10 @@ class SagerDataTable extends Component
         | Sager data
         |--------------------------------------------------------------------------
         */
+        // I render() før $sagers = $query->...
+        $kreditorRoleId = cache()->remember('role_id_kreditor', 3600, fn () =>
+            \Spatie\Permission\Models\Role::where('name', 'Kreditor')->value('id')
+        );
 
         $sagers = $query
             ->with([
@@ -382,13 +402,15 @@ class SagerDataTable extends Component
                 'ktr',
             ])
             ->withExists([
-                'dialogs as has_unread_messages' => function ($q) {
-                    $q->whereHas('messages', function ($m) {
+                'dialogs as has_unread_messages' => function ($q) use ($kreditorRoleId) {
+                    $q->whereHas('messages', function ($m) use ($kreditorRoleId) {
                         $m->whereNull('read_at')
-                            ->whereHas(
-                                'sender.roles',
-                                fn ($r) => $r->where('name', 'Kreditor')
-                            );
+                        ->whereIn('sender_id', function ($u) use ($kreditorRoleId) {
+                            $u->select('model_id')
+                                ->from('model_has_roles')
+                                ->where('model_type', \App\Models\User::class)
+                                ->where('role_id', $kreditorRoleId);
+                        });
                     });
                 },
             ])
@@ -437,33 +459,23 @@ class SagerDataTable extends Component
             ->orderBy('navn')
             ->get();
 
-        // Start with the same base query used by the table.
-        $query = $this->baseQuery();
+        $filteredQuery = $this->applyMode($this->baseQuery());
 
-        // Apply the current mode, except "kreditor".
-        $query = $this->applyMode($query);
-
-        // One grouped query instead of one COUNT per kreditor.
-        $counts = $this->applyMode($this->baseQuery())
-        ->join('sager_kreditor', 'sagers.id', '=', 'sager_kreditor.sag_id')
-        ->reorder()
-        ->select('sager_kreditor.kreditor_id')
-        ->selectRaw('COUNT(DISTINCT sagers.id) as total')
-        ->groupBy('sager_kreditor.kreditor_id')
-        ->pluck('total', 'kreditor_id');
+        $counts = (clone $filteredQuery)
+            ->join('sager_kreditor', 'sagers.id', '=', 'sager_kreditor.sag_id')
+            ->reorder()
+            ->select('sager_kreditor.kreditor_id')
+            ->selectRaw('COUNT(DISTINCT sagers.id) as total')
+            ->groupBy('sager_kreditor.kreditor_id')
+            ->pluck('total', 'kreditor_id');
 
         $this->recordsByKreditor = $this->kreditors
-            ->mapWithKeys(function ($kreditor) use ($counts) {
-                return [
-                    $kreditor->navn => (int) ($counts[$kreditor->id] ?? 0),
-                ];
-            })
+            ->mapWithKeys(fn ($kreditor) => [
+                $kreditor->navn => (int) ($counts[$kreditor->id] ?? 0),
+            ])
             ->toArray();
 
-        // Overall count.
-        $this->modeCount = $this->applyMode(
-            $this->baseQuery()
-        )->count();
+        $this->modeCount = (clone $filteredQuery)->count();
     }
 
     public function setMode(string $mode): void

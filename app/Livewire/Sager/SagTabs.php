@@ -17,6 +17,11 @@ class SagTabs extends Component
     public int $unreadBogholderi = 0;
 
     #[On('dialogUpdated')]
+    public function handleDialogUpdated(): void
+    {
+        $this->refreshBadges();
+    }
+    
     public function mount(?Sager $sag = null, ?string $activeTab = null)
     {
         $this->sag = $sag;
