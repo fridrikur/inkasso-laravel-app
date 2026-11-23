@@ -28,11 +28,19 @@
             @endforeach
         </div>
 
-        {{-- BREVTYPE-SORTERING / FILTER + ANTAL SKABELONER ØVERST TIL HØJRE --}}
+        {{-- BREVTYPE-SORTERING / FILTER + AKTIV TYPE + ANTAL SKABELONER ØVERST TIL HØJRE --}}
         <div class="flex flex-wrap items-center gap-2 shrink-0">
+            {{-- Viser hvilken brevtype den aktuelt valgte skabelon hører til --}}
+            <div class="inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-1.5 shadow-2xs">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-400">Aktiv type:</span>
+                <span class="text-xs font-extrabold text-indigo-700">
+                    {{ $this->aktivBrevTypeNavn ?? 'Ingen kategori' }}
+                </span>
+            </div>
+
             <div class="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2.5 py-1 shadow-2xs">
                 <label for="top-brevtype-sort" class="text-[11px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap">
-                    Type:
+                    Filter:
                 </label>
                 <select
                     id="top-brevtype-sort"
@@ -350,8 +358,7 @@
                     <select
                         id="skabelon-brevtype"
                         wire:model.live="brevtype_id"
-                        @disabled($beskyttet)
-                        class="min-w-[170px] h-[38px] border border-slate-200 rounded-xl px-3 text-xs font-bold bg-white text-slate-800 focus:outline-none focus:border-indigo-500 transition {{ $beskyttet ? 'opacity-60 cursor-not-allowed bg-slate-100' : 'cursor-pointer hover:bg-slate-50' }}"
+                        class="min-w-[170px] h-[38px] border border-slate-200 rounded-xl px-3 text-xs font-bold bg-white text-slate-800 focus:outline-none focus:border-indigo-500 transition cursor-pointer hover:bg-slate-50"
                     >
                         <option value="">— Ingen kategori —</option>
                         @foreach ($brevTyperList as $typeItem)

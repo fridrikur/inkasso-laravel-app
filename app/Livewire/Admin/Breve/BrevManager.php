@@ -83,16 +83,15 @@ class BrevManager extends Component
         'visalle'   => false,
     ];
 
+    public $brevtype_id = '';
+    public string $selectedBrevTypeFilter = '';
+
     // Admin-modal til brevtyper fra databasen
     public bool $showBrevTyperModal = false;
     public string $newBrevTypeName = '';
     public ?int $editingBrevTypeId = null;
     public string $editingBrevTypeName = '';
     public array $brevTyperList = [];
-
-    public ?int $brevtype_id = null;
-
-    public ?string $selectedBrevTypeFilter = '';
 
     public function getAllowedFontColorsProperty(): array
     {
@@ -115,6 +114,7 @@ class BrevManager extends Component
 
     public function mount()
     {
+        $this->loadBrevTyperList();
         $this->loadBreveList();
 
         if (!empty($this->breveList)) {
@@ -133,8 +133,8 @@ class BrevManager extends Component
         $this->settingsOpen = false;
 
         if ($brev) {
-            $this->brevId              = $brev->id;
-            $this->brevtype_id = $brev->brevtype_id ? (int) $brev->brevtype_id : null;
+            $this->brevId      = $brev->id;
+            $this->brevtype_id = $brev->brevtype_id ? (int) $brev->brevtype_id : '';
             $this->titel               = $brev->titel ?? '';
             $this->editTitle           = $brev->titel ?? '';
             $this->emne                = $brev->emne ?? '';
@@ -213,7 +213,9 @@ class BrevManager extends Component
 
         $cleanSubEmneMargin = (float) str_replace(',', '.', (string) ($this->sub_emne_top_margin ?: 0.40));
 
-        $cleanBrevtypeId = ($this->brevtype_id !== null && $this->brevtype_id !== '')? (int) $this->brevtype_id: null;
+        $cleanBrevtypeId = ($this->brevtype_id !== '' && $this->brevtype_id !== null)
+        ? (int) $this->brevtype_id
+        : null;
 
         // Gem selve brevet inkl. alle nye layout- og skriftfelter
         Brev::where('id', $this->brevId)->update([
@@ -263,6 +265,7 @@ class BrevManager extends Component
         );
 
         $this->loadBreveList();
+        $this->loadBrevTyperList();
         $this->loadBrev($this->brevId);
 
         $this->dispatch('toast', $toast->success('Skabelonen og brevhoved blev gemt'));
@@ -356,31 +359,35 @@ class BrevManager extends Component
         if (empty(trim($this->newBrevTitle))) return;
 
         $brev = Brev::create([
-            'titel'               => $this->newBrevTitle,
-            'emne'                => '',
-            'sub_emne'            => '',
-            'tekst'               => '',
-            'navn_top_margin'     => 5.45,
-            'dato_margin_top'     => 7.57,
-            'emne_top_margin'     => 8.91,
-            'sub_emne_top_margin' => 0.40,
-            'body_margin_top'     => 1.00,
-            'margin_left'         => 0,
-            'margin_right'        => 0,
-            'navn_font_size'      => 9.5,
-            'emne_font_size'      => 10.5,
-            'body_font_size'      => 9.5,
-            'font_family'         => "Century Schoolbook, Georgia, serif",
-            'font_color'          => '#000000',
-            'beskyttet'           => 0,
-            'linjeafstand'        => 1.5,
-            'visfirmabrevhoved'   => false,
-            'brevpos'             => (Brev::max('brevpos') ?? 0) + 1,
-            'brevtype'            => '0',
+            'titel'                => $this->newBrevTitle,
+            'brevtype_id'          => null,
+            'emne'                 => '',
+            'sub_emne'             => '',
+            'tekst'                => '',
+            'navn_top_margin'      => 5.45,
+            'dato_margin_top'      => 7.57,
+            'emne_top_margin'      => 8.91,
+            'sub_emne_top_margin'  => 0.40,
+            'body_margin_top'      => 1.00,
+            'margin_left'          => 0,
+            'margin_right'         => 0,
+            'navn_font_size'       => 9.5,
+            'emne_font_size'       => 10.5,
+            'body_font_size'       => 9.5,
+            'font_family'          => "Century Schoolbook, Georgia, serif",
+            'font_color'           => '#000000',
+            'beskyttet'            => 0,
+            'linjeafstand'         => 1.5,
+            'visfirmabrevhoved'    => false,
+            'brevhoved_top_margin' => 1.50,
+            'firma_font_size'      => 8.5,
+            'firma_left_margin'    => 11.80,
+            'brevpos'              => (Brev::max('brevpos') ?? 0) + 1,
         ]);
 
         $this->closeCreateModal();
         $this->loadBreveList();
+        $this->loadBrevTyperList();
         $this->loadBrev($brev->id);
     }
 
@@ -907,6 +914,22 @@ class BrevManager extends Component
 
         $this->breveList = $query->get()->toArray();
     }
+    
+    public function updatedBrevtypeId($value): void
+    {
+        $this->brevtype_id = ($value === '' || $value === null) ? '' : (int) $value;
+    }
+
+    public function getAktivBrevTypeNavnProperty(): ?string
+    {
+        if ($this->brevtype_id === '' || $this->brevtype_id === null) {
+            return null;
+        }
+
+        $match = collect($this->brevTyperList)->firstWhere('id', (int) $this->brevtype_id);
+        return $match['navn'] ?? null;
+    }
+    
     public function render()
     {
         return view('livewire.admin.breve.brev-manager');
