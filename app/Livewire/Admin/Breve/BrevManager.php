@@ -970,6 +970,22 @@ class BrevManager extends Component
         }
     }
 
+    public function getAktivBrevTitelProperty(): string
+    {
+        if (trim($this->titel) !== '') {
+            return $this->titel;
+        }
+
+        if ($this->brevId) {
+            $match = collect($this->breveList)->firstWhere('id', $this->brevId);
+            if (!empty($match['titel'])) {
+                return $match['titel'];
+            }
+        }
+
+        return 'Unavngivet skabelon';
+    }
+    
     public function render()
     {
         return view('livewire.admin.breve.brev-manager');
