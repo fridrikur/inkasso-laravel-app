@@ -11,6 +11,7 @@ use Livewire\WithFileUploads;
 use App\Models\BrevFilter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use App\Models\BrevType;
 
 class BrevManager extends Component
 {
@@ -876,7 +877,7 @@ class BrevManager extends Component
 
         $this->dispatch('toast', $toast->success("Brevtypen blev omdøbt til '{$navn}'."));
     }
-    
+
     public function render()
     {
         return view('livewire.admin.breve.brev-manager');
