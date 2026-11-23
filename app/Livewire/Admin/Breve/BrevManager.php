@@ -90,6 +90,8 @@ class BrevManager extends Component
     public string $editingBrevTypeName = '';
     public array $brevTyperList = [];
 
+    public ?int $brevtype_id = null;
+
     public function getAllowedFontColorsProperty(): array
     {
         return [
@@ -135,6 +137,7 @@ class BrevManager extends Component
 
         if ($brev) {
             $this->brevId              = $brev->id;
+            $this->brevtype_id = $brev->brevtype_id ? (int) $brev->brevtype_id : null;
             $this->titel               = $brev->titel ?? '';
             $this->editTitle           = $brev->titel ?? '';
             $this->emne                = $brev->emne ?? '';
@@ -216,6 +219,7 @@ class BrevManager extends Component
         // Gem selve brevet inkl. alle nye layout- og skriftfelter
         Brev::where('id', $this->brevId)->update([
             'titel'               => $this->titel,
+            'brevtype_id'         => $this->brevtype_id ?: null,
             'emne'                => $this->emne,
             'sub_emne'            => $cleanSubEmne,
             'tekst'               => $this->tekst,

@@ -319,6 +319,23 @@
                 </div>
             </div>
 
+            <div class="flex items-center gap-2">
+                <label for="skabelon-brevtype" class="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                    Brevtype:
+                </label>
+                <select
+                    id="skabelon-brevtype"
+                    wire:model.live="brevtype_id"
+                    @disabled($beskyttet)
+                    class="border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold bg-slate-50 text-slate-800 focus:outline-none focus:border-indigo-500 transition {{ $beskyttet ? 'opacity-60 cursor-not-allowed bg-slate-100' : 'cursor-pointer hover:bg-slate-100' }}"
+                >
+                    <option value="">— Ingen kategori —</option>
+                    @foreach ($brevTyperList as $typeItem)
+                        <option value="{{ $typeItem['id'] }}">{{ $typeItem['navn'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             {{-- Brevhoved Indstillinger (Dropdown) --}}
             <div class="relative" x-data="{ openHeaderMenu: false }">
                 <button 
