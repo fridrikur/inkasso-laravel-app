@@ -1,22 +1,49 @@
 <div class="relative pb-24" x-data="{ settingsOpen: true }">
 
-    {{-- 1. FANER ØVERST --}}
-    <div class="flex items-center justify-between gap-4 mb-4">
-        <div class="flex items-center gap-2 overflow-x-auto pb-1 flex-1">
+    <{{-- 1. FANER ØVERST MED ANTAL UDE I SIDEN --}}
+    <div class="flex items-center justify-between gap-4 mb-4 bg-slate-50/90 border border-slate-200/90 rounded-t-2xl px-3 pt-2.5 pb-0 shadow-2xs">
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-0 flex-1">
             @foreach ($breveList as $brevItem)
+                @php
+                    $isActive = $brevId === $brevItem['id'];
+                    $isProtected = !empty($brevItem['beskyttet']);
+                @endphp
                 <button
                     type="button"
-                    wire:click="loadBrev({{ $brevItem['id'] }})"
-                    @click="settingsOpen = false"
-                    class="px-4 py-2 rounded-t-xl rounded-b-none text-xs font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-2 border-t border-x {{ $brevId === $brevItem['id'] ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' }}"
+                    wire:click="selectBrevTab({{ $brevItem['id'] }})"
+                    class="group px-4 py-2.5 rounded-t-xl rounded-b-none text-xs font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-2 border-t border-x relative {{ $isActive ? 'bg-white text-indigo-700 border-slate-200 shadow-[0_-2px_6px_rgba(15,23,42,0.04)] -mb-px pb-[11px] z-10' : 'bg-transparent border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60' }}"
                 >
-                    <span>✉️</span> {{ $brevItem['titel'] }}
+                    <span class="w-2 h-2 rounded-full transition {{ $isActive ? 'bg-indigo-600' : 'bg-slate-300 group-hover:bg-slate-400' }}"></span>
+                    <span>{{ $brevItem['titel'] }}</span>
+                    @if ($isProtected)
+                        <span title="Beskyttet skabelon" class="text-[10px] leading-none opacity-75">🔒</span>
+                    @endif
                 </button>
             @endforeach
         </div>
+
+        {{-- ANTAL SKABELONER UDE I HØJRE SIDE --}}
+        <div class="flex items-center gap-2 pb-2 shrink-0">
+            <div class="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Skabeloner</span>
+                <span class="inline-flex items-center justify-center min-w-[24px] h-5 px-2 rounded-lg bg-indigo-600 text-white text-xs font-extrabold">
+                    {{ $this->antalSkabeloner }}
+                </span>
+            </div>
+
+            @if ($this->antalBeskyttedeSkabeloner > 0)
+                <div
+                    title="Antal beskyttede skabeloner"
+                    class="hidden sm:inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-[11px] font-bold text-slate-600"
+                >
+                    <span>🔒</span>
+                    <span>{{ $this->antalBeskyttedeSkabeloner }}</span>
+                </div>
+            @endif
+        </div>
     </div>
 
-    <button type="button" wire:click="openBackupModal" >
+    <button type="button" wire:click="openBackupModal" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5">
         🛡️ Import / Eksport
     </button>
 

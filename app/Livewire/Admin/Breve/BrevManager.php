@@ -729,6 +729,22 @@ class BrevManager extends Component
         }
     }
     
+    public function getAntalSkabelonerProperty(): int
+    {
+        return count($this->breveList);
+    }
+
+    public function getAntalBeskyttedeSkabelonerProperty(): int
+    {
+        return collect($this->breveList)->where('beskyttet', true)->count();
+    }
+
+    public function selectBrevTab(int $id): void
+    {
+        $this->settingsOpen = false;
+        $this->loadBrev($id);
+}
+
     public function render()
     {
         return view('livewire.admin.breve.brev-manager');
