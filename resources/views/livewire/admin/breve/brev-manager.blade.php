@@ -1,4 +1,4 @@
-<div class="relative pb-24" x-data="{ settingsOpen: true }">
+<div class="relative pb-24" x-data="{ settingsOpen: $wire.entangle('settingsOpen') }">
 
     {{-- 1. FANER ØVERST MED ANTAL UDE I SIDEN --}}
     <div class="flex items-center justify-between gap-4 mb-4 bg-slate-50/90 border border-slate-200/90 rounded-t-2xl px-3 pt-2.5 pb-0 shadow-2xs">
@@ -42,13 +42,16 @@
             @endif
         </div>
     </div>
-    <button type="button" wire:click="openBackupModal" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5">
-        🛡️ Import / Eksport
-    </button>
+
+    <div class="mb-3 flex items-center justify-end">
+        <button type="button" wire:click="openBackupModal" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5">
+            🛡️ Import / Eksport
+        </button>
+    </div>
 
     {{-- 2. SKABELONINDHOLD --}}
     <div class="bg-white border border-slate-200 rounded-b-2xl rounded-tr-2xl p-6 shadow-sm flex flex-col space-y-4" style="height:100%">
-        
+
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             {{-- Left Margin --}}
             <div>
@@ -108,7 +111,7 @@
                 </div>
             </div>
         </div>
-        
+
         {{-- CONTAINER 2: LAYOUTINDSTILLINGER (MED TOGGLE) --}}
         <div x-data="{ open: settingsOpen }" x-effect="open = settingsOpen" class="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-4 space-y-4">
             <div class="flex items-center justify-between">
@@ -121,16 +124,16 @@
                     <span x-text="open ? 'Skjul sektion' : 'Vis sektion'"></span>
                 </button>
             </div>
-            
+
             <div x-show="open" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                 {{-- 1. Navn top-margin --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Navn top-margin (cm):</label>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         inputmode="decimal"
-                        wire:model.live="navn_top_margin" 
-                        placeholder="5.45" 
+                        wire:model.live="navn_top_margin"
+                        placeholder="5.45"
                         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
                     >
                 </div>
@@ -138,11 +141,11 @@
                 {{-- 2. Dato top-margin --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Dato top-margin (cm):</label>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         inputmode="decimal"
-                        wire:model.live="dato_margin_top" 
-                        placeholder="7.57" 
+                        wire:model.live="dato_margin_top"
+                        placeholder="7.57"
                         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
                     >
                 </div>
@@ -150,11 +153,11 @@
                 {{-- 3. Emne top-margin --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Emne top-margin (cm):</label>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         inputmode="decimal"
-                        wire:model.live="emne_top_margin" 
-                        placeholder="8.91" 
+                        wire:model.live="emne_top_margin"
+                        placeholder="8.91"
                         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
                     >
                 </div>
@@ -162,22 +165,22 @@
                 {{-- 4. Body top-margin (afstand under emne i em) --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Body top-margin (em):</label>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         inputmode="decimal"
-                        wire:model.live="body_margin_top" 
-                        placeholder="2" 
+                        wire:model.live="body_margin_top"
+                        placeholder="2"
                         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
                     >
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Brevhoved top-margin (cm):</label>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         inputmode="decimal"
-                        wire:model.live="brevhoved_top_margin" 
-                        placeholder="1.50" 
+                        wire:model.live="brevhoved_top_margin"
+                        placeholder="1.50"
                         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
                     >
                 </div>
@@ -210,9 +213,9 @@
                 </div>
 
                 <div>
-                    <button 
-                        type="button" 
-                        wire:click="nulstilAlleMarginer" 
+                    <button
+                        type="button"
+                        wire:click="nulstilAlleMarginer"
                         wire:confirm="Er du sikker på, at du vil nulstille marginer til 0 på ALLE brevskabeloner?"
                         class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 w-fit"
                     >
@@ -305,109 +308,108 @@
             </div>
         </div>
 
-        {{-- OVERSKRIFT OG BREVHOVED-KNAP SAMLET (BEHOLDT PÅ SAMME PLADS) --}}
-        <div class="flex items-center justify-between pb-2 pt-2">
+        {{-- OVERSKRIFT, BESKYTTET, BREVTYPE OG BREVHOVED-KNAP --}}
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-2 pt-2">
             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Skabelonens layout og indhold:</label>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div class="flex flex-wrap items-center gap-3">
                 {{-- Beskyttet Checkbox --}}
-                <div class="flex flex-col justify-end md:col-span-2 gap-2">
-                    <label class="flex items-center gap-2 h-[42px] px-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition">
-                        <input type="checkbox" wire:model.live="beskyttet" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer">
-                        <span class="text-xs font-bold text-slate-700">🔒 Beskyttet</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-2">
-                <label for="skabelon-brevtype" class="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
-                    Brevtype:
+                <label class="flex items-center gap-2 h-[38px] px-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition shrink-0">
+                    <input type="checkbox" wire:model.live="beskyttet" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer">
+                    <span class="text-xs font-bold text-slate-700 whitespace-nowrap">🔒 Beskyttet</span>
                 </label>
-                <select
-                    id="skabelon-brevtype"
-                    wire:model.live="brevtype_id"
-                    @disabled($beskyttet)
-                    class="border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold bg-slate-50 text-slate-800 focus:outline-none focus:border-indigo-500 transition {{ $beskyttet ? 'opacity-60 cursor-not-allowed bg-slate-100' : 'cursor-pointer hover:bg-slate-100' }}"
-                >
-                    <option value="">— Ingen kategori —</option>
-                    @foreach ($brevTyperList as $typeItem)
-                        <option value="{{ $typeItem['id'] }}">{{ $typeItem['navn'] }}</option>
-                    @endforeach
-                </select>
-            </div>
 
-            {{-- Brevhoved Indstillinger (Dropdown) --}}
-            <div class="relative" x-data="{ openHeaderMenu: false }">
-                <button 
-                    type="button" 
-                    @if(!$beskyttet) @click="openHeaderMenu = !openHeaderMenu" @else @click="alert('🚫 Denne skabelon er beskyttet. Brevhovedet kan ikke ændres.');" @endif
-                    class="bg-white text-slate-800 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-2xs {{ $beskyttet ? 'opacity-60 cursor-not-allowed bg-slate-100' : 'hover:bg-slate-100 cursor-pointer' }}"
-                >
-                    <span>📄 Brevhoved indstillinger</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold {{ ($filter['skjulalle'] ?? false) ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700' }}">
-                        {{ $beskyttet ? 'Låst' : (($filter['skjulalle'] ?? false) ? 'Skjult' : 'Aktiv') }}
-                    </span>
-                </button>
-
-                {{-- Dropdown boks (Kun tilgængelig hvis ikke beskyttet) --}}
-                @if(!$beskyttet)
-                    <div 
-                        x-show="openHeaderMenu" 
-                        @click.outside="openHeaderMenu = false"
-                        class="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl p-4 z-50 space-y-3 text-xs"
-                        style="display: none;"
+                {{-- Brevtype Dropdown --}}
+                <div class="flex items-center gap-2 shrink-0">
+                    <label for="skabelon-brevtype" class="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                        Brevtype:
+                    </label>
+                    <select
+                        id="skabelon-brevtype"
+                        wire:model.live="brevtype_id"
+                        @disabled($beskyttet)
+                        class="min-w-[170px] h-[38px] border border-slate-200 rounded-xl px-3 text-xs font-bold bg-white text-slate-800 focus:outline-none focus:border-indigo-500 transition {{ $beskyttet ? 'opacity-60 cursor-not-allowed bg-slate-100' : 'cursor-pointer hover:bg-slate-50' }}"
                     >
-                        <div class="font-bold text-slate-700 border-b border-slate-100 pb-2 flex justify-between items-center gap-2">
-                            <span>Styr brevhoved visning</span>
-                            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-800">
-                                <input
-                                    type="checkbox"
-                                    wire:model.live="visfirmabrevhoved"
-                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
-                                >
-                                <span>Firmabrevhoved</span>
-                            </label>
-                        </div>
+                        <option value="">— Ingen kategori —</option>
+                        @foreach ($brevTyperList as $typeItem)
+                            <option value="{{ $typeItem['id'] }}">{{ $typeItem['navn'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-                        {{-- Master kontrol --}}
-                        <div class="space-y-1.5">
-                            <label class="flex items-center gap-2 cursor-pointer font-medium text-slate-800">
-                                <input type="checkbox" wire:model.live="filter.visalle" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
-                                <span>Vis alle felter i top</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer font-medium text-slate-800">
-                                <input type="checkbox" wire:model.live="filter.skjulalle" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500 w-3.5 h-3.5">
-                                <span>Skjul hele brevhovedet</span>
-                            </label>
-                        </div>
+                {{-- Brevhoved Indstillinger (Dropdown) --}}
+                <div class="relative shrink-0" x-data="{ openHeaderMenu: false }">
+                    <button
+                        type="button"
+                        @if(!$beskyttet) @click="openHeaderMenu = !openHeaderMenu" @else @click="alert('🚫 Denne skabelon er beskyttet. Brevhovedet kan ikke ændres.');" @endif
+                        class="h-[38px] bg-white text-slate-800 border border-slate-200 px-3 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-2xs {{ $beskyttet ? 'opacity-60 cursor-not-allowed bg-slate-100' : 'hover:bg-slate-100 cursor-pointer' }}"
+                    >
+                        <span>📄 Brevhoved indstillinger</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold {{ ($filter['skjulalle'] ?? false) ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700' }}">
+                            {{ $beskyttet ? 'Låst' : (($filter['skjulalle'] ?? false) ? 'Skjult' : 'Aktiv') }}
+                        </span>
+                    </button>
 
-                        <hr class="border-slate-100">
+                    {{-- Dropdown boks (Kun tilgængelig hvis ikke beskyttet) --}}
+                    @if(!$beskyttet)
+                        <div
+                            x-show="openHeaderMenu"
+                            @click.outside="openHeaderMenu = false"
+                            class="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl p-4 z-50 space-y-3 text-xs"
+                            style="display: none;"
+                        >
+                            <div class="font-bold text-slate-700 border-b border-slate-100 pb-2 flex justify-between items-center gap-2">
+                                <span>Styr brevhoved visning</span>
+                                <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-800">
+                                    <input
+                                        type="checkbox"
+                                        wire:model.live="visfirmabrevhoved"
+                                        class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
+                                    >
+                                    <span>Firmabrevhoved</span>
+                                </label>
+                            </div>
 
-                        {{-- Detaljerede felter --}}
-                        <div class="space-y-1.5 text-slate-600">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" wire:model.live="filter.navn" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
-                                <span>Vis Navn</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" wire:model.live="filter.adresse" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
-                                <span>Vis Adresse</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" wire:model.live="filter.dato" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
-                                <span>Vis Dato</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" wire:model.live="filter.sagsnr" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
-                                <span>Vis Sagsnr.</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" wire:model.live="filter.emne" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
-                                <span>Vis Emne</span>
-                            </label>
+                            {{-- Master kontrol --}}
+                            <div class="space-y-1.5">
+                                <label class="flex items-center gap-2 cursor-pointer font-medium text-slate-800">
+                                    <input type="checkbox" wire:model.live="filter.visalle" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                    <span>Vis alle felter i top</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer font-medium text-slate-800">
+                                    <input type="checkbox" wire:model.live="filter.skjulalle" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500 w-3.5 h-3.5">
+                                    <span>Skjul hele brevhovedet</span>
+                                </label>
+                            </div>
+
+                            <hr class="border-slate-100">
+
+                            {{-- Detaljerede felter --}}
+                            <div class="space-y-1.5 text-slate-600">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" wire:model.live="filter.navn" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
+                                    <span>Vis Navn</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" wire:model.live="filter.adresse" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
+                                    <span>Vis Adresse</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" wire:model.live="filter.dato" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
+                                    <span>Vis Dato</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" wire:model.live="filter.sagsnr" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
+                                    <span>Vis Sagsnr.</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" wire:model.live="filter.emne" class="rounded border-slate-300 text-indigo-600 w-3.5 h-3.5">
+                                    <span>Vis Emne</span>
+                                </label>
+                            </div>
                         </div>
-                    </div>
-                @endif
+                    @endif
+                </div>
             </div>
         </div>
 
@@ -441,10 +443,8 @@
                 🚫 Brevhovedet er skjult for denne skabelon
             </div>
         @else
-                <div style="position: relative; width: 100%; height: auto; margin: 0; color: {{ $font_color }};" id="brev_preview">
-    {{-- 0. Firmabrevhoved, 1. Navn/adresse, 2. Dato/Sagsnr --}}
-                
-                {{-- Ensartet firmabrevhoved-blok til både brev-manager og vis-brev --}}
+            <div style="position: relative; width: 100%; height: auto; margin: 0; color: {{ $font_color }};" id="brev_preview">
+                {{-- 0. Firmabrevhoved --}}
                 @if(($brev->visfirmabrevhoved ?? ($visfirmabrevhoved ?? true)))
                     <div
                         x-data="{
@@ -513,7 +513,7 @@
                         </table>
                     </div>
                 @endif
-            
+
                 {{-- 1. Navn og adresse sektion --}}
                 <div style="position: absolute; top: {{ $navnTop }}cm; left: 0; right: 0;">
                     <table class="w-full text-xs sm:text-sm font-sans" style="width: 100%; border-collapse: collapse; border: none;" cellspacing="0" cellpadding="0" border="0">
@@ -563,7 +563,6 @@
 
                 {{-- 3. EMNE OG SUB-EMNE I NATURLIGT FLOW --}}
                 <div style="position: relative; margin-top: {{ $emneTop }}cm;" class="flex flex-col pb-4">
-                    
 
                     {{-- EMNE: Klik eller træk felt ind for at redigere --}}
                     <div
@@ -727,7 +726,7 @@
 
     {{-- 3. BUND MED ALLE KNAPPER --}}
     <div class="mt-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4 text-white">
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">Handlinger:</span>
             @if ($brevId)
                 <button type="button" wire:click="openRenameModal" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border border-slate-700">
@@ -737,6 +736,9 @@
                     🗑️ Slet
                 </button>
             @endif
+            <button type="button" wire:click="openBrevTyperModal" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border border-slate-700">
+                🏷️ Brevtyper
+            </button>
             <button type="button" wire:click="openCreateModal" class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm">
                 <span>+</span> Opret ny skabelon
             </button>
@@ -749,17 +751,8 @@
         </div>
     </div>
 
-    {{-- Knap i bundbjælken --}}
-    <button
-        type="button"
-        wire:click="openBrevTyperModal"
-        class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border border-slate-700"
-    >
-        🏷️ Brevtyper
-    </button>
-
     {{-- 4. TRÆKBAR BOKS MED FELTER --}}
-    <div 
+    <div
         x-data="{
             open: true,
             dragging: false,
@@ -767,6 +760,8 @@
             y: 120,
             startX: 0,
             startY: 0,
+            mouseX: 0,
+            mouseY: 0,
             init() {
                 if (this.x > window.innerWidth - 320) this.x = window.innerWidth - 320;
             }
@@ -778,15 +773,15 @@
             }
         "
         @mouseup.window="dragging = false"
-        :style="`left: ${x}px; top: ${y}px; position: fixed;`" 
+        :style="`left: ${x}px; top: ${y}px; position: fixed;`"
         class="w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden select-none"
     >
-        <div 
+        <div
             @mousedown="
-                dragging = true; 
-                mouseX = $event.clientX; 
-                mouseY = $event.clientY; 
-                startX = x; 
+                dragging = true;
+                mouseX = $event.clientX;
+                mouseY = $event.clientY;
+                startX = x;
                 startY = y;
             "
             class="cursor-grab active:cursor-grabbing bg-slate-900 text-white px-4 py-3 flex justify-between items-center"
@@ -796,7 +791,7 @@
             </span>
             <button type="button" @click="open = !open" class="text-xs text-slate-400 hover:text-white cursor-pointer"><span x-text="open ? '–' : '+'"></span></button>
         </div>
-        
+
         <div x-show="open" class="p-3 max-h-80 overflow-y-auto bg-slate-50 space-y-2">
             <p class="text-[10px] text-slate-400 font-medium px-1">Træk felterne ind i editoren:</p>
             <div class="flex flex-wrap gap-1.5">
@@ -850,7 +845,7 @@
 
     @if($showDeleteBrevModal)
         <div class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-            <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 border border-slate-100">
+            <div wire:click.away="cancelDeleteBrev" class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 border border-slate-100">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h3 class="text-base font-bold text-rose-600">Slet skabelon</h3>
                     <button type="button" wire:click="cancelDeleteBrev" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
@@ -867,90 +862,91 @@
     @endif
 
     @if($showBackupModal)
-    <div class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-        <div wire:click.away="closeBackupModal" class="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-5 border border-slate-100">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div>
-                    <h3 class="text-base font-bold text-slate-900">🛡️ Sikkerhedskopi: Import & Eksport</h3>
-                    <p class="text-[11px] text-slate-500">Download dine brevskabeloner som JSON eller gendan dem fra en tidligere fil.</p>
+        <div class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div wire:click.away="closeBackupModal" class="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-5 border border-slate-100">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">🛡️ Sikkerhedskopi: Import & Eksport</h3>
+                        <p class="text-[11px] text-slate-500">Download dine brevskabeloner som JSON eller gendan dem fra en tidligere fil.</p>
+                    </div>
+                    <button type="button" wire:click="closeBackupModal" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
                 </div>
-                <button type="button" wire:click="closeBackupModal" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
-            </div>
 
-            {{-- EKSPORT --}}
-            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
-                <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">1. Eksporter brevskabeloner</div>
+                {{-- EKSPORT --}}
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                    <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">1. Eksporter brevskabeloner</div>
 
-                <div class="space-y-2 text-xs text-slate-700">
-                    <label class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-indigo-300 transition">
-                        <span class="flex items-center gap-2">
-                            <input type="radio" wire:model.live="exportScope" value="all" class="text-indigo-600 focus:ring-indigo-500">
-                            <span>Eksporter <strong>alle breve</strong></span>
-                        </span>
-                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                            {{ $this->antalAlleBreve }} stk.
-                        </span>
+                    <div class="space-y-2 text-xs text-slate-700">
+                        <label class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-indigo-300 transition">
+                            <span class="flex items-center gap-2">
+                                <input type="radio" wire:model.live="exportScope" value="all" class="text-indigo-600 focus:ring-indigo-500">
+                                <span>Eksporter <strong>alle breve</strong></span>
+                            </span>
+                            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                                {{ $this->antalAlleBreve }} stk.
+                            </span>
+                        </label>
+
+                        <label class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-indigo-300 transition">
+                            <span class="flex items-center gap-2">
+                                <input type="radio" wire:model.live="exportScope" value="protected" class="text-indigo-600 focus:ring-indigo-500">
+                                <span>Eksporter <strong>kun beskyttede breve</strong> 🔒</span>
+                            </span>
+                            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                                {{ $this->antalBeskyttedeBreve }} stk.
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button
+                            type="button"
+                            wire:click="exportBreveJson"
+                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5"
+                        >
+                            ⬇️ Download JSON-fil
+                        </button>
+                    </div>
+                </div>
+
+                {{-- IMPORT --}}
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                    <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">2. Importer / gendan fra JSON-fil</div>
+
+                    <input
+                        type="file"
+                        wire:model="importJsonFile"
+                        accept=".json,application/json,text/plain"
+                        class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                    >
+
+                    @error('importJsonFile')
+                        <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
+                    @enderror
+
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                        <input type="checkbox" wire:model.live="overwriteExistingBreve" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <span>Overskriv eksisterende skabeloner med samme titel</span>
                     </label>
 
-                    <label class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-indigo-300 transition">
-                        <span class="flex items-center gap-2">
-                            <input type="radio" wire:model.live="exportScope" value="protected" class="text-indigo-600 focus:ring-indigo-500">
-                            <span>Eksporter <strong>kun beskyttede breve</strong> 🔒</span>
-                        </span>
-                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                            {{ $this->antalBeskyttedeBreve }} stk.
-                        </span>
-                    </label>
-                </div>
-
-                <div class="flex justify-end">
-                    <button
-                        type="button"
-                        wire:click="exportBreveJson"
-                        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5"
-                    >
-                        ⬇️ Download JSON-fil
-                    </button>
-                </div>
-            </div>
-
-            {{-- IMPORT --}}
-            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
-                <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">2. Importer / gendan fra JSON-fil</div>
-
-                <input
-                    type="file"
-                    wire:model="importJsonFile"
-                    accept=".json,application/json,text/plain"
-                    class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                >
-
-                @error('importJsonFile')
-                    <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
-                @enderror
-
-                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
-                    <input type="checkbox" wire:model.live="overwriteExistingBreve" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                    <span>Overskriv eksisterende skabeloner med samme titel</span>
-                </label>
-
-                <div class="flex justify-end gap-2 pt-1">
-                    <button type="button" wire:click="closeBackupModal" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">
-                        Luk
-                    </button>
-                    <button
-                        type="button"
-                        wire:click="importBreveJson"
-                        wire:loading.attr="disabled"
-                        class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5"
-                    >
-                        ⬆️ Importer skabeloner
-                    </button>
+                    <div class="flex justify-end gap-2 pt-1">
+                        <button type="button" wire:click="closeBackupModal" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">
+                            Luk
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="importBreveJson"
+                            wire:loading.attr="disabled"
+                            class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5"
+                        >
+                            ⬆️ Importer skabeloner
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-@endif
+    @endif
+
     {{-- ADMIN-MODAL: BREVTYPER --}}
     @if($showBrevTyperModal)
         <div class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
