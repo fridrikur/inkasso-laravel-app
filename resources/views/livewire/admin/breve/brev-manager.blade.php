@@ -1,12 +1,13 @@
 <div class="relative pb-24" x-data="{ settingsOpen: $wire.entangle('settingsOpen') }">
 
-    {{-- 1. FANER ØVERST MED ANTAL UDE I SIDEN --}}
-    <div class="flex items-center justify-between gap-4 mb-4 bg-slate-50/90 border border-slate-200/90 rounded-t-2xl px-3 pt-2.5 pb-0 shadow-2xs">
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-0 flex-1">
+    {{-- 1. FANER ØVERST MED BREVTYPE-SORTERING OG ANTAL UDE I SIDEN --}}
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4 bg-slate-50/90 border border-slate-200/90 rounded-t-2xl px-3 pt-2.5 pb-2 shadow-2xs">
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 flex-1 min-w-[240px]">
             @foreach ($breveList as $brevItem)
                 @php
                     $isActive = $brevId === $brevItem['id'];
                     $isProtected = !empty($brevItem['beskyttet']);
+                    $typeNavn = $brevItem['brev_type']['navn'] ?? null;
                 @endphp
                 <button
                     type="button"
@@ -15,6 +16,11 @@
                 >
                     <span class="w-2 h-2 rounded-full transition {{ $isActive ? 'bg-indigo-600' : 'bg-slate-300 group-hover:bg-slate-400' }}"></span>
                     <span>{{ $brevItem['titel'] }}</span>
+                    @if ($typeNavn)
+                        <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md {{ $isActive ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200/70 text-slate-600' }}">
+                            {{ $typeNavn }}
+                        </span>
+                    @endif
                     @if ($isProtected)
                         <span title="Beskyttet skabelon" class="text-[10px] leading-none opacity-75">🔒</span>
                     @endif
@@ -22,8 +28,25 @@
             @endforeach
         </div>
 
-        {{-- ANTAL SKABELONER UDE I HØJRE SIDE --}}
-        <div class="flex items-center gap-2 pb-2 shrink-0">
+        {{-- BREVTYPE-SORTERING / FILTER + ANTAL SKABELONER ØVERST TIL HØJRE --}}
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <div class="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2.5 py-1 shadow-2xs">
+                <label for="top-brevtype-sort" class="text-[11px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap">
+                    Type:
+                </label>
+                <select
+                    id="top-brevtype-sort"
+                    wire:model.live="selectedBrevTypeFilter"
+                    class="text-xs font-bold text-slate-800 bg-transparent focus:outline-none cursor-pointer pr-1"
+                >
+                    <option value="">Alle brevtyper</option>
+                    <option value="none">Uden kategori</option>
+                    @foreach ($brevTyperList as $typeItem)
+                        <option value="{{ $typeItem['id'] }}">{{ $typeItem['navn'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <div class="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
                 <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Skabeloner</span>
                 <span class="inline-flex items-center justify-center min-w-[24px] h-5 px-2 rounded-lg bg-indigo-600 text-white text-xs font-extrabold">

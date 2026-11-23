@@ -92,6 +92,8 @@ class BrevManager extends Component
 
     public ?int $brevtype_id = null;
 
+    public ?string $selectedBrevTypeFilter = '';
+
     public function getAllowedFontColorsProperty(): array
     {
         return [
@@ -118,11 +120,6 @@ class BrevManager extends Component
         if (!empty($this->breveList)) {
             $this->loadBrev($this->breveList[0]['id']);
         }
-    }
-
-    public function loadBreveList(): void
-    {
-        $this->breveList = Brev::orderBy('brevpos')->get()->toArray();
     }
 
     public function loadBrev($id): void
@@ -216,10 +213,12 @@ class BrevManager extends Component
 
         $cleanSubEmneMargin = (float) str_replace(',', '.', (string) ($this->sub_emne_top_margin ?: 0.40));
 
+        $cleanBrevtypeId = ($this->brevtype_id !== null && $this->brevtype_id !== '')? (int) $this->brevtype_id: null;
+
         // Gem selve brevet inkl. alle nye layout- og skriftfelter
         Brev::where('id', $this->brevId)->update([
             'titel'               => $this->titel,
-            'brevtype_id'         => $this->brevtype_id ?: null,
+            'brevtype_id'         => $cleanBrevtypeId,
             'emne'                => $this->emne,
             'sub_emne'            => $cleanSubEmne,
             'tekst'               => $this->tekst,
@@ -882,6 +881,32 @@ class BrevManager extends Component
         $this->dispatch('toast', $toast->success("Brevtypen blev omdøbt til '{$navn}'."));
     }
 
+    public function updatedSelectedBrevTypeFilter(): void
+    {
+        $this->loadBreveList();
+
+        if (!empty($this->breveList)) {
+            $ids = array_column($this->breveList, 'id');
+            if (!in_array($this->brevId, $ids, true)) {
+                $this->loadBrev($this->breveList[0]['id']);
+            }
+        }
+    }
+
+    public function loadBreveList(): void
+    {
+        $query = Brev::with('brevType')->orderBy('brevpos');
+
+        if ($this->selectedBrevTypeFilter !== null && $this->selectedBrevTypeFilter !== '') {
+            if ($this->selectedBrevTypeFilter === 'none') {
+                $query->whereNull('brevtype_id');
+            } else {
+                $query->where('brevtype_id', (int) $this->selectedBrevTypeFilter);
+            }
+        }
+
+        $this->breveList = $query->get()->toArray();
+    }
     public function render()
     {
         return view('livewire.admin.breve.brev-manager');
