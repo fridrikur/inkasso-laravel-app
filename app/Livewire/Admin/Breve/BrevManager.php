@@ -558,7 +558,9 @@ class BrevManager extends Component
 
     public function exportBreveJson()
     {
-        $query = Brev::orderBy('brevpos')->orderBy('id');
+        $query = Brev::with('brevType')
+            ->orderBy('brevpos')
+            ->orderBy('id');
 
         if ($this->exportScope === 'protected') {
             $query->where('beskyttet', 1);
@@ -585,7 +587,10 @@ class BrevManager extends Component
             'count'       => $breve->count(),
             'breve'       => $breve->map(function (Brev $brev) use ($filtersByBrevId) {
                 $data = $brev->toArray();
-                unset($data['id'], $data['created_at'], $data['updated_at']);
+                unset($data['id'], $data['created_at'], $data['updated_at'], $data['brev_type']);
+
+                // Gem brevtypen på navn så skabelonen kan matches på tværs af miljøer
+                $data['brevtype_navn'] = $brev->brevType?->navn;
 
                 $filter = $filtersByBrevId->get($brev->id);
                 $data['filter'] = $filter ? [
@@ -630,156 +635,7 @@ class BrevManager extends Component
         $this->loadBrev($id);
     }
 
-    public function importBreveJson(ToastService $toast): void
-    {
-        $this->validate([
-            'importJsonFile' => 'required|file|mimes:json,txt|max:10240',
-        ]);
-
-        try {
-            $raw = file_get_contents($this->importJsonFile->getRealPath());
-            $decoded = json_decode($raw, true);
-
-            $items = is_array($decoded) && isset($decoded['breve']) && is_array($decoded['breve'])
-                ? $decoded['breve']
-                : (is_array($decoded) ? $decoded : null);
-
-            if (!$items) {
-                $this->dispatch('toast', ['type' => 'error', 'message' => 'Ugyldig JSON-fil: Kunne ikke læse brevskabeloner.']);
-                return;
-            }
-
-            $columns = Schema::getColumnListing('breve');
-            $feltMapping = [
-                '{Statistik}' => '{restgaeld_dkg}',
-                '{statistik}' => '{restgaeld_dkg}',
-                '{restgaeld}'  => '{ialt}',
-            ];
-
-            $oprettet = 0;
-            $opdateret = 0;
-            $sprungetOver = 0;
-            $setTitlerIFil = [];
-
-            DB::transaction(function () use (
-                $items,
-                $columns,
-                $feltMapping,
-                &$oprettet,
-                &$opdateret,
-                &$sprungetOver,
-                &$setTitlerIFil
-            ) {
-                foreach ($items as $item) {
-                    $titel = trim((string) ($item['titel'] ?? ''));
-                    if (!is_array($item) || $titel === '') {
-                        continue;
-                    }
-
-                    // Bremse: spring dubletter med samme titel inden for selve JSON-filen over
-                    $titelKey = mb_strtolower($titel);
-                    if (isset($setTitlerIFil[$titelKey])) {
-                        $sprungetOver++;
-                        continue;
-                    }
-                    $setTitlerIFil[$titelKey] = true;
-
-                    $filterData = is_array($item['filter'] ?? null) ? $item['filter'] : null;
-                    unset($item['id'], $item['created_at'], $item['updated_at'], $item['filter']);
-                    $item['titel'] = $titel;
-
-                    foreach (['tekst', 'emne', 'sub_emne'] as $felt) {
-                        if (isset($item[$felt]) && is_string($item[$felt])) {
-                            $item[$felt] = str_replace(
-                                array_keys($feltMapping),
-                                array_values($feltMapping),
-                                $item[$felt]
-                            );
-                        }
-                    }
-
-                    if (isset($item['sub_emne'])) {
-                        $item['sub_emne'] = strip_tags((string) $item['sub_emne']);
-                    }
-
-                    if (isset($item['font_color'])) {
-                        $item['font_color'] = $this->sanitizeFontColor($item['font_color']);
-                    }
-
-                    $cleanRow = array_intersect_key($item, array_flip($columns));
-                    $cleanRow['titel'] = $titel;
-                    $cleanRow['tekst'] = (string) ($cleanRow['tekst'] ?? '');
-
-                    if (in_array('emne', $columns, true) && (!array_key_exists('emne', $cleanRow) || $cleanRow['emne'] === null)) {
-                        $cleanRow['emne'] = '';
-                    }
-
-                    if (in_array('sub_emne', $columns, true) && (!array_key_exists('sub_emne', $cleanRow) || $cleanRow['sub_emne'] === null)) {
-                        $cleanRow['sub_emne'] = '';
-                    }
-
-                    $eksisterende = Brev::where('titel', $titel)->first();
-
-                    if ($eksisterende) {
-                        if (!$this->overwriteExistingBreve) {
-                            $sprungetOver++;
-                            continue;
-                        }
-
-                        $eksisterende->update($cleanRow);
-                        $targetBrevId = $eksisterende->id;
-                        $opdateret++;
-                    } else {
-                        $cleanRow['brevpos'] = $cleanRow['brevpos'] ?? (((int) Brev::max('brevpos')) + 1);
-                        $cleanRow['brevtype'] = $cleanRow['brevtype'] ?? '0';
-
-                        try {
-                            $nyBrev = Brev::create($cleanRow);
-                            $targetBrevId = $nyBrev->id;
-                            $oprettet++;
-                        } catch (\Illuminate\Database\QueryException $qe) {
-                            // Hvis unik constraint (1062 / 23000) udløses, tæl som sprunget over
-                            if (($qe->errorInfo[1] ?? null) === 1062 || str_contains($qe->getMessage(), '1062')) {
-                                $sprungetOver++;
-                                continue;
-                            }
-                            throw $qe;
-                        }
-                    }
-
-                    if ($filterData && $targetBrevId) {
-                        BrevFilter::updateOrCreate(
-                            ['brevID' => $targetBrevId],
-                            [
-                                'adresse'   => (bool) ($filterData['adresse'] ?? true),
-                                'dato'      => (bool) ($filterData['dato'] ?? true),
-                                'navn'      => (bool) ($filterData['navn'] ?? true),
-                                'sagsnr'    => (bool) ($filterData['sagsnr'] ?? true),
-                                'emne'      => (bool) ($filterData['emne'] ?? true),
-                                'skjulalle' => (bool) ($filterData['skjulalle'] ?? false),
-                                'visalle'   => (bool) ($filterData['visalle'] ?? false),
-                            ]
-                        );
-                    }
-                }
-            });
-
-            $this->loadBreveList();
-            if ($this->brevId) {
-                $this->loadBrev($this->brevId);
-            } elseif (!empty($this->breveList)) {
-                $this->loadBrev($this->breveList[0]['id']);
-            }
-
-            $this->closeBackupModal();
-
-            $this->dispatch('toast', $toast->success(
-                "Import fuldført: {$oprettet} oprettet, {$opdateret} opdateret, {$sprungetOver} sprunget over"
-            ));
-        } catch (\Throwable $e) {
-            $this->dispatch('toast', ['type' => 'error', 'message' => 'Fejl ved import: ' . $e->getMessage()]);
-        }
-    }
+    
 
     public function loadBrevTyperList(): void
     {
@@ -930,6 +786,190 @@ class BrevManager extends Component
         return $match['navn'] ?? null;
     }
     
+    public function importBreveJson(ToastService $toast): void
+    {
+        $this->validate([
+            'importJsonFile' => 'required|file|mimes:json,txt|max:10240',
+        ]);
+
+        try {
+            $raw = file_get_contents($this->importJsonFile->getRealPath());
+            $decoded = json_decode($raw, true);
+
+            $items = is_array($decoded) && isset($decoded['breve']) && is_array($decoded['breve'])
+                ? $decoded['breve']
+                : (is_array($decoded) ? $decoded : null);
+
+            if (!$items) {
+                $this->dispatch('toast', ['type' => 'error', 'message' => 'Ugyldig JSON-fil: Kunne ikke læse brevskabeloner.']);
+                return;
+            }
+
+            $columns = Schema::getColumnListing('breve');
+            $feltMapping = [
+                '{Statistik}' => '{restgaeld_dkg}',
+                '{statistik}' => '{restgaeld_dkg}',
+                '{restgaeld}'  => '{ialt}',
+            ];
+
+            $oprettet = 0;
+            $opdateret = 0;
+            $sprungetOver = 0;
+            $setTitlerIFil = [];
+            $typeIdCache = [];
+
+            DB::transaction(function () use (
+                $items,
+                $columns,
+                $feltMapping,
+                &$oprettet,
+                &$opdateret,
+                &$sprungetOver,
+                &$setTitlerIFil,
+                &$typeIdCache
+            ) {
+                foreach ($items as $item) {
+                    $titel = trim((string) ($item['titel'] ?? ''));
+                    if (!is_array($item) || $titel === '') {
+                        continue;
+                    }
+
+                    // Bremse: spring dubletter med samme titel inden for selve JSON-filen over
+                    $titelKey = mb_strtolower($titel);
+                    if (isset($setTitlerIFil[$titelKey])) {
+                        $sprungetOver++;
+                        continue;
+                    }
+                    $setTitlerIFil[$titelKey] = true;
+
+                    $filterData = is_array($item['filter'] ?? null) ? $item['filter'] : null;
+                    $brevTypeNavn = trim((string) ($item['brevtype_navn'] ?? ''));
+
+                    unset($item['id'], $item['created_at'], $item['updated_at'], $item['filter'], $item['brevtype_navn']);
+                    $item['titel'] = $titel;
+
+                    // Oversæt brevtype_navn til lokalt brevtype_id i dette miljø
+                    $resolvedBrevTypeId = null;
+                    if ($brevTypeNavn !== '') {
+                        $typeKey = mb_strtolower($brevTypeNavn);
+
+                        if (!array_key_exists($typeKey, $typeIdCache)) {
+                            $existingType = BrevType::whereRaw('LOWER(navn) = ?', [$typeKey])->first();
+
+                            if ($existingType) {
+                                $typeIdCache[$typeKey] = (int) $existingType->id;
+                            } else {
+                                $nextSort = ((int) BrevType::max('sorteringsorden')) + 1;
+                                $createdType = BrevType::create([
+                                    'navn'            => $brevTypeNavn,
+                                    'sorteringsorden' => $nextSort,
+                                    'aktiv'           => true,
+                                ]);
+                                $typeIdCache[$typeKey] = (int) $createdType->id;
+                            }
+                        }
+
+                        $resolvedBrevTypeId = $typeIdCache[$typeKey];
+                    }
+
+                    foreach (['tekst', 'emne', 'sub_emne'] as $felt) {
+                        if (isset($item[$felt]) && is_string($item[$felt])) {
+                            $item[$felt] = str_replace(
+                                array_keys($feltMapping),
+                                array_values($feltMapping),
+                                $item[$felt]
+                            );
+                        }
+                    }
+
+                    if (isset($item['sub_emne'])) {
+                        $item['sub_emne'] = strip_tags((string) $item['sub_emne']);
+                    }
+
+                    if (isset($item['font_color'])) {
+                        $item['font_color'] = $this->sanitizeFontColor($item['font_color']);
+                    }
+
+                    $cleanRow = array_intersect_key($item, array_flip($columns));
+                    $cleanRow['titel'] = $titel;
+                    $cleanRow['tekst'] = (string) ($cleanRow['tekst'] ?? '');
+
+                    if (in_array('brevtype_id', $columns, true)) {
+                        $cleanRow['brevtype_id'] = $resolvedBrevTypeId;
+                    }
+
+                    if (in_array('emne', $columns, true) && (!array_key_exists('emne', $cleanRow) || $cleanRow['emne'] === null)) {
+                        $cleanRow['emne'] = '';
+                    }
+
+                    if (in_array('sub_emne', $columns, true) && (!array_key_exists('sub_emne', $cleanRow) || $cleanRow['sub_emne'] === null)) {
+                        $cleanRow['sub_emne'] = '';
+                    }
+
+                    $eksisterende = Brev::where('titel', $titel)->first();
+
+                    if ($eksisterende) {
+                        if (!$this->overwriteExistingBreve) {
+                            $sprungetOver++;
+                            continue;
+                        }
+
+                        $eksisterende->update($cleanRow);
+                        $targetBrevId = $eksisterende->id;
+                        $opdateret++;
+                    } else {
+                        $cleanRow['brevpos'] = $cleanRow['brevpos'] ?? (((int) Brev::max('brevpos')) + 1);
+                        $cleanRow['brevtype'] = $cleanRow['brevtype'] ?? '0';
+
+                        try {
+                            $nyBrev = Brev::create($cleanRow);
+                            $targetBrevId = $nyBrev->id;
+                            $oprettet++;
+                        } catch (\Illuminate\Database\QueryException $qe) {
+                            // Hvis unik constraint (1062 / 23000) udløses, tæl som sprunget over
+                            if (($qe->errorInfo[1] ?? null) === 1062 || str_contains($qe->getMessage(), '1062')) {
+                                $sprungetOver++;
+                                continue;
+                            }
+                            throw $qe;
+                        }
+                    }
+
+                    if ($filterData && $targetBrevId) {
+                        BrevFilter::updateOrCreate(
+                            ['brevID' => $targetBrevId],
+                            [
+                                'adresse'   => (bool) ($filterData['adresse'] ?? true),
+                                'dato'      => (bool) ($filterData['dato'] ?? true),
+                                'navn'      => (bool) ($filterData['navn'] ?? true),
+                                'sagsnr'    => (bool) ($filterData['sagsnr'] ?? true),
+                                'emne'      => (bool) ($filterData['emne'] ?? true),
+                                'skjulalle' => (bool) ($filterData['skjulalle'] ?? false),
+                                'visalle'   => (bool) ($filterData['visalle'] ?? false),
+                            ]
+                        );
+                    }
+                }
+            });
+
+            $this->loadBrevTyperList();
+            $this->loadBreveList();
+            if ($this->brevId) {
+                $this->loadBrev($this->brevId);
+            } elseif (!empty($this->breveList)) {
+                $this->loadBrev($this->breveList[0]['id']);
+            }
+
+            $this->closeBackupModal();
+
+            $this->dispatch('toast', $toast->success(
+                "Import fuldført: {$oprettet} oprettet, {$opdateret} opdateret, {$sprungetOver} sprunget over"
+            ));
+        } catch (\Throwable $e) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => 'Fejl ved import: ' . $e->getMessage()]);
+        }
+    }
+
     public function render()
     {
         return view('livewire.admin.breve.brev-manager');
