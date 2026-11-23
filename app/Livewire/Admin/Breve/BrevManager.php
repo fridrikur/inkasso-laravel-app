@@ -82,6 +82,13 @@ class BrevManager extends Component
         'visalle'   => false,
     ];
 
+    // Admin-modal til brevtyper fra databasen
+    public bool $showBrevTyperModal = false;
+    public string $newBrevTypeName = '';
+    public ?int $editingBrevTypeId = null;
+    public string $editingBrevTypeName = '';
+    public array $brevTyperList = [];
+
     public function getAllowedFontColorsProperty(): array
     {
         return [
@@ -763,6 +770,113 @@ class BrevManager extends Component
         }
     }
 
+    public function loadBrevTyperList(): void
+    {
+        $this->brevTyperList = BrevType::withCount('breve')
+            ->orderBy('sorteringsorden')
+            ->orderBy('navn')
+            ->get()
+            ->toArray();
+    }
+
+    public function openBrevTyperModal(): void
+    {
+        $this->newBrevTypeName = '';
+        $this->editingBrevTypeId = null;
+        $this->editingBrevTypeName = '';
+        $this->loadBrevTyperList();
+        $this->showBrevTyperModal = true;
+    }
+
+    public function closeBrevTyperModal(): void
+    {
+        $this->showBrevTyperModal = false;
+        $this->newBrevTypeName = '';
+        $this->editingBrevTypeId = null;
+        $this->editingBrevTypeName = '';
+    }
+
+    public function createBrevType(ToastService $toast): void
+    {
+        $navn = trim($this->newBrevTypeName);
+
+        if ($navn === '') {
+            $this->dispatch('toast', ['type' => 'error', 'message' => 'Angiv et navn til brevtypen.']);
+            return;
+        }
+
+        $findesAllerede = BrevType::whereRaw('LOWER(navn) = ?', [mb_strtolower($navn)])->exists();
+        if ($findesAllerede) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => "Brevtypen '{$navn}' findes allerede."]);
+            return;
+        }
+
+        $naesteSortering = ((int) BrevType::max('sorteringsorden')) + 1;
+
+        BrevType::create([
+            'navn'            => $navn,
+            'sorteringsorden' => $naesteSortering,
+            'aktiv'           => true,
+        ]);
+
+        $this->newBrevTypeName = '';
+        $this->loadBrevTyperList();
+
+        $this->dispatch('toast', $toast->success("Brevtypen '{$navn}' blev oprettet."));
+    }
+
+    public function startEditBrevType(int $id): void
+    {
+        $type = BrevType::find($id);
+        if (!$type) {
+            return;
+        }
+
+        $this->editingBrevTypeId = $type->id;
+        $this->editingBrevTypeName = $type->navn;
+    }
+
+    public function cancelEditBrevType(): void
+    {
+        $this->editingBrevTypeId = null;
+        $this->editingBrevTypeName = '';
+    }
+
+    public function renameBrevType(ToastService $toast): void
+    {
+        if (!$this->editingBrevTypeId) {
+            return;
+        }
+
+        $navn = trim($this->editingBrevTypeName);
+        if ($navn === '') {
+            $this->dispatch('toast', ['type' => 'error', 'message' => 'Brevtypen skal have et navn.']);
+            return;
+        }
+
+        $type = BrevType::find($this->editingBrevTypeId);
+        if (!$type) {
+            return;
+        }
+
+        $dublet = BrevType::whereRaw('LOWER(navn) = ?', [mb_strtolower($navn)])
+            ->where('id', '!=', $type->id)
+            ->exists();
+
+        if ($dublet) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => "En anden brevtype hedder allerede '{$navn}'."]);
+            return;
+        }
+
+        $type->update(['navn' => $navn]);
+
+        $this->editingBrevTypeId = null;
+        $this->editingBrevTypeName = '';
+        $this->loadBrevTyperList();
+
+        $this->dispatch('toast', $toast->success("Brevtypen blev omdøbt til '{$navn}'."));
+    }
+    
     public function render()
     {
         return view('livewire.admin.breve.brev-manager');

@@ -732,6 +732,15 @@
         </div>
     </div>
 
+    {{-- Knap i bundbjælken --}}
+    <button
+        type="button"
+        wire:click="openBrevTyperModal"
+        class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border border-slate-700"
+    >
+        🏷️ Brevtyper
+    </button>
+
     {{-- 4. TRÆKBAR BOKS MED FELTER --}}
     <div 
         x-data="{
@@ -925,5 +934,101 @@
         </div>
     </div>
 @endif
+    {{-- ADMIN-MODAL: BREVTYPER --}}
+    @if($showBrevTyperModal)
+        <div class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div wire:click.away="closeBrevTyperModal" class="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-5 border border-slate-100">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">🏷️ Administration af brevtyper</h3>
+                        <p class="text-[11px] text-slate-500">Opret nye kategorier (f.eks. Fuldmagt, Kontrakttype) eller omdøb eksisterende.</p>
+                    </div>
+                    <button type="button" wire:click="closeBrevTyperModal" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
+                </div>
 
+                {{-- OPRET NY BREVTYPE --}}
+                <form wire:submit.prevent="createBrevType" class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2.5">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Ny brevtype</label>
+                    <div class="flex items-center gap-2">
+                        <input
+                            type="text"
+                            wire:model.defer="newBrevTypeName"
+                            placeholder="F.eks. Fuldmagt, Kontrakttype, Rykker..."
+                            class="flex-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs bg-white focus:outline-none focus:border-indigo-500 font-semibold text-slate-900"
+                        >
+                        <button
+                            type="submit"
+                            class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition cursor-pointer shrink-0"
+                        >
+                            + Opret
+                        </button>
+                    </div>
+                </form>
+
+                {{-- LISTE OVER EKSISTERENDE BREVTYPER --}}
+                <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Eksisterende brevtyper</div>
+
+                    @forelse ($brevTyperList as $typeItem)
+                        <div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                            @if ($editingBrevTypeId === $typeItem['id'])
+                                <div class="flex items-center gap-2 flex-1">
+                                    <input
+                                        type="text"
+                                        wire:model.defer="editingBrevTypeName"
+                                        wire:keydown.enter="renameBrevType"
+                                        wire:keydown.escape="cancelEditBrevType"
+                                        class="flex-1 border border-indigo-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
+                                    >
+                                    <button
+                                        type="button"
+                                        wire:click="renameBrevType"
+                                        class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-bold cursor-pointer"
+                                    >
+                                        Gem
+                                    </button>
+                                    <button
+                                        type="button"
+                                        wire:click="cancelEditBrevType"
+                                        class="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-[11px] font-bold cursor-pointer"
+                                    >
+                                        Annuller
+                                    </button>
+                                </div>
+                            @else
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="font-bold text-slate-800 truncate">{{ $typeItem['navn'] }}</span>
+                                    <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500 shrink-0">
+                                        {{ $typeItem['breve_count'] ?? 0 }} breve
+                                    </span>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    wire:click="startEditBrevType({{ $typeItem['id'] }})"
+                                    class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-[11px] font-bold transition cursor-pointer shrink-0"
+                                >
+                                    ✏️ Omdøb
+                                </button>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="text-xs text-slate-400 italic py-4 text-center">
+                            Der er endnu ikke oprettet nogen brevtyper i databasen.
+                        </div>
+                    @endforelse
+                </div>
+
+                <div class="flex justify-end pt-2 border-t border-slate-100">
+                    <button
+                        type="button"
+                        wire:click="closeBrevTyperModal"
+                        class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                    >
+                        Luk
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
