@@ -20,7 +20,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('debitors', function (Blueprint $table) {
-            $table->dropColumn(['email2', 'tlf2', 'tlf3']);
+            $table->dropColumn(['email2', 'tlf2']);
         });
     }
 };
