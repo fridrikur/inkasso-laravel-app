@@ -1,6 +1,6 @@
 <div class="relative pb-24" x-data="{ settingsOpen: true }">
 
-    <{{-- 1. FANER ØVERST MED ANTAL UDE I SIDEN --}}
+    {{-- 1. FANER ØVERST MED ANTAL UDE I SIDEN --}}
     <div class="flex items-center justify-between gap-4 mb-4 bg-slate-50/90 border border-slate-200/90 rounded-t-2xl px-3 pt-2.5 pb-0 shadow-2xs">
         <div class="flex items-center gap-1.5 overflow-x-auto pb-0 flex-1">
             @foreach ($breveList as $brevItem)
@@ -42,7 +42,6 @@
             @endif
         </div>
     </div>
-
     <button type="button" wire:click="openBackupModal" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5">
         🛡️ Import / Eksport
     </button>
