@@ -84,6 +84,50 @@
     <div class="bg-white border border-slate-200 rounded-b-2xl rounded-tr-2xl p-6 shadow-sm flex flex-col space-y-4" style="height:100%">
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {{-- STICKY TAGLINE: VISER ALTID AKTIV SKABELON UNDER REDIGERING --}}
+        @if ($brevId)
+            <div class="sticky top-2 z-30 flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-slate-900/95 backdrop-blur-xs text-white rounded-xl shadow-md border border-slate-700/80">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
+                        Redigerer skabelon:
+                    </span>
+                    <span class="text-sm font-extrabold text-white truncate">
+                        {{ $titel ?: 'Unavngivet skabelon' }}
+                    </span>
+
+                    @if ($this->aktivBrevTypeNavn)
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 shrink-0">
+                            {{ $this->aktivBrevTypeNavn }}
+                        </span>
+                    @endif
+
+                    @if ($beskyttet)
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/30 shrink-0">
+                            🔒 Beskyttet
+                        </span>
+                    @endif
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button
+                        type="button"
+                        wire:click="openRenameModal"
+                        class="text-[11px] font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-lg border border-slate-700 transition cursor-pointer"
+                        title="Omdøb denne skabelon"
+                    >
+                        ✏️ Omdøb
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="saveTemplate"
+                        class="text-[11px] font-bold text-white bg-indigo-600 hover:bg-indigo-500 px-3 py-1 rounded-lg transition cursor-pointer shadow-xs"
+                    >
+                        💾 Gem
+                    </button>
+                </div>
+            </div>
+        @endif
             {{-- Left Margin --}}
             <div>
                 <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5" title="Skub indholdet til højre eller venstre">Venstre-margin (px):</label>
