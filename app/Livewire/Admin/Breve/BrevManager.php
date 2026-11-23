@@ -596,6 +596,22 @@ class BrevManager extends Component
         );
     }
 
+    public function getAntalSkabelonerProperty(): int
+    {
+        return count($this->breveList);
+    }
+
+    public function getAntalBeskyttedeSkabelonerProperty(): int
+    {
+        return collect($this->breveList)->where('beskyttet', true)->count();
+    }
+
+    public function selectBrevTab(int $id): void
+    {
+        $this->settingsOpen = false;
+        $this->loadBrev($id);
+    }
+
     public function importBreveJson(ToastService $toast): void
     {
         $this->validate([
@@ -625,6 +641,7 @@ class BrevManager extends Component
             $oprettet = 0;
             $opdateret = 0;
             $sprungetOver = 0;
+            $setTitlerIFil = [];
 
             DB::transaction(function () use (
                 $items,
@@ -632,17 +649,27 @@ class BrevManager extends Component
                 $feltMapping,
                 &$oprettet,
                 &$opdateret,
-                &$sprungetOver
+                &$sprungetOver,
+                &$setTitlerIFil
             ) {
                 foreach ($items as $item) {
-                    if (!is_array($item) || empty(trim((string) ($item['titel'] ?? '')))) {
+                    $titel = trim((string) ($item['titel'] ?? ''));
+                    if (!is_array($item) || $titel === '') {
                         continue;
                     }
 
+                    // Bremse: spring dubletter med samme titel inden for selve JSON-filen over
+                    $titelKey = mb_strtolower($titel);
+                    if (isset($setTitlerIFil[$titelKey])) {
+                        $sprungetOver++;
+                        continue;
+                    }
+                    $setTitlerIFil[$titelKey] = true;
+
                     $filterData = is_array($item['filter'] ?? null) ? $item['filter'] : null;
                     unset($item['id'], $item['created_at'], $item['updated_at'], $item['filter']);
+                    $item['titel'] = $titel;
 
-                    // Opdater eventuelle forældede flettefelter
                     foreach (['tekst', 'emne', 'sub_emne'] as $felt) {
                         if (isset($item[$felt]) && is_string($item[$felt])) {
                             $item[$felt] = str_replace(
@@ -662,21 +689,18 @@ class BrevManager extends Component
                     }
 
                     $cleanRow = array_intersect_key($item, array_flip($columns));
-
-                    // Sikr at 'tekst' og øvrige tekstfelter aldrig er null i MySQL
+                    $cleanRow['titel'] = $titel;
                     $cleanRow['tekst'] = (string) ($cleanRow['tekst'] ?? '');
 
-                    if (in_array('emne', $columns, true) && !array_key_exists('emne', $cleanRow) || ($cleanRow['emne'] ?? null) === null) {
-                        if (in_array('emne', $columns, true)) {
-                            $cleanRow['emne'] = '';
-                        }
+                    if (in_array('emne', $columns, true) && (!array_key_exists('emne', $cleanRow) || $cleanRow['emne'] === null)) {
+                        $cleanRow['emne'] = '';
                     }
 
-                    if (in_array('sub_emne', $columns, true) && ($cleanRow['sub_emne'] ?? null) === null) {
+                    if (in_array('sub_emne', $columns, true) && (!array_key_exists('sub_emne', $cleanRow) || $cleanRow['sub_emne'] === null)) {
                         $cleanRow['sub_emne'] = '';
                     }
 
-                    $eksisterende = Brev::where('titel', $cleanRow['titel'])->first();
+                    $eksisterende = Brev::where('titel', $titel)->first();
 
                     if ($eksisterende) {
                         if (!$this->overwriteExistingBreve) {
@@ -690,9 +714,19 @@ class BrevManager extends Component
                     } else {
                         $cleanRow['brevpos'] = $cleanRow['brevpos'] ?? (((int) Brev::max('brevpos')) + 1);
                         $cleanRow['brevtype'] = $cleanRow['brevtype'] ?? '0';
-                        $nyBrev = Brev::create($cleanRow);
-                        $targetBrevId = $nyBrev->id;
-                        $oprettet++;
+
+                        try {
+                            $nyBrev = Brev::create($cleanRow);
+                            $targetBrevId = $nyBrev->id;
+                            $oprettet++;
+                        } catch (\Illuminate\Database\QueryException $qe) {
+                            // Hvis unik constraint (1062 / 23000) udløses, tæl som sprunget over
+                            if (($qe->errorInfo[1] ?? null) === 1062 || str_contains($qe->getMessage(), '1062')) {
+                                $sprungetOver++;
+                                continue;
+                            }
+                            throw $qe;
+                        }
                     }
 
                     if ($filterData && $targetBrevId) {
@@ -728,22 +762,6 @@ class BrevManager extends Component
             $this->dispatch('toast', ['type' => 'error', 'message' => 'Fejl ved import: ' . $e->getMessage()]);
         }
     }
-    
-    public function getAntalSkabelonerProperty(): int
-    {
-        return count($this->breveList);
-    }
-
-    public function getAntalBeskyttedeSkabelonerProperty(): int
-    {
-        return collect($this->breveList)->where('beskyttet', true)->count();
-    }
-
-    public function selectBrevTab(int $id): void
-    {
-        $this->settingsOpen = false;
-        $this->loadBrev($id);
-}
 
     public function render()
     {
