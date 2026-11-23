@@ -27,8 +27,13 @@ return new class extends Migration {
         Schema::create('breve', function (Blueprint $table) {
             $table->id();
             $table->string('titel')->unique('breve_titel_unique');
+            $table->foreignId('brevtype_id')
+                ->nullable()
+                ->constrained('brev_typer')
+                ->nullOnDelete();
             $table->string('brevpos')->default('0'); // Beholder varchar for kompatibilitet med eksisterende SQL
             $table->string('emne')->nullable();
+            $table->string('sub_emne')->nullable();
             $table->mediumText('tekst');
             $table->tinyInteger('beskyttet')->default(0);
             $table->integer('brevtype')->default(0);
@@ -40,6 +45,7 @@ return new class extends Migration {
             $table->float('linjeafstand')->default(1.5);
             $table->decimal('dato_margin_top', 8, 2)->default(7.57);
             $table->decimal('emne_top_margin', 8, 2)->default(8.91);
+            $table->decimal('sub_emne_top_margin', 8, 2)->default(0.40);
             $table->decimal('body_margin_top', 8, 2)->default(1.00);
             $table->decimal('brevhoved_top_margin', 8, 2)->default(1.50);
 
@@ -48,10 +54,11 @@ return new class extends Migration {
             $table->decimal('emne_font_size', 5, 2)->default(10.5);
             $table->decimal('body_font_size', 5, 2)->default(9.5);
 
-            // Skrifttype
+            // Skrifttype og farve
             $table->string('font_family')->default("Century Schoolbook, Georgia, serif");
+            $table->string('font_color', 20)->default('#000000');
 
-            //firma brevhoved
+            // Firma brevhoved
             $table->boolean('visfirmabrevhoved')->default(true);
             $table->string('firma_navn')->default('DANSK KONSULENT GRUPPE A/S');
             $table->string('firma_adresse')->default('SCT. HANSGADE 9, 1 SAL, 4100 RINGSTED');
