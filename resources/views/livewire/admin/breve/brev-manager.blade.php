@@ -83,14 +83,22 @@
     {{-- 2. SKABELONINDHOLD --}}
     <div class="bg-white border border-slate-200 rounded-b-2xl rounded-tr-2xl p-6 shadow-sm flex flex-col space-y-4" style="height:100%">
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         {{-- AKTIV SKABELON-BJÆLKE + ÆGTE FASTGJORT FLOATING BAR VED SCROLL --}}
         @if ($brevId)
             <div
-                x-data="{ scrolledDown: false }"
-                @scroll.window="scrolledDown = (window.scrollY > 220)"
+                x-data="{
+                    scrolledDown: false,
+                    checkScroll(e) {
+                        const winY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+                        const targetY = (e && e.target && typeof e.target.scrollTop === 'number') ? e.target.scrollTop : 0;
+                        this.scrolledDown = (winY > 180 || targetY > 180);
+                    }
+                }"
+                x-init="checkScroll()"
+                @scroll.window="checkScroll($event)"
+                @scroll.capture="checkScroll($event)"
             >
-                {{-- 1. Normal bjælke øverst i skabelonen --}}
+                {{-- 1. Bjælke øverst i skabelonen --}}
                 <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-slate-900 text-white rounded-xl shadow-md border border-slate-700/80">
                     <div class="flex items-center gap-2 min-w-0">
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
@@ -113,7 +121,7 @@
 
                     {{-- SKABELONNAVN LIGE VED SIDEN AF OMDØB & GEM --}}
                     <div class="flex flex-wrap items-center gap-2.5 shrink-0">
-                        <span class="text-sm font-extrabold text-amber-300 bg-slate-800/90 border border-slate-700 px-3 py-1 rounded-lg">
+                        <span class="text-sm font-extrabold text-amber-300 bg-slate-800 border border-amber-400/40 px-3 py-1 rounded-lg">
                             📄 {{ $this->aktivBrevTitel }}
                         </span>
 
@@ -164,7 +172,7 @@
 
                     {{-- SKABELONNAVN LIGE VED SIDEN AF OMDØB & GEM --}}
                     <div class="flex items-center gap-2.5 shrink-0">
-                        <span class="text-xs sm:text-sm font-extrabold text-amber-300 bg-slate-900 border border-slate-700 px-3 py-1 rounded-lg max-w-[260px] truncate">
+                        <span class="text-xs sm:text-sm font-extrabold text-amber-300 bg-slate-900 border border-amber-400/40 px-3 py-1 rounded-lg max-w-[260px] truncate">
                             📄 {{ $this->aktivBrevTitel }}
                         </span>
 
@@ -187,6 +195,8 @@
                 </div>
             </div>
         @endif
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             {{-- Left Margin --}}
             <div>
                 <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5" title="Skub indholdet til højre eller venstre">Venstre-margin (px):</label>
@@ -1098,7 +1108,7 @@
                     <div class="flex items-center gap-2">
                         <input
                             type="text"
-                            wire:model.defer="newBrevTypeName"
+                            wire:model="newBrevTypeName"
                             placeholder="F.eks. Fuldmagt, Kontrakttype, Rykker..."
                             class="flex-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs bg-white focus:outline-none focus:border-indigo-500 font-semibold text-slate-900"
                         >
@@ -1121,7 +1131,7 @@
                                 <div class="flex items-center gap-2 flex-1">
                                     <input
                                         type="text"
-                                        wire:model.defer="editingBrevTypeName"
+                                        wire:model="editingBrevTypeName"
                                         wire:keydown.enter="renameBrevType"
                                         wire:keydown.escape="cancelEditBrevType"
                                         class="flex-1 border border-indigo-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
