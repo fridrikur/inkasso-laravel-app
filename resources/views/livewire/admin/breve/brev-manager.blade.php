@@ -1006,24 +1006,24 @@
 
     @if($showBackupModal)
         <div class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-            <div wire:click.away="closeBackupModal" class="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-5 border border-slate-100">
+            <div wire:click.away="closeBackupModal" class="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl p-6 shadow-2xl space-y-5 border border-slate-100">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">🛡️ Sikkerhedskopi: Import & Eksport</h3>
-                        <p class="text-[11px] text-slate-500">Download dine brevskabeloner som JSON eller gendan dem fra en tidligere fil.</p>
+                        <p class="text-[11px] text-slate-500">Gem snapshots på serverens Storage, download filer, eller gendan skabeloner.</p>
                     </div>
                     <button type="button" wire:click="closeBackupModal" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
                 </div>
 
-                {{-- EKSPORT --}}
+                {{-- 1. EKSPORT & SERVER-BACKUP --}}
                 <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
-                    <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">1. Eksporter brevskabeloner</div>
+                    <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">1. Eksporter eller gem backup på server</div>
 
                     <div class="space-y-2 text-xs text-slate-700">
                         <label class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-indigo-300 transition">
                             <span class="flex items-center gap-2">
                                 <input type="radio" wire:model.live="exportScope" value="all" class="text-indigo-600 focus:ring-indigo-500">
-                                <span>Eksporter <strong>alle breve</strong></span>
+                                <span>Omfang: <strong>alle breve</strong></span>
                             </span>
                             <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
                                 {{ $this->antalAlleBreve }} stk.
@@ -1033,7 +1033,7 @@
                         <label class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-indigo-300 transition">
                             <span class="flex items-center gap-2">
                                 <input type="radio" wire:model.live="exportScope" value="protected" class="text-indigo-600 focus:ring-indigo-500">
-                                <span>Eksporter <strong>kun beskyttede breve</strong> 🔒</span>
+                                <span>Omfang: <strong>kun beskyttede breve</strong> 🔒</span>
                             </span>
                             <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
                                 {{ $this->antalBeskyttedeBreve }} stk.
@@ -1041,7 +1041,14 @@
                         </label>
                     </div>
 
-                    <div class="flex justify-end">
+                    <div class="flex flex-wrap justify-end gap-2">
+                        <button
+                            type="button"
+                            wire:click="saveBackupToStorage"
+                            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5"
+                        >
+                            💾 Gem på server (Storage)
+                        </button>
                         <button
                             type="button"
                             wire:click="exportBreveJson"
@@ -1052,9 +1059,47 @@
                     </div>
                 </div>
 
-                {{-- IMPORT --}}
+                {{-- 2. SERVER-BACKUPS PÅ STORAGE --}}
                 <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
-                    <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">2. Importer / gendan fra JSON-fil</div>
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">2. Gemte server-backups (Storage)</div>
+                        <button
+                            type="button"
+                            wire:click="loadServerBackups"
+                            class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                        >
+                            🔄 Opdater liste
+                        </button>
+                    </div>
+
+                    <div class="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                        @forelse ($serverBackups as $backup)
+                            <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-slate-200 text-xs">
+                                <div class="min-w-0">
+                                    <div class="font-bold text-slate-800 truncate">{{ $backup['filename'] }}</div>
+                                    <div class="text-[11px] text-slate-500">
+                                        {{ $backup['last_modified'] }} · {{ $backup['size_kb'] }} KB
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    wire:click="downloadServerBackup('{{ $backup['filename'] }}')"
+                                    class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-[11px] font-bold transition cursor-pointer shrink-0"
+                                >
+                                    ⬇️ Hent fra server
+                                </button>
+                            </div>
+                        @empty
+                            <div class="text-xs text-slate-400 italic py-3 text-center">
+                                Ingen server-backups gemt endnu. Klik "Gem på server (Storage)" for at oprette en.
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+
+                {{-- 3. IMPORT --}}
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                    <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">3. Importer / gendan fra JSON-fil</div>
 
                     <input
                         type="file"

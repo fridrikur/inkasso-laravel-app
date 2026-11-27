@@ -11,6 +11,7 @@ use Livewire\WithFileUploads;
 use App\Models\BrevFilter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use App\Models\BrevType;
 
 class BrevManager extends Component
@@ -92,6 +93,9 @@ class BrevManager extends Component
     public ?int $editingBrevTypeId = null;
     public string $editingBrevTypeName = '';
     public array $brevTyperList = [];
+
+    public array $serverBackups = [];
+    public string $backupStorageFolder = 'backups/breve';
 
     public function getAllowedFontColorsProperty(): array
     {
@@ -985,7 +989,118 @@ class BrevManager extends Component
 
         return 'Unavngivet skabelon';
     }
-    
+
+    protected function buildBreveBackupPayload(): ?array
+    {
+        $query = Brev::with('brevType')
+            ->orderBy('brevpos')
+            ->orderBy('id');
+
+        if ($this->exportScope === 'protected') {
+            $query->where('beskyttet', 1);
+        }
+
+        $breve = $query->get();
+
+        if ($breve->isEmpty()) {
+            $besked = $this->exportScope === 'protected'
+                ? 'Der er ingen beskyttede breve at sikkerhedskopiere.'
+                : 'Der er ingen breve at sikkerhedskopiere.';
+
+            $this->dispatch('toast', ['type' => 'error', 'message' => $besked]);
+            return null;
+        }
+
+        $filtersByBrevId = BrevFilter::whereIn('brevID', $breve->pluck('id'))
+            ->get()
+            ->keyBy('brevID');
+
+        return [
+            'exported_at' => now()->toIso8601String(),
+            'scope'       => $this->exportScope,
+            'count'       => $breve->count(),
+            'breve'       => $breve->map(function (Brev $brev) use ($filtersByBrevId) {
+                $data = $brev->toArray();
+                unset($data['id'], $data['created_at'], $data['updated_at'], $data['brev_type']);
+
+                $data['brevtype_navn'] = $brev->brevType?->navn;
+
+                $filter = $filtersByBrevId->get($brev->id);
+                $data['filter'] = $filter ? [
+                    'adresse'   => (bool) $filter->adresse,
+                    'dato'      => (bool) $filter->dato,
+                    'navn'      => (bool) $filter->navn,
+                    'sagsnr'    => (bool) $filter->sagsnr,
+                    'emne'      => (bool) $filter->emne,
+                    'skjulalle' => (bool) $filter->skjulalle,
+                    'visalle'   => (bool) $filter->visalle,
+                ] : null;
+
+                return $data;
+            })->values()->all(),
+        ];
+    }
+
+    public function loadServerBackups(): void
+    {
+        $disk = Storage::disk('local');
+
+        if (!$disk->exists($this->backupStorageFolder)) {
+            $this->serverBackups = [];
+            return;
+        }
+
+        $files = collect($disk->files($this->backupStorageFolder))
+            ->filter(fn (string $path) => str_ends_with(strtolower($path), '.json'))
+            ->sortByDesc(fn (string $path) => $disk->lastModified($path))
+            ->values();
+
+        $this->serverBackups = $files->map(function (string $path) use ($disk) {
+            return [
+                'path'          => $path,
+                'filename'      => basename($path),
+                'size_kb'       => round($disk->size($path) / 1024, 1),
+                'last_modified' => date('d.m.Y H:i:s', $disk->lastModified($path)),
+            ];
+        })->all();
+    }
+
+    public function saveBackupToStorage(ToastService $toast): void
+    {
+        $payload = $this->buildBreveBackupPayload();
+        if (!$payload) {
+            return;
+        }
+
+        $prefix = $this->exportScope === 'protected' ? 'beskyttede-breve' : 'alle-breve';
+        $filename = $prefix . '-' . now()->format('Y-m-d-His') . '.json';
+        $path = $this->backupStorageFolder . '/' . $filename;
+
+        Storage::disk('local')->put(
+            $path,
+            json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+        );
+
+        $this->loadServerBackups();
+        $this->dispatch('toast', $toast->success("Backup gemt på serveren: {$filename}"));
+    }
+
+    public function downloadServerBackup(string $filename)
+    {
+        $safeFilename = basename($filename);
+        $path = $this->backupStorageFolder . '/' . $safeFilename;
+        $disk = Storage::disk('local');
+
+        if (!$disk->exists($path)) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => 'Backup-filen blev ikke fundet på serveren.']);
+            return null;
+        }
+
+        return $disk->download($path, $safeFilename, [
+            'Content-Type' => 'application/json; charset=UTF-8',
+        ]);
+    }
+
     public function render()
     {
         return view('livewire.admin.breve.brev-manager');
