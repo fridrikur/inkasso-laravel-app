@@ -96,6 +96,8 @@ class BrevManager extends Component
 
     public array $serverBackups = [];
     public string $backupStorageFolder = 'backups/breve';
+    public string $selectedStorageBackup = '';
+    public bool $overwriteOnStorageImport = false;
 
     public function getAllowedFontColorsProperty(): array
     {
@@ -539,8 +541,8 @@ class BrevManager extends Component
     public function openBackupModal(): void
     {
         $this->exportScope = 'all';
-        $this->importJsonFile = null;
-        $this->overwriteExistingBreve = false;
+        $this->overwriteOnStorageImport = false;
+        $this->loadServerBackups();
         $this->showBackupModal = true;
     }
 
@@ -1101,6 +1103,292 @@ class BrevManager extends Component
         ]);
     }
 
+    
+    public function loadServerBackups(): void
+    {
+        $disk = Storage::disk('local');
+
+        if (!$disk->exists($this->backupStorageFolder)) {
+            $this->serverBackups = [];
+            $this->selectedStorageBackup = '';
+            return;
+        }
+
+        $files = collect($disk->files($this->backupStorageFolder))
+            ->filter(fn (string $path) => str_ends_with(strtolower($path), '.json'))
+            ->sortByDesc(fn (string $path) => $disk->lastModified($path))
+            ->values();
+
+        $this->serverBackups = $files->map(function (string $path) use ($disk) {
+            return [
+                'filename'      => basename($path),
+                'size_kb'       => round($disk->size($path) / 1024, 1),
+                'last_modified' => date('d.m.Y H:i:s', $disk->lastModified($path)),
+            ];
+        })->all();
+
+        if ($this->selectedStorageBackup === '' && !empty($this->serverBackups)) {
+            $this->selectedStorageBackup = $this->serverBackups[0]['filename'];
+        }
+    }
+
+    /**
+     * STORAGE EXPORT: Gemmer backup direkte i Storage på serveren
+     */
+    public function exportToStorage(ToastService $toast): void
+    {
+        $query = Brev::with('brevType')
+            ->orderBy('brevpos')
+            ->orderBy('id');
+
+        if ($this->exportScope === 'protected') {
+            $query->where('beskyttet', 1);
+        }
+
+        $breve = $query->get();
+
+        if ($breve->isEmpty()) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => 'Der er ingen breve at eksportere til Storage.']);
+            return;
+        }
+
+        $filtersByBrevId = BrevFilter::whereIn('brevID', $breve->pluck('id'))
+            ->get()
+            ->keyBy('brevID');
+
+        $payload = [
+            'exported_at' => now()->toIso8601String(),
+            'scope'       => $this->exportScope,
+            'count'       => $breve->count(),
+            'breve'       => $breve->map(function (Brev $brev) use ($filtersByBrevId) {
+                $data = $brev->toArray();
+                unset($data['id'], $data['created_at'], $data['updated_at'], $data['brev_type']);
+
+                $data['brevtype_navn'] = $brev->brevType?->navn;
+
+                $filter = $filtersByBrevId->get($brev->id);
+                $data['filter'] = $filter ? [
+                    'adresse'   => (bool) $filter->adresse,
+                    'dato'      => (bool) $filter->dato,
+                    'navn'      => (bool) $filter->navn,
+                    'sagsnr'    => (bool) $filter->sagsnr,
+                    'emne'      => (bool) $filter->emne,
+                    'skjulalle' => (bool) $filter->skjulalle,
+                    'visalle'   => (bool) $filter->visalle,
+                ] : null;
+
+                return $data;
+            })->values()->all(),
+        ];
+
+        $prefix = $this->exportScope === 'protected' ? 'beskyttede-breve' : 'alle-breve';
+        $filename = $prefix . '-' . now()->format('Y-m-d-His') . '.json';
+        $path = $this->backupStorageFolder . '/' . $filename;
+
+        Storage::disk('local')->put(
+            $path,
+            json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+        );
+
+        $this->selectedStorageBackup = $filename;
+        $this->loadServerBackups();
+
+        $this->dispatch('toast', $toast->success("Storage export fuldført: {$filename}"));
+    }
+
+    /**
+     * STORAGE IMPORT: Gendanner skabeloner direkte fra valgt fil i Storage
+     */
+    public function importFromStorage(ToastService $toast): void
+    {
+        $safeFilename = basename($this->selectedStorageBackup);
+        if ($safeFilename === '') {
+            $this->dispatch('toast', ['type' => 'error', 'message' => 'Vælg en backup-fil på serveren først.']);
+            return;
+        }
+
+        $path = $this->backupStorageFolder . '/' . $safeFilename;
+        $disk = Storage::disk('local');
+
+        if (!$disk->exists($path)) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => 'Backup-filen findes ikke på serveren.']);
+            $this->loadServerBackups();
+            return;
+        }
+
+        try {
+            $raw = $disk->get($path);
+            $decoded = json_decode($raw, true);
+
+            $items = is_array($decoded) && isset($decoded['breve']) && is_array($decoded['breve'])
+                ? $decoded['breve']
+                : (is_array($decoded) ? $decoded : null);
+
+            if (!$items) {
+                $this->dispatch('toast', ['type' => 'error', 'message' => 'Ugyldigt backup-indhold i filen på Storage.']);
+                return;
+            }
+
+            $columns = Schema::getColumnListing('breve');
+            $feltMapping = [
+                '{Statistik}' => '{restgaeld_dkg}',
+                '{statistik}' => '{restgaeld_dkg}',
+                '{restgaeld}'  => '{ialt}',
+            ];
+
+            $oprettet = 0;
+            $opdateret = 0;
+            $sprungetOver = 0;
+            $setTitlerIFil = [];
+            $typeIdCache = [];
+
+            DB::transaction(function () use (
+                $items,
+                $columns,
+                $feltMapping,
+                &$oprettet,
+                &$opdateret,
+                &$sprungetOver,
+                &$setTitlerIFil,
+                &$typeIdCache
+            ) {
+                foreach ($items as $item) {
+                    $titel = trim((string) ($item['titel'] ?? ''));
+                    if (!is_array($item) || $titel === '') {
+                        continue;
+                    }
+
+                    $titelKey = mb_strtolower($titel);
+                    if (isset($setTitlerIFil[$titelKey])) {
+                        $sprungetOver++;
+                        continue;
+                    }
+                    $setTitlerIFil[$titelKey] = true;
+
+                    $filterData = is_array($item['filter'] ?? null) ? $item['filter'] : null;
+                    $brevTypeNavn = trim((string) ($item['brevtype_navn'] ?? ''));
+
+                    unset($item['id'], $item['created_at'], $item['updated_at'], $item['filter'], $item['brevtype_navn']);
+                    $item['titel'] = $titel;
+
+                    $resolvedBrevTypeId = null;
+                    if ($brevTypeNavn !== '') {
+                        $typeKey = mb_strtolower($brevTypeNavn);
+
+                        if (!array_key_exists($typeKey, $typeIdCache)) {
+                            $existingType = BrevType::whereRaw('LOWER(navn) = ?', [$typeKey])->first();
+
+                            if ($existingType) {
+                                $typeIdCache[$typeKey] = (int) $existingType->id;
+                            } else {
+                                $nextSort = ((int) BrevType::max('sorteringsorden')) + 1;
+                                $createdType = BrevType::create([
+                                    'navn'            => $brevTypeNavn,
+                                    'sorteringsorden' => $nextSort,
+                                    'aktiv'           => true,
+                                ]);
+                                $typeIdCache[$typeKey] = (int) $createdType->id;
+                            }
+                        }
+
+                        $resolvedBrevTypeId = $typeIdCache[$typeKey];
+                    }
+
+                    foreach (['tekst', 'emne', 'sub_emne'] as $felt) {
+                        if (isset($item[$felt]) && is_string($item[$felt])) {
+                            $item[$felt] = str_replace(
+                                array_keys($feltMapping),
+                                array_values($feltMapping),
+                                $item[$felt]
+                            );
+                        }
+                    }
+
+                    if (isset($item['sub_emne'])) {
+                        $item['sub_emne'] = strip_tags((string) $item['sub_emne']);
+                    }
+
+                    if (isset($item['font_color'])) {
+                        $item['font_color'] = $this->sanitizeFontColor($item['font_color']);
+                    }
+
+                    $cleanRow = array_intersect_key($item, array_flip($columns));
+                    $cleanRow['titel'] = $titel;
+                    $cleanRow['tekst'] = (string) ($cleanRow['tekst'] ?? '');
+
+                    if (in_array('brevtype_id', $columns, true)) {
+                        $cleanRow['brevtype_id'] = $resolvedBrevTypeId;
+                    }
+
+                    if (in_array('emne', $columns, true) && (!array_key_exists('emne', $cleanRow) || $cleanRow['emne'] === null)) {
+                        $cleanRow['emne'] = '';
+                    }
+
+                    if (in_array('sub_emne', $columns, true) && (!array_key_exists('sub_emne', $cleanRow) || $cleanRow['sub_emne'] === null)) {
+                        $cleanRow['sub_emne'] = '';
+                    }
+
+                    $eksisterende = Brev::where('titel', $titel)->first();
+
+                    if ($eksisterende) {
+                        if (!$this->overwriteOnStorageImport) {
+                            $sprungetOver++;
+                            continue;
+                        }
+
+                        $eksisterende->update($cleanRow);
+                        $targetBrevId = $eksisterende->id;
+                        $opdateret++;
+                    } else {
+                        $cleanRow['brevpos'] = $cleanRow['brevpos'] ?? (((int) Brev::max('brevpos')) + 1);
+                        $cleanRow['brevtype'] = $cleanRow['brevtype'] ?? '0';
+
+                        try {
+                            $nyBrev = Brev::create($cleanRow);
+                            $targetBrevId = $nyBrev->id;
+                            $oprettet++;
+                        } catch (\Illuminate\Database\QueryException $qe) {
+                            if (($qe->errorInfo[1] ?? null) === 1062 || str_contains($qe->getMessage(), '1062')) {
+                                $sprungetOver++;
+                                continue;
+                            }
+                            throw $qe;
+                        }
+                    }
+
+                    if ($filterData && $targetBrevId) {
+                        BrevFilter::updateOrCreate(
+                            ['brevID' => $targetBrevId],
+                            [
+                                'adresse'   => (bool) ($filterData['adresse'] ?? true),
+                                'dato'      => (bool) ($filterData['dato'] ?? true),
+                                'navn'      => (bool) ($filterData['navn'] ?? true),
+                                'sagsnr'    => (bool) ($filterData['sagsnr'] ?? true),
+                                'emne'      => (bool) ($filterData['emne'] ?? true),
+                                'skjulalle' => (bool) ($filterData['skjulalle'] ?? false),
+                                'visalle'   => (bool) ($filterData['visalle'] ?? false),
+                            ]
+                        );
+                    }
+                }
+            });
+
+            $this->loadBrevTyperList();
+            $this->loadBreveList();
+            if ($this->brevId) {
+                $this->loadBrev($this->brevId);
+            } elseif (!empty($this->breveList)) {
+                $this->loadBrev($this->breveList[0]['id']);
+            }
+
+            $this->dispatch('toast', $toast->success(
+                "Storage import fuldført: {$oprettet} oprettet, {$opdateret} opdateret, {$sprungetOver} sprunget over"
+            ));
+        } catch (\Throwable $e) {
+            $this->dispatch('toast', ['type' => 'error', 'message' => 'Fejl ved storage import: ' . $e->getMessage()]);
+        }
+    }
+    
     public function render()
     {
         return view('livewire.admin.breve.brev-manager');
