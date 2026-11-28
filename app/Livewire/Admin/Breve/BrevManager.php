@@ -1043,30 +1043,6 @@ class BrevManager extends Component
         ];
     }
 
-    public function loadServerBackups(): void
-    {
-        $disk = Storage::disk('local');
-
-        if (!$disk->exists($this->backupStorageFolder)) {
-            $this->serverBackups = [];
-            return;
-        }
-
-        $files = collect($disk->files($this->backupStorageFolder))
-            ->filter(fn (string $path) => str_ends_with(strtolower($path), '.json'))
-            ->sortByDesc(fn (string $path) => $disk->lastModified($path))
-            ->values();
-
-        $this->serverBackups = $files->map(function (string $path) use ($disk) {
-            return [
-                'path'          => $path,
-                'filename'      => basename($path),
-                'size_kb'       => round($disk->size($path) / 1024, 1),
-                'last_modified' => date('d.m.Y H:i:s', $disk->lastModified($path)),
-            ];
-        })->all();
-    }
-
     public function saveBackupToStorage(ToastService $toast): void
     {
         $payload = $this->buildBreveBackupPayload();
